@@ -29,6 +29,25 @@ def draw_alpha_line(x1, y1, x2, y2, color, alpha, width):
                            int(x2 + nx * o), int(top - (y2 + ny * o)))
 
 
+def draw_disc(x, y, radius, color):
+    # pico2d에는 원 그리기가 없어 가로 띠를 쌓아 채운 원을 그린다
+    step = config.DISC_STEP
+    rows = max(1, int(radius * 2 / step))
+    for i in range(rows):
+        dy = -radius + (i + 0.5) * radius * 2 / rows
+        half = math.sqrt(max(0, radius * radius - dy * dy))
+        draw_rectangle(x - half, y + dy - step / 2, x + half, y + dy + step / 2, *color, filled=True)
+
+
+def draw_ring(x, y, rx, ry, dots, size, color):
+    # 점 dots개로 타원 테두리를 그린다 (ry를 작게 주면 바닥에 눕힌 원)
+    half = size / 2
+    for i in range(dots):
+        angle = 2 * math.pi * i / dots
+        px, py = x + rx * math.cos(angle), y + ry * math.sin(angle)
+        draw_rectangle(px - half, py - half, px + half, py + half, *color, filled=True)
+
+
 class ScreenFlash:
     # 화면 전체를 덮었다가 서서히 사라지는 섬광 (흔들림으로 밀려도 가장자리가 드러나지 않게 크게 그린다)
     def __init__(self, color, alpha, time):
@@ -64,9 +83,10 @@ class BorderFlash(ScreenFlash):
 
 
 class Particle:
-    # 사방으로 튀고 중력을 받으며 작아지는 사각형 조각
-    def __init__(self, x, y, speed, life, size, color):
-        angle = random.uniform(0, 2 * math.pi)
+    # 사방으로(angle을 주면 그 방향으로) 튀고 중력을 받으며 작아지는 사각형 조각
+    def __init__(self, x, y, speed, life, size, color, angle=None):
+        if angle is None:
+            angle = random.uniform(0, 2 * math.pi)
         speed = random.uniform(*speed)
         self.x, self.y = x, y
         self.vx, self.vy = math.cos(angle) * speed, math.sin(angle) * speed
@@ -158,9 +178,32 @@ def player_dead():
     sound.play('death')
 
 
-def enemy_hurt(x, y):
-    burst(x, y, config.HURT_SPARK, config.HURT_SPARK['color'])
+def hit_spark(x, y, dir_x, count):
+    # 노란 스파크가 공격 방향(dir_x: +1 오른쪽, -1 왼쪽)으로 부채꼴로 퍼진다
+    base = 0 if dir_x > 0 else math.pi
+    spread = math.radians(config.HIT_SPARK_SPREAD)
+    speed = (config.HIT_SPARK_SPEED * (1 - config.HIT_SPARK_SPEED_JITTER), config.HIT_SPARK_SPEED)
+    game_world.add_objects([Particle(x, y, speed, config.HIT_SPARK_LIFE, config.HIT_SPARK_SIZE,
+                                     config.HIT_SPARK_COLOR, base + random.uniform(-spread, spread))
+                            for _ in range(count)], config.DEPTH_EFFECT)
+
+
+def enemy_hurt(x, y, dir_x):
+    # 투사체 등 플레이어 근접 공격이 아닌 피해 (히트스톱 없음)
+    hit_spark(x, y, dir_x, config.HIT_SPARK_COUNT)
     sound.play('enemy_hurt')
+
+
+def attack_hit(x, y, dir_x, step, killed):
+    # 플레이어 근접 공격 적중. 여러 적을 맞혀도 히트스톱은 max로 1회분만 걸린다 (처치 히트스톱과도 max)
+    hitstop.start(config.HITSTOP_HIT[step - 1])
+    count = config.HIT_SPARK_COUNT
+    if step == 3:
+        camera.shake(config.SHAKE_HIT3['amp'], config.SHAKE_HIT3['time'])
+        count *= config.HIT_SPARK_MULT3
+    hit_spark(x, y, dir_x, count)
+    if not killed:
+        sound.play('enemy_hurt')  # 처치면 처치음이 따로 난다
 
 
 def enemy_killed(x, y, color):

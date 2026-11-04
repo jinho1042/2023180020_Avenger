@@ -54,6 +54,7 @@ class Player:
         self.attack_timer = 0.0
         self.combo_timer = 0.0
         self.attack_buffer = 0.0
+        self.lunge_timer = 0.0  # > 0인 동안 공격 전진 중
         # 이번 공격 판정 구간에 이미 맞힌 적 (한 번 휘두름에 한 번만 피해)
         self.attack_hits = set()
         # 패링: parry_timer > 0인 동안 판정 중. 아무것도 못 막고 끝나면 parry_stun_timer 동안 경직
@@ -264,6 +265,8 @@ class Player:
         move = self.right_pressed - self.left_pressed
         if move != 0:
             self.face_dir = move
+        # 지상 공격은 선딜 동안 바라보는 방향으로 ATTACK_LUNGE만큼 전진 (공중에서는 전진 없음)
+        self.lunge_timer = config.ATTACK_STARTUP[self.attack_step - 1] if self.on_ground else 0
 
     def update_attack(self, dt):
         self.attack_buffer = max(0, self.attack_buffer - dt)
@@ -285,7 +288,7 @@ class Player:
         return config.ATTACK_DAMAGE[self.attack_step - 1] * self.attack_mult * self.swing_mult
 
     def attack_knockback(self):
-        return config.ATTACK3_KNOCKBACK if self.attack_step == 3 else 0
+        return config.ATTACK3_KNOCKBACK if self.attack_step == 3 else config.ATTACK_KNOCKBACK_LIGHT
 
     def get_attack_bb(self):
         # 판정 구간에서만 몸 앞쪽에 공격 hitbox를 만든다. 아니면 None
@@ -329,6 +332,13 @@ class Player:
             move_dt = step
             if self.dash_timer <= 0:
                 upgrades.on_dash_end(self)
+        elif self.is_attacking() and self.lunge_timer > 0:
+            # 마지막 프레임은 남은 시간만큼만 이동해서 전진 거리를 ATTACK_LUNGE에 맞춘다
+            i = self.attack_step - 1
+            step = min(dt, self.lunge_timer)
+            self.lunge_timer -= step
+            self.vx = self.face_dir * config.ATTACK_LUNGE[i] / config.ATTACK_STARTUP[i]
+            move_dt = step
         else:
             move = self.right_pressed - self.left_pressed
             if self.is_attacking() or self.is_parrying():

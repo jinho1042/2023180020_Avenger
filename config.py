@@ -37,7 +37,23 @@ BLINK_INTERVAL = 0.08      # s, 피격 무적 깜빡임 주기
 ATTACK_STARTUP = [0.06, 0.06, 0.10]   # s
 ATTACK_ACTIVE = [0.10, 0.10, 0.12]    # s, 공격 hitbox 유지 시간
 ATTACK_RECOVER = [0.10, 0.10, 0.18]   # s
-ATTACK_HITBOX = [(60, 40), (60, 40), (80, 56)]  # px (가로, 세로), 몸 앞쪽에 붙음
+ATTACK_HITBOX = [(90, 40), (90, 40), (115, 56)]  # px (가로, 세로), 몸 앞쪽에 붙음
+# [v2] 타격감 (적중했을 때만 적용, 헛스윙은 휘두름음만)
+HITSTOP_HIT = [0.03, 0.03, 0.07]   # s, 1·2·3타 적중 시 히트스톱 (헛스윙은 0)
+ATTACK_KNOCKBACK_LIGHT = 30        # px, 1·2타 넉백 (3타는 ATTACK3_KNOCKBACK)
+ATTACK_LUNGE = [15, 15, 35]        # px, 공격 시작 시 앞으로 전진 (공중에서는 0). 선딜 동안 나눠 이동
+ENEMY_HIT_SHAKE = 3                # px, 맞은 적 몸 좌우 떨림 폭
+ENEMY_HIT_SHAKE_TIME = 0.1         # s
+ENEMY_FLINCH_TIME = 0.15           # s, 일반 적 피격 경직 (Idle/Chase에서만)
+HIT_SPARK_COUNT = 6                # 3타는 HIT_SPARK_MULT3배
+HIT_SPARK_MULT3 = 2
+HIT_SPARK_SPEED = 400              # px/s, 최대 속도. 개별 속도는 × (1 - JITTER) ~ 1
+HIT_SPARK_SPEED_JITTER = 0.5
+HIT_SPARK_SPREAD = 50              # 도, 공격 방향 기준 좌우로 퍼지는 각도
+HIT_SPARK_LIFE = 0.15              # s
+HIT_SPARK_SIZE = 5                 # px
+HIT_SPARK_COLOR = (255, 214, 102)  # 노란 스파크 (흰/빨강은 예고 전용이라 쓰지 않음)
+SHAKE_HIT3 = dict(amp=5, time=0.12)    # 3타 적중 시 화면 흔들림
 PLAYER_W, PLAYER_H = 40, 64  # px, 몸 hitbox
 COLOR_PLAYER = (80, 160, 255)
 COLOR_PLAYER_DASH = (180, 220, 255)  # 대시(무적) 중 색
@@ -78,14 +94,69 @@ COLOR_SOLID = (90, 90, 100)
 COLOR_ONEWAY = (150, 130, 90)
 
 # 방 · 문
-# 일반 전투방 템플릿 (data/rooms/ 아래 JSON 이름). 런 시작 시 여기서 중복 없이 RUN_COMBAT_ROOMS개를 뽑는다
+# 일반 전투방 템플릿 (data/rooms/ 아래 JSON 이름). [v2] 루트마다 여기서 중복 없이 뽑는다
 ROOM_TEMPLATES = ['flat_01', 'platform_01', 'platform_02', 'canyon_01', 'canyon_02', 'mixed_01']
-RUN_COMBAT_ROOMS = 4
 DOOR_W, DOOR_H = 60, 100   # px
 DOOR_FRAME = 6             # px, 문틀 두께
 COLOR_DOOR_FRAME = (60, 50, 40)
 COLOR_DOOR_LOCKED = (110, 60, 50)
 COLOR_DOOR_OPEN = (240, 220, 140)
+
+# [v2] 안전지대(허브) · 루트
+HUB_ROOM = 'hub'           # data/rooms/hub.json
+HUB_HEAL_RATIO = 1.0       # 안전지대 복귀 시 최대 체력 대비 회복 비율
+ROUTE_ORDER = ['greatsword', 'mage', 'twinblade']    # 안전지대 문 배치 순서 (왼→오)
+ROUTE_STARS = dict(greatsword=1, mage=2, twinblade=3)  # 난이도 별 개수
+ROUTE_COLOR = dict(        # 문·배경 톤 구분용
+    greatsword=(140, 140, 150),
+    mage=(130, 90, 200),
+    twinblade=(40, 50, 90),
+)
+ROUTE_NAME = dict(greatsword='대검', mage='마법사', twinblade='쌍검')  # HUD 진행도 표시용
+ROUTE_LAYERS = 3           # 보스방 전 전투방 층 수
+ROUTE_BRANCH = 2           # 2·3층의 방 개수 (= 방 클리어 후 고를 수 있는 문 수)
+ROUTE_ENEMIES = dict(
+    greatsword=['melee', 'archer', 'flyer'],
+    mage=['apprentice_mage', 'adept_mage'],
+    twinblade=['dual_dagger', 'assassin'],
+)
+ROUTE_DIFFICULTY = dict(   # 일반 적 체력·피해 배율(보스 제외), 방당 적 수 (1층은 최소값, 3층은 최대값 쪽)
+    greatsword=dict(hp_mult=1.0, dmg_mult=1.0, enemy_count=(2, 3)),
+    mage=dict(hp_mult=1.15, dmg_mult=1.1, enemy_count=(3, 4)),
+    twinblade=dict(hp_mult=1.3, dmg_mult=1.2, enemy_count=(3, 5)),
+)
+# 루트 보스방 템플릿
+ROUTE_BOSS_ROOM = dict(greatsword='arena_greatsword', mage='boss_mage', twinblade='arena_twinblade')
+CHESTS_PER_ROUTE = (1, 2)  # 루트당 보물상자 개수 범위 (첫 상자는 항상 1층)
+BOSS_REWARD_UPGRADE = True # 보스 처치 후 문에 들어가면 강화 3택 1
+AIR_ENEMIES = ['flyer']    # spawn_points 중 'air' 자리에 우선 배치할 적
+ROUTE_BG_TINT = 0.2        # 0~1, 배경색을 현재 루트 색 쪽으로 섞는 비율
+COLOR_DOOR_CLEARED = (70, 70, 75)  # 보스를 처치한 루트의 문 (잠김)
+# 루트 문 위 표지판: 루트 색 판 위에 별(폰트가 없으면 작은 사각형)을 그린다
+DOOR_SIGN_W, DOOR_SIGN_H = 96, 30  # px
+DOOR_SIGN_GAP = 12         # px, 문틀 위쪽과 표지판 사이
+DOOR_SIGN_BORDER = 3       # px
+DOOR_STAR_SIZE = 8         # px, 폰트 없을 때 별 대신 그리는 사각형 한 변
+DOOR_STAR_GAP = 6          # px
+FONT_SIZE_STAR = 20
+COLOR_DOOR_STAR = (255, 220, 120)
+
+# [v2] 보물상자 (x, y는 상자 아래쪽 중심, 템플릿의 chest_spot)
+CHEST_W, CHEST_H = 52, 38  # px
+CHEST_LID_H = 12           # px, 뚜껑 높이 (열리면 뚜껑이 위로 들린다)
+CHEST_LID_LIFT = 14        # px
+CHEST_BAND = 6             # px, 가운데 잠금쇠 폭
+COLOR_CHEST = (170, 110, 50)
+COLOR_CHEST_LOCKED = (95, 75, 60)   # 적이 남아 있을 때
+COLOR_CHEST_OPENED = (110, 80, 50)
+COLOR_CHEST_BAND = (255, 210, 90)
+CHEST_PILLAR_TIME = 0.3    # s, 빛 기둥을 보여준 뒤 강화 화면
+CHEST_PILLAR_W = 40        # px
+CHEST_PILLAR_ALPHA = 200   # 0~255
+COLOR_CHEST_PILLAR = (255, 240, 170)
+CHEST_ICON_W, CHEST_ICON_H = 24, 16  # px, 상자 있는 방으로 가는 문 위 아이콘
+CHEST_ICON_GAP = 10        # px, 문틀 위쪽과 아이콘 사이
+UPGRADE_EMPTY_HEAL = 30    # 남은 강화가 없으면 강화 화면 대신 이만큼 회복
 
 # 패링
 PARRY_WINDOW = 0.15        # s
@@ -96,7 +167,6 @@ HITSTOP_PARRY = 0.08       # s
 HITSTOP_KILL = 0.05        # s
 ENEMY_STAGGER_TIME = 1.0   # s
 STAGGER_DAMAGE_MULT = 1.5  # 비틀거리는 적이 받는 피해 배율
-CONTACT_DAMAGE = 5         # 적 몸에 닿았을 때 받는 피해 (비틀거림·그로기 중인 적은 없음)
 REFLECT_DAMAGE_MULT = 1.0  # 반사 투사체 피해 배율 (강화로 2.0)
 
 # 연출 (흔들림 세기는 px, 시간은 s)
@@ -115,7 +185,6 @@ PARTICLE_GRAVITY = -1200   # px/s^2
 PARRY_SPARK = dict(count=14, speed=(250, 600), life=0.25, size=6, color=(255, 250, 200))
 KILL_PARTICLE = dict(count=18, speed=(150, 450), life=0.5, size=8)  # 색은 적 몸 색
 HIT_PARTICLE = dict(count=10, speed=(150, 350), life=0.3, size=6)   # 색은 COLOR_HIT_FLASH
-HURT_SPARK = dict(count=5, speed=(150, 350), life=0.15, size=5, color=(255, 230, 180))
 PARRY_MISS_PUFF = dict(count=6, speed=(40, 120), life=0.3, size=6, color=(140, 140, 170))
 DOOR_SPARK = dict(count=24, speed=(80, 300), life=0.6, size=6)      # 색은 COLOR_DOOR_OPEN
 # 빛줄기: length는 (최소, 최대) 뻗는 길이 px, width는 굵기 px
@@ -134,9 +203,7 @@ COLOR_UNPARRYABLE = (239, 68, 68)
 
 # 적
 KNOCKBACK_TIME = 0.15      # s, 넉백 거리를 이 시간 동안 나눠 밀어낸다
-ENEMY_HURT_FLASH = 0.1     # s, 피해를 받았을 때 몸이 밝아지는 시간
 TELEGRAPH_BLINK = 0.06     # s, 예고 번쩍임 주기
-COLOR_ENEMY_HURT = (255, 200, 120)
 COLOR_ENEMY_WINDUP = (255, 240, 180)   # 공격 모션 중 무기 표시
 COLOR_ENEMY_SLASH = (255, 150, 60)     # 공격 판정 중 베기 표시
 COLOR_ENEMY_STAGGER = (220, 210, 90)   # 패링당해 비틀거리는 중 색
@@ -163,6 +230,56 @@ COLOR_BOW = (170, 120, 60)
 # 투사체 (화살 등). size는 정사각 hitbox 한 변, length는 화살 그림 길이
 ARROW = dict(size=14, length=36, color=(240, 230, 200))
 COLOR_REFLECTED = (120, 255, 255)  # 반사되어 플레이어 소유가 된 투사체
+DISC_STEP = 3              # px, 원형 투사체를 가로 띠로 나눠 그리는 간격
+
+# [v2] 적 - 마법사 루트
+# 견습 마법사: 궁수처럼 keep_distance ± distance_tolerance 유지, shoot_range 안이면 조준해 마력탄 1발 (흰색)
+APPRENTICE_MAGE = dict(hp=25, speed=120, keep_distance=450, bolt_speed=350,
+                       damage=10, telegraph=0.7, cast_cooldown=2.0,
+                       w=38, h=60, color=(110, 80, 170), detect_range=1280,
+                       distance_tolerance=60, shoot_range=900,
+                       windup=0.2, active=0.05, recover=0.5)
+# 숙련 마법사: 마력탄 bolt_count발 부채꼴(사이각 bolt_spread도, 흰색) 또는
+#   circle_chance 확률로 플레이어 발밑 마법진(빨간색, 패링 불가)
+#   blink_trigger_dist 안으로 들어오면 blink_dist만큼 순간 후퇴 (예고 없음, blink_cooldown)
+ADEPT_MAGE = dict(hp=45, speed=120, keep_distance=400, bolt_speed=450, bolt_count=3,
+                  bolt_spread=15, damage=12, telegraph=0.6, cast_cooldown=2.5,
+                  circle_chance=0.35, circle_radius=90, circle_delay=0.8,
+                  blink_trigger_dist=150, blink_dist=250, blink_cooldown=4.0,
+                  w=42, h=66, color=(80, 50, 140), detect_range=1280,
+                  distance_tolerance=60, shoot_range=900,
+                  windup=0.25, active=0.05, recover=0.6,
+                  circle_telegraph=0.5, circle_windup=0.2, circle_recover=0.6, circle_damage=15)
+COLOR_STAFF = (150, 110, 80)
+COLOR_STAFF_ORB = (190, 140, 255)
+# 마력탄: 화살과 같은 반사 처리, 원형. 반사하면 reflect_mult배 (견습 마법사를 반사탄 한 방에 처치하는 수준)
+MAGIC_BOLT = dict(size=18, length=0, color=(190, 140, 255), reflect_mult=3.0, round=True)
+# 바닥 마법진 (패링 불가): 빨간 테두리 예고 → delay 후 active 동안 빛 기둥 폭발, 기둥 안에 있으면 피해
+# 테두리는 바닥에 눕힌 타원(세로 = 반지름 × ring_flat)을 점 ring_dots개로 그린다
+MAGIC_CIRCLE = dict(active=0.12, pillar_h=150, ring_flat=0.3, ring_dots=24, dot=6,
+                    warn_alpha=70, pillar_alpha=200, pillar_color=(255, 150, 60))
+
+# [v2] 적 - 쌍검 루트
+# 쌍단검 병사: 빠르게 접근해 combo연속 베기 (흰색). 첫 타 예고 telegraph, 이후 각 타는 combo_interval 예고
+#   패링해도 연타가 끊기지 않고 다음 타로 이어간다 (연속 패링 연습). 마지막 타를 패링하면 비틀거린다
+DUAL_DAGGER = dict(hp=35, speed=260, damage=8, telegraph=0.35,
+                   combo=3, combo_interval=0.3,       # combo_interval >= TELEGRAPH_MIN
+                   w=40, h=62, color=(60, 130, 150), detect_range=900, attack_range=70,
+                   windup=0.08, active=0.08, recover=0.12, last_recover=0.7,
+                   attack_cooldown=1.0, hitbox=(64, 44))
+# 그림자 암살자: keep_distance ± distance_tolerance를 두고 배회. 공격 쿨타임이 끝나면
+#   ① 순간이동 기습 (빨간색): 예고 → fade_time 동안 흐려짐 → 플레이어 등 뒤 offset px에 나타나 appear_windup 후 베기
+#      (teleport_cooldown. 등 뒤가 벽·화면 밖이면 앞쪽에 나타난다)
+#   ② stab_chance 확률로(또는 기습 쿨타임 중이면) 걸어서 접근해 정면 찌르기 (흰색)
+#   흐려지는 동안 몸 알파값은 fade_alpha[0] → fade_alpha[1]
+ASSASSIN = dict(hp=30, speed=200, damage=14, telegraph=0.5,
+                teleport_cooldown=4.0, fade_time=0.4, stab_chance=0.5,
+                w=38, h=64, color=(120, 60, 110), detect_range=1280, attack_range=80,
+                keep_distance=320, distance_tolerance=60, attack_cooldown=1.2,
+                stab_windup=0.2, stab_active=0.1, stab_recover=0.5, stab_hitbox=(80, 26),
+                appear_windup=0.3, slash_active=0.12, slash_recover=0.7, slash_hitbox=(80, 60),
+                offset=80, fade_alpha=(220, 0))
+COLOR_DAGGER = (200, 210, 225)
 
 # 보스
 POSTURE_MAX = 3            # 패링 성공 횟수로 그로기
@@ -207,6 +324,34 @@ BOSS_TWINBLADE = dict(hp=600, damage=15, phase2_hp_ratio=0.5, phase2_speed_mult=
                                     offset=90),
                       # 검기 발사 (흰색): 바라보는 방향으로 수평 발사
                       wave=dict(telegraph=0.6, windup=0.2, active=0.05, recover=0.6, speed=550))
+# [v2] 대마법사 (1페이즈): keep_distance ± distance_tolerance를 유지하며 투사체로 압박. 넉백을 받지 않는다
+# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치로 랜덤 (같은 패턴 3연속 금지)
+# 순간이동: 플레이어가 blink_trigger_dist 안이면 반대쪽으로 blink_dist (공격 아님, 예고 없음, blink_cooldown)
+# 견습 소환: 동시에 최대 summon_max, 쿨타임 summon_cooldown. 보스 좌우 summon_offset px에 나타난다
+BOSS_MAGE = dict(hp=500, damage=15,
+                 volley_count=5, volley_interval=0.3, bolt_speed=450,
+                 orb_speed=250, orb_reflect_mult=3.0,
+                 circle_count=3, circle_radius=100, circle_delay=0.8, circle_interval=0.4,
+                 blink_trigger_dist=200, blink_dist=400,
+                 summon_max=2, summon_cooldown=15.0,
+                 w=60, h=110, color=(120, 70, 190), speed=110, detect_range=1280,
+                 keep_distance=500, distance_tolerance=80, attack_cooldown=1.0, near_range=350,
+                 blink_cooldown=3.0, orb_damage=25, circle_damage=20, summon_offset=120,
+                 near=dict(volley=2, orb=1, barrage=3, summon=1),
+                 far=dict(volley=3, orb=2, barrage=2, summon=1),
+                 # 마력탄 연사 (흰색): Active 동안 volley_interval마다 1발씩, 쏠 때마다 플레이어 조준
+                 volley=dict(telegraph=0.6, windup=0.2, recover=0.6),
+                 # 대형 마력구 (흰색): 느린 큰 구체 1발
+                 orb=dict(telegraph=0.8, windup=0.35, active=0.05, recover=0.8),
+                 # 마법진 폭격 (빨간색): Active 동안 circle_interval마다 플레이어 위치에 마법진
+                 barrage=dict(telegraph=0.7, windup=0.2, recover=0.8),
+                 # 견습 소환 (흰색 번쩍임, 막을 공격 없음)
+                 summon=dict(telegraph=0.6, windup=0.3, active=0.05, recover=0.8))
+# 대마법사 마력탄은 반사해도 1배, 대형 마력구는 반사하면 orb_reflect_mult배 (반사 강화 배율과 곱해진다)
+BOSS_BOLT = dict(size=20, length=0, color=(200, 150, 255), round=True)
+MAGE_ORB = dict(size=56, length=0, color=(170, 100, 255), round=True,
+                reflect_mult=BOSS_MAGE['orb_reflect_mult'])
+COLOR_BOSS_STAFF_ORB = (220, 180, 255)
 # 쌍검 기사 검기. 반사하면 reflect_mult배 피해 (반사 강화 배율과 곱해진다)
 TWIN_WAVE = dict(size=36, length=48, color=(200, 160, 255), reflect_mult=3.0)
 TELEPORT_PUFF = dict(count=10, speed=(100, 300), life=0.3, size=6)  # 색은 보스 몸 색
@@ -215,11 +360,6 @@ COLOR_TWINBLADE = (210, 210, 235)
 # 진행
 UPGRADE_CHOICES = 3
 DEATH_DELAY = 1.2          # s, 사망 후 결과 화면으로 넘어가기 전 대기
-# 보스방: (런에서 몇 번째 자리에 끼울지 0부터, 템플릿 이름). 앞에서부터 차례로 끼운다
-# 전투1~3 다음에 중간 보스, 전투4 다음에 최종 보스
-RUN_BOSS_ROOMS = [(3, 'arena_greatsword'), (5, 'arena_twinblade')]
-# n번째 방(보스방 포함, 1부터)을 클리어하고 문에 들어가면 강화 선택: 전투1 후, 중간 보스 후
-RUN_UPGRADE_AFTER = [1, 4]
 
 # 강화 (효과 구현은 systems/upgrades.py)
 UPGRADE_PARRY_WINDOW_BONUS = 0.05  # s
@@ -273,6 +413,12 @@ UPGRADE_ICON = 36          # px, 강화 아이콘 한 변
 UPGRADE_ICON_GAP = 6       # px
 UPGRADE_ICON_PAD = 4       # px, 아이콘 안 글자 여백
 FONT_SIZE_ICON = 14
+# [v2] 루트 진행도 (대시 쿨타임 아래, 오른쪽 정렬): 층마다 작은 사각형 + 그 아래 글자
+HUD_ROUTE_GAP = 14         # px, 대시 아이콘·사각형·글자 사이
+HUD_ROUTE_MARK = 14        # px, 사각형 한 변
+HUD_ROUTE_MARK_GAP = 6     # px
+HUD_ROUTE_TEXT_W = 150     # px, 글자 자리 (오른쪽 끝에서 이만큼 왼쪽부터 쓴다)
+COLOR_ROUTE_MARK_EMPTY = (60, 60, 70)
 
 # 보스 HUD (하단 중앙): 체력 바 + 그 아래 자세 게이지 (POSTURE_MAX칸)
 BOSS_BAR_W, BOSS_BAR_H = 640, 18
@@ -282,7 +428,7 @@ BOSS_NAME_GAP = 16         # px, 체력 바 위 이름 글자 중심까지
 COLOR_BOSS_HP = (200, 50, 50)
 COLOR_POSTURE_BACK = (50, 50, 60)
 COLOR_POSTURE_FILL = (255, 220, 120)
-BOSS_NAME = dict(greatsword='대검 기사', twinblade='쌍검 기사')
+BOSS_NAME = dict(greatsword='대검 기사', mage='대마법사', twinblade='쌍검 기사')
 
 # 결과 화면
 COLOR_RESULT_DEAD = (239, 68, 68)
@@ -294,7 +440,7 @@ SOUND_DIR = 'assets/sounds'
 SOUND_VOLUME = dict(
     parry=110, parry_miss=60, swing=45, hit=100, enemy_hurt=60, kill=80,
     telegraph_white=55, telegraph_red=70, groggy=110, phase2=110,
-    dash=55, jump=35, shoot=55, door=70, death=100, cursor=50, select=60)
+    dash=55, jump=35, shoot=55, door=70, death=100, cursor=50, select=60, chest=80)
 SOUND_MIN_INTERVAL = 0.03  # s, 같은 소리가 한 프레임에 겹쳐 커지는 것 방지
 # 배경음 (파일을 넣으면 재생, 없으면 생략). ogg/mp3/wav
 MUSIC_FILES = dict(battle='bgm_battle.ogg', boss='bgm_boss.ogg')

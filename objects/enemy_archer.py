@@ -46,7 +46,7 @@ class EnemyArcher(EnemyBase):
             dx = self.player.x - bx
             dy = (self.player.y + config.PLAYER_H / 2) - by
             dist = math.hypot(dx, dy) or 1
-            projectile.fire(bx, by, dx / dist, dy / dist, STATS['arrow_speed'], self.attack.damage,
+            projectile.fire(bx, by, dx / dist, dy / dist, STATS['arrow_speed'], self.attack_damage(),
                             self.attack.parryable, self.platforms, config.ARROW)
 
     def draw_weapon(self, l, b, r, t):

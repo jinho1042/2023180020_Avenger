@@ -1,3 +1,5 @@
+import random
+
 from pico2d import *
 
 import config
@@ -8,8 +10,9 @@ from systems import terrain
 
 # 공통 AI 상태: Idle → Chase → Telegraph → Windup → Active → Recover → (Chase)
 # 어느 상태든 패링당하면 Stagger → (Chase)
-IDLE, CHASE, TELEGRAPH, WINDUP, ACTIVE, RECOVER, STAGGER, DEAD = (
-    'Idle', 'Chase', 'Telegraph', 'Windup', 'Active', 'Recover', 'Stagger', 'Dead')
+# [v2] Idle/Chase 중에 맞으면 잠깐 Flinch → (Chase). 예고~회복 중에는 경직되지 않는다
+IDLE, CHASE, TELEGRAPH, WINDUP, ACTIVE, RECOVER, STAGGER, FLINCH, DEAD = (
+    'Idle', 'Chase', 'Telegraph', 'Windup', 'Active', 'Recover', 'Stagger', 'Flinch', 'Dead')
 
 
 class Attack:
@@ -54,18 +57,19 @@ class EnemyBase:
         self.attack_cooldown = 0.0
         self.knock_timer = 0.0
         self.knock_vx = 0.0
-        self.hurt_timer = 0.0
+        self.shake_timer = 0.0  # 맞은 뒤 몸을 좌우로 떨며 그리는 시간
+        self.dmg_mult = 1.0     # [v2] 루트 난이도 피해 배율 (apply_difficulty)
 
     def choose_attacks(self):
         # 서브클래스가 이번에 쓸 Attack 목록을 돌려준다
         return []
 
+    def pop_summons(self):
+        # [v2] 이번 프레임에 새로 소환한 적 목록. play_mode가 가져가 월드·충돌에 등록한다
+        return []
+
     def is_alive(self):
         return self.state != DEAD
-
-    def deals_contact_damage(self):
-        # 패링당해 비틀거리는 동안은 붙어서 반격할 수 있게 몸 접촉 피해를 주지 않는다
-        return self.state not in (STAGGER, DEAD)
 
     def set_state(self, state, duration=0.0):
         self.state = state
@@ -99,7 +103,7 @@ class EnemyBase:
                 self.attack = None
                 self.attack_cooldown = self.attack_cooldown_time
                 self.set_state(CHASE)
-        elif self.state == STAGGER:
+        elif self.state in (STAGGER, FLINCH):
             self.set_state(CHASE)
 
     def on_parried(self):
@@ -124,19 +128,30 @@ class EnemyBase:
         else:
             self.vx = 0
 
+    def apply_difficulty(self, hp_mult, dmg_mult):
+        # [v2] 스폰 직후 현재 루트의 ROUTE_DIFFICULTY 배율을 HP·피해에 곱한다
+        self.hp *= hp_mult
+        self.dmg_mult = dmg_mult
+
+    def attack_damage(self):
+        # 현재 공격이 플레이어에게 주는 피해 (근접 판정·투사체·마법진 모두 이 값을 쓴다)
+        return self.attack.damage * self.dmg_mult
+
     def take_damage(self, damage, knockback=0):
         # knockback은 부호 있는 px (오른쪽이 +)
         if self.state == STAGGER:
             damage *= config.STAGGER_DAMAGE_MULT
         self.hp -= damage
-        self.hurt_timer = config.ENEMY_HURT_FLASH
+        # 몸 색은 바꾸지 않는다 (흰/빨강 번쩍임은 예고 전용). 떨림·스파크로만 표현
+        self.shake_timer = config.ENEMY_HIT_SHAKE_TIME
         if knockback:
             self.knock_timer = config.KNOCKBACK_TIME
             self.knock_vx = knockback / config.KNOCKBACK_TIME
         if self.hp <= 0:
             self.die()
-        else:
-            effect.enemy_hurt(self.x, self.y + self.h / 2)
+        elif not self.is_boss and self.state in (IDLE, CHASE):
+            self.vx = 0
+            self.set_state(FLINCH, config.ENEMY_FLINCH_TIME)
 
     def die(self):
         self.hp = 0
@@ -149,7 +164,7 @@ class EnemyBase:
             return
         dt = game_framework.frame_time
         self.attack_cooldown = max(0, self.attack_cooldown - dt)
-        self.hurt_timer = max(0, self.hurt_timer - dt)
+        self.shake_timer = max(0, self.shake_timer - dt)
         self.state_timer -= dt
         self.update_ai()
         self.move(dt)
@@ -205,15 +220,34 @@ class EnemyBase:
         return config.COLOR_PARRYABLE if self.attack.parryable else config.COLOR_UNPARRYABLE
 
     def body_color(self):
-        if self.hurt_timer > 0:
-            return config.COLOR_ENEMY_HURT
         if self.state == STAGGER:
             return config.COLOR_ENEMY_STAGGER
         if self.state == TELEGRAPH and int(self.state_timer / config.TELEGRAPH_BLINK) % 2 == 0:
             return self.telegraph_color()
         return self.color
 
+    def shake_offset(self):
+        # 맞은 직후 좌우 떨림 (점점 약해짐). 그리는 위치만 옮기고 실제 좌표·hitbox는 그대로
+        if self.shake_timer <= 0:
+            return 0
+        amp = config.ENEMY_HIT_SHAKE * self.shake_timer / config.ENEMY_HIT_SHAKE_TIME
+        return random.uniform(-amp, amp)
+
     def draw(self):
+        real_x = self.x
+        self.x += self.shake_offset()
+        self.draw_body()
+        self.x = real_x
+
+        attack_bb = self.get_attack_bb()
+        if attack_bb:
+            draw_rectangle(*attack_bb, *config.COLOR_ENEMY_SLASH, filled=True)
+        if game_world.show_hitbox:
+            draw_rectangle(*self.get_bb(), *config.COLOR_DEBUG_BODY)
+            if attack_bb:
+                draw_rectangle(*attack_bb, *config.COLOR_DEBUG_ATTACK)
+
+    def draw_body(self):
         l, b, r, t = self.get_bb()
         draw_rectangle(l, b, r, t, *self.body_color(), filled=True)
         # 바라보는 방향 표시
@@ -228,14 +262,6 @@ class EnemyBase:
             draw_rectangle(self.x - eye / 2, t + eye / 2, self.x + eye / 2, t + eye * 1.5,
                            *config.COLOR_UNPARRYABLE, filled=True)
         self.draw_weapon(l, b, r, t)
-
-        attack_bb = self.get_attack_bb()
-        if attack_bb:
-            draw_rectangle(*attack_bb, *config.COLOR_ENEMY_SLASH, filled=True)
-        if game_world.show_hitbox:
-            draw_rectangle(l, b, r, t, *config.COLOR_DEBUG_BODY)
-            if attack_bb:
-                draw_rectangle(*attack_bb, *config.COLOR_DEBUG_ATTACK)
 
     def draw_weapon(self, l, b, r, t):
         if self.state == WINDUP:

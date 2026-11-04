@@ -15,15 +15,17 @@ rooms_reached = 0
 rooms_total = 0
 parry_count = 0
 play_time = 0.0
+bosses_defeated = []  # [v2] 처치한 보스의 루트 이름 (처치 순서)
 
 
-def set_result(is_cleared, reached, total, parries, time):
-    global cleared, rooms_reached, rooms_total, parry_count, play_time
+def set_result(is_cleared, reached, total, parries, time, bosses):
+    global cleared, rooms_reached, rooms_total, parry_count, play_time, bosses_defeated
     cleared = is_cleared
     rooms_reached = reached
     rooms_total = total
     parry_count = parries
     play_time = time
+    bosses_defeated = list(bosses)
 
 
 def _load_font(size):
@@ -73,6 +75,8 @@ def draw():
         text_font.draw(cx - 110, cy + 20, f'도달한 방 : {rooms_reached} / {rooms_total}', config.COLOR_TEXT)
         text_font.draw(cx - 110, cy - 20, f'패링 횟수 : {parry_count}', config.COLOR_TEXT)
         text_font.draw(cx - 110, cy - 60, f'플레이 시간 : {minutes:02d}:{seconds:02d}', config.COLOR_TEXT)
+        names = ', '.join(config.BOSS_NAME[r] for r in bosses_defeated) or '없음'
+        text_font.draw(cx - 110, cy - 100, f'처치한 보스 : {names}', config.COLOR_TEXT)
         text_font.draw(cx - 110, cy - 140, 'Space : 타이틀로', config.COLOR_TEXT_DIM)
     update_canvas()
 

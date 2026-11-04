@@ -97,7 +97,7 @@ class BossTwinblade(BossBase):
         # 플레이어 몸 높이에 맞춰 수평으로 쏜다
         x = self.x + self.face_dir * self.w / 2
         y = self.y + config.PLAYER_H / 2
-        projectile.fire(x, y, self.face_dir, 0, STATS['wave']['speed'], self.attack.damage,
+        projectile.fire(x, y, self.face_dir, 0, STATS['wave']['speed'], self.attack_damage(),
                         self.attack.parryable, self.platforms, config.TWIN_WAVE)
 
     def recoil(self):

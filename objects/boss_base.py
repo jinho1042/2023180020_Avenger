@@ -19,9 +19,6 @@ class BossBase(EnemyBase):
         self.posture = 0
         self.history = []  # 최근 사용한 패턴 이름
 
-    def deals_contact_damage(self):
-        return super().deals_contact_damage() and self.state != GROGGY
-
     def pick_pattern(self, weights):
         names = [n for n, w in weights.items()
                  if w > 0 and self.history[-2:] != [n, n]]
@@ -40,14 +37,22 @@ class BossBase(EnemyBase):
             super().next_phase()
 
     def on_parried(self):
-        self.posture += 1
-        if self.posture >= config.POSTURE_MAX:
-            self.posture = 0
-            self.cancel_attack()
-            self.set_state(GROGGY, config.GROGGY_TIME)
-            effect.boss_groggy(self.x, self.y + self.h / 2)
-        else:
+        if not self.add_posture():
             self.recoil()
+
+    def add_posture(self):
+        # 자세 +1. POSTURE_MAX에 도달하면 그로기에 들어가고 True. 이미 그로기 중이면 쌓지 않는다
+        # [v2] 보스의 투사체를 반사한 것도 패링 성공이므로 combat에서 이것을 부른다
+        if self.state == GROGGY:
+            return False
+        self.posture += 1
+        if self.posture < config.POSTURE_MAX:
+            return False
+        self.posture = 0
+        self.cancel_attack()
+        self.set_state(GROGGY, config.GROGGY_TIME)
+        effect.boss_groggy(self.x, self.y + self.h / 2)
+        return True
 
     def recoil(self):
         # 보스는 길게 비틀거리지 않고 잠깐만 멈칫한다
@@ -66,6 +71,6 @@ class BossBase(EnemyBase):
         super().take_damage(damage)
 
     def body_color(self):
-        if self.state == GROGGY and self.hurt_timer <= 0:
+        if self.state == GROGGY:
             return config.COLOR_BOSS_GROGGY
         return super().body_color()

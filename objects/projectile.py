@@ -3,6 +3,7 @@ from pico2d import *
 import config
 import game_framework
 import game_world
+from objects import effect
 from systems import combat, sound
 
 GROUP_PLAYER = 'player:projectile'
@@ -13,8 +14,9 @@ class Projectile:
     # 직선으로 날아가는 투사체. x, y는 중심 좌표, (dir_x, dir_y)는 단위 방향 벡터
     # solid 지형이나 화면 밖에 닿으면 사라진다 (oneway 발판은 통과)
     # 패링당하면 반사되어 플레이어 소유가 되고, 그때부터 플레이어 대신 적에게 피해를 준다
-    def __init__(self, x, y, dir_x, dir_y, speed, damage, parryable, platforms, spec):
+    def __init__(self, x, y, dir_x, dir_y, speed, damage, parryable, platforms, spec, owner=None):
         self.x, self.y = x, y
+        self.owner = owner  # [v2] 쏜 보스 (반사하면 그 보스의 자세가 쌓인다). 없으면 None
         self.dir_x, self.dir_y = dir_x, dir_y
         self.speed = speed
         self.damage = damage
@@ -24,6 +26,7 @@ class Projectile:
         self.length = spec['length']
         self.color = spec['color']
         self.reflect_mult = spec.get('reflect_mult', 1)  # 반사됐을 때 투사체 자체의 추가 배율
+        self.round = spec.get('round', False)  # [v2] 마력탄은 원형으로 그린다
         self.alive = True
         self.reflected = False
 
@@ -57,6 +60,14 @@ class Projectile:
                 return
 
     def draw(self):
+        if self.round:
+            effect.draw_disc(self.x, self.y, self.size / 2, self.color)
+        else:
+            self.draw_arrow()
+        if game_world.show_hitbox:
+            draw_rectangle(*self.get_bb(), *config.COLOR_DEBUG_ATTACK)
+
+    def draw_arrow(self):
         # 진행 방향으로 늘어선 작은 사각형으로 화살 몸통을 그리고, 앞쪽 끝에 촉을 그린다
         dot = self.size / 4
         steps = int(self.length / dot)
@@ -67,8 +78,6 @@ class Projectile:
         hx = self.x + self.dir_x * self.length / 2
         hy = self.y + self.dir_y * self.length / 2
         draw_rectangle(hx - dot, hy - dot, hx + dot, hy + dot, *self.color, filled=True)
-        if game_world.show_hitbox:
-            draw_rectangle(*self.get_bb(), *config.COLOR_DEBUG_ATTACK)
 
     def get_bb(self):
         half = self.size / 2
@@ -81,11 +90,13 @@ class Projectile:
             combat.projectile_hit(other, self)
         elif group == GROUP_ENEMY and self.reflected and other.is_alive():
             other.take_damage(self.damage)
+            if other.is_alive():
+                effect.enemy_hurt(self.x, self.y, self.dir_x)
             self.destroy()
 
 
-def fire(x, y, dir_x, dir_y, speed, damage, parryable, platforms, spec):
-    p = Projectile(x, y, dir_x, dir_y, speed, damage, parryable, platforms, spec)
+def fire(x, y, dir_x, dir_y, speed, damage, parryable, platforms, spec, owner=None):
+    p = Projectile(x, y, dir_x, dir_y, speed, damage, parryable, platforms, spec, owner)
     sound.play('shoot')
     game_world.add_object(p, config.DEPTH_ENEMY)
     # 반사 후 그룹을 옮기면 충돌 순회 중 목록이 바뀌므로 처음부터 양쪽에 등록하고 reflected로 거른다
