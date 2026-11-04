@@ -62,28 +62,6 @@ COLOR_PLAYER_DEAD = (70, 70, 80)
 COLOR_PLAYER_PARRY = (120, 255, 255)  # 패링 판정 중 몸 앞 방패 표시
 COLOR_PLAYER_STUN = (110, 110, 150)   # 헛입력 경직 중 색
 PARRY_SHIELD_W = 10        # px, 패링 방패 표시 두께
-# 플레이어 스프라이트 (없으면 도형으로 그림)
-# 시트는 PLAYER_SPRITE_CELL 크기 칸을 왼→오, 위→아래 순서로 배치한 격자
-PLAYER_IMAGE_DIR = 'assets/images/player'
-PLAYER_SPRITE_CELL = 512   # px, 원본 시트 한 칸
-PLAYER_SPRITE_SIZE = 72    # px, 화면에 그릴 한 칸 크기 (몸 높이가 PLAYER_H 정도)
-PLAYER_SPRITE_FOOT = 3     # px, 칸 아래쪽 빈 공간 (발바닥을 y에 맞춤)
-# 애니메이션별로 사용할 칸 번호. jump는 [상승, 낙하]
-PLAYER_ANIM_FRAMES = {
-    'idle': [0, 1, 2, 3],
-    'run': [0, 1, 2, 3, 4, 5],
-    'jump': [0, 2],
-    'attack1': [0, 1, 2, 3],
-    'attack2': [0, 1, 2, 3],
-    'attack3': [0, 1, 2, 3],
-    'parry': [0, 1, 2, 3],
-    'parry_stun': [0, 1, 2, 3],
-    'dash': [0, 1, 2, 3, 4, 5, 6, 7],
-    'hit': [0, 1, 2, 3],
-    'dead': [0, 1, 2, 3, 4, 5, 6, 7],
-}
-PLAYER_ANIM_FPS = {'idle': 6, 'run': 12}  # 반복 애니메이션 속도 (프레임/초)
-PLAYER_DEAD_ANIM_TIME = 0.8  # s, 쓰러지는 애니메이션 길이 (끝나면 마지막 칸 유지)
 
 # 디버그
 COLOR_DEBUG_BODY = (0, 255, 0)

@@ -1,7 +1,4 @@
-import os
-
 from pico2d import *
-from sdl2 import SDL_SetHint, SDL_HINT_RENDER_SCALE_QUALITY
 
 import config
 import game_framework
@@ -10,30 +7,8 @@ from objects import effect
 from systems import sound, terrain, upgrades
 
 
-IMAGE_DIR = os.path.join(os.path.dirname(__file__), '..', config.PLAYER_IMAGE_DIR)
-
-
 class Player:
-    images = None  # 애니메이션 이름 → 시트 이미지. 파일이 없는 애니메이션은 빠진다
-
-    @classmethod
-    def load_images(cls):
-        if cls.images is not None:
-            return
-        cls.images = {}
-        # 원본을 크게 줄여 그리므로 선형 필터로 부드럽게
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, b'1')
-        for name in config.PLAYER_ANIM_FRAMES:
-            path = os.path.join(IMAGE_DIR, name + '.png')
-            if os.path.exists(path):
-                cls.images[name] = load_image(path)
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, b'0')
-
     def __init__(self, platforms, start):
-        Player.load_images()
-        # 현재 애니메이션과 그 애니메이션이 시작된 뒤 지난 시간
-        self.anim = 'idle'
-        self.anim_time = 0.0
         # x, y는 발 중심 좌표
         self.x, self.y = start
         self.vx, self.vy = 0.0, 0.0
@@ -365,69 +340,6 @@ class Player:
         if self.on_ground:
             self.jumps_left = self.max_jumps - 1
 
-        anim = self.current_anim()
-        if anim != self.anim:
-            self.anim = anim
-            self.anim_time = 0.0
-        else:
-            self.anim_time += dt
-
-    def current_anim(self):
-        if self.dead:
-            return 'dead'
-        if self.is_hit():
-            return 'hit'
-        if self.is_parry_stunned():
-            return 'parry_stun'
-        if self.is_parrying():
-            return 'parry'
-        if self.is_dashing():
-            return 'dash'
-        if self.is_attacking():
-            return 'attack%d' % self.attack_step
-        if not self.on_ground:
-            return 'jump'
-        if self.vx != 0:
-            return 'run'
-        return 'idle'
-
-    def anim_progress(self):
-        # 정해진 시간 동안 한 번 재생하는 애니메이션의 진행률 (0~1)
-        if self.anim == 'dead':
-            return self.anim_time / config.PLAYER_DEAD_ANIM_TIME
-        if self.anim == 'hit':
-            return 1 - self.hit_timer / config.PLAYER_HIT_STUN
-        if self.anim == 'parry_stun':
-            return 1 - self.parry_stun_timer / config.PARRY_FAIL_STUN
-        if self.anim == 'parry':
-            return 1 - self.parry_timer / self.parry_window
-        if self.anim == 'dash':
-            return 1 - self.dash_timer / config.DASH_TIME
-        return 1 - self.attack_timer / self.attack_duration(self.attack_step)
-
-    def anim_frame(self):
-        frames = config.PLAYER_ANIM_FRAMES[self.anim]
-        if self.anim == 'jump':
-            return frames[0] if self.vy > 0 else frames[1]
-        if self.anim in config.PLAYER_ANIM_FPS:
-            i = int(self.anim_time * config.PLAYER_ANIM_FPS[self.anim]) % len(frames)
-            return frames[i]
-        i = int(self.anim_progress() * len(frames))
-        return frames[clamp(0, i, len(frames) - 1)]
-
-    def draw_sprite(self):
-        image = Player.images[self.anim]
-        cell = config.PLAYER_SPRITE_CELL
-        size = config.PLAYER_SPRITE_SIZE
-        frame = self.anim_frame()
-        cols = image.w // cell
-        col, row = frame % cols, frame // cols
-        # pico2d의 clip은 좌하단 기준이라 위쪽 줄부터 센 row를 뒤집는다
-        bottom = image.h - (row + 1) * cell
-        flip = '' if self.face_dir > 0 else 'h'
-        y = self.y - config.PLAYER_SPRITE_FOOT + size / 2
-        image.clip_composite_draw(col * cell, bottom, cell, cell, 0, flip, self.x, y, size, size)
-
     def is_blink_hidden(self):
         # 피격 무적 중에는 BLINK_INTERVAL마다 숨겼다 보였다 한다
         if self.dead or self.invincible_timer <= 0:
@@ -437,10 +349,7 @@ class Player:
     def draw(self):
         l, b, r, t = self.get_bb()
         attack_bb = self.get_attack_bb()
-        if self.anim in Player.images:
-            if not self.is_blink_hidden():
-                self.draw_sprite()
-        elif not self.is_blink_hidden():
+        if not self.is_blink_hidden():
             if self.dead:
                 color = config.COLOR_PLAYER_DEAD
             elif self.is_dashing():
