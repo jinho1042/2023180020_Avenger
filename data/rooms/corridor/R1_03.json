@@ -18,6 +18,9 @@
   "air_vents": [
     [560, 110, "vent_a"]
   ],
+  "safe_zones": [
+    [40, 340, 820, 340, "safe_carver"]
+  ],
   "breakables": [
     [860, 340, 48, 340, "crack", "crack_carver"],
     [560, 340, 56, 56, "ore_chunk", "chunk_a"],
@@ -28,7 +31,8 @@
     {"id": "R", "rect": [1264, 64, 16, 200], "to": "R1_04", "to_exit": "L"}
   ],
   "objects": [
-    ["carver", 260, 340, "oram"]
+    ["carver", 260, 340, "oram"],
+    ["seat", 440, 340, "safe_carver"]
   ],
   "spawns": [],
   "safe_points": [

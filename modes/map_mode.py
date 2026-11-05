@@ -15,7 +15,7 @@ from ui import font
 # 지도 (13.4). play_mode가 Tab을 누를 때 push하고, Tab을 떼면 pop한다 (월드·숨 정지)
 # 지금 있는 구역만 그린다: 방문한 방 + 지도석을 얻었으면 미방문 방(회색 윤곽). 방 = map_cell·size 사각형, 출구 = 테두리 틈
 # 숨 정보: 안전지대(큰 원), 숨구멍(작은 원), 숨 소모가 큰 곳(점 무늬), 숨 게이트 방(빗금 + 요구 레벨)
-# 아이콘: 보름 캠프·대장간, 새김터(met_oram 뒤), 보스(처치 전·후 색), 연 허브행 숏컷(허브 쪽 화살표),
+# 아이콘: 보름 캠프·대장간, 새김터(met_oram 뒤, 그 전에는 보름 힌트 뒤 한 번 더 기절하면 물음표), 보스(처치 전·후 색), 연 허브행 숏컷(허브 쪽 화살표),
 # 현재 위치('광부의 나침반' 장착 시에만). ←→↑↓로 스크롤
 
 MAP_KEY = getattr(pico2d, config.KEYS['map'])
@@ -203,12 +203,17 @@ def draw_icons(room):
         draw_disc(*to_map(room, x + w / 2, y + h / 2), config.MAP_SAFE_RADIUS, config.COLOR_MAP_SAFE)
     for x, y, _ in room.air_vents:
         draw_disc(*to_map(room, x, y), config.MAP_VENT_RADIUS, config.COLOR_MAP_VENT)
+    text_font = font.get(config.FONT_SIZE_SMALL)
     for obj in room.objects:
         icon = None
         if obj[0] == 'npc':
             icon = config.MAP_NPC_ICON.get(obj[3])
         elif obj[0] == 'carver' and 'met_oram' in state.flags:
             icon = 'carver'   # 새김터는 찾은 뒤 영구 표시 (8.3)
+        elif obj[0] == 'carver' and state.hint_fail_count > config.HINT_FAIL_COUNT and text_font:
+            # 보름 힌트 뒤 한 번 더 기절하면 새김터 자리에 물음표 (7.5)
+            mx, my = to_map(room, obj[1], obj[2])
+            text_font.draw(mx - config.FONT_SIZE_SMALL / 2, my, '?', config.COLOR_MAP_QUESTION)
         if icon:
             draw_square(*to_map(room, obj[1], obj[2]), config.MAP_ICON, config.COLOR_MAP_ICON[icon])
     if room.boss:
@@ -216,7 +221,6 @@ def draw_icons(room):
         done = room.boss in state.bosses_defeated
         draw_square((l + r) / 2, (b + t) / 2, config.MAP_ICON * 1.5,
                     config.COLOR_MAP_ICON['boss_done' if done else 'boss'])
-    text_font = font.get(config.FONT_SIZE_SMALL)
     for x, y, w, h, kind, gid, attrs in room.gates:
         # 허브행 숏컷은 연 뒤에만 화살표 (13.4)
         if kind == 'one_way' and attrs.get('to_hub') and f'{room.id}:{gid}' in state.opened and text_font:

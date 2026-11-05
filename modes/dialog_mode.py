@@ -15,13 +15,15 @@ from ui import font
 # 대사: data/dialog/<id>.json {name, name_en, pages: [[줄, ...], ...], pages_en, shop}. 한 페이지 최대 3줄 (2.6)
 # 글자는 DIALOG_CHARS_PER_SEC로 한 글자씩 나온다. Z·X·↑·Enter·Space: 다 나오기 전이면 끝까지, 다 나왔으면 다음 페이지
 # 마지막 페이지 뒤 shop이면 상점 목록 (←→ 선택, X 구매, Z·Esc 닫기). Esc는 언제든 닫는다
+# start(id, after): 마지막 페이지를 넘기면 닫고 after()를 부른다 (룬지기 → 룬 획득·강화 목록). Esc로 닫으면 부르지 않는다
 
 DIALOG_PATH = os.path.join(os.path.dirname(__file__), '..', config.DIALOG_DIR)
 NEXT_KEYS = (SDLK_z, SDLK_x, SDLK_UP, SDLK_RETURN, SDLK_SPACE)
 BUY_KEYS = (SDLK_x, SDLK_RETURN, SDLK_SPACE)
 CLOSE_KEYS = (SDLK_ESCAPE, SDLK_z)
 
-dialog = None      # 지금 대화 데이터 (open()이 정한다)
+dialog = None      # 지금 대화 데이터 (start()가 정한다)
+after = None       # 끝까지 읽고 닫으면 부를 함수
 page = 0
 shown = 0.0        # 지금 페이지에서 나온 글자 수 (소수 = 다음 글자까지 진행)
 blink = 0.0
@@ -41,10 +43,11 @@ def load_dialog(dialog_id):
         return json.load(f)
 
 
-def start(dialog_id):
-    # play_mode가 push_mode 직전에 부른다
-    global dialog
+def start(dialog_id, then=None):
+    # play_mode·carver_mode가 push_mode 직전에 부른다
+    global dialog, after
     dialog = load_dialog(dialog_id)
+    after = then
 
 
 def init():
@@ -56,8 +59,9 @@ def init():
 
 
 def finish():
-    global dialog
+    global dialog, after
     dialog = None
+    after = None
 
 
 def pages():
@@ -84,7 +88,10 @@ def next_page():
         view, stock, selected = 'shop', economy.shop_stock(), 0
         sound.play('select')
     else:
+        then = after
         game_framework.pop_mode()
+        if then:
+            then()
         return True
     return False
 

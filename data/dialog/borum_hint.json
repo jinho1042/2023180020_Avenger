@@ -1,0 +1,13 @@
+{
+  "name": "보름",
+  "name_en": "Borum",
+  "pages": [
+    ["그 갱에 또 들어갔다 왔어? 숨이 버티질 못하잖아.", "그러고 보니... 캠프 옆 벽에서 바람 소리가 나는 걸 들었어.", "벽 너머에 공기가 있는 걸지도 몰라."],
+    ["떨어지면서 건진 것들이야. 골라 봐."]
+  ],
+  "pages_en": [
+    ["You went into that shaft again? Your breath can't last.", "Come to think of it... I heard wind behind the wall next to camp.", "Maybe there's air on the other side."],
+    ["Stuff I grabbed on the way down. Take a look."]
+  ],
+  "shop": true
+}

@@ -1,0 +1,52 @@
+{
+  "breath": {
+    "name": "숨의 룬", "name_en": "Rune of Breath", "key": "",
+    "levels": [
+      ["숨을 더 오래 참는다 (숨 {cap})", "각인 「받아친 숨」: 패링 성공 시 숨 회복"],
+      ["숨 용량이 늘어난다 (숨 {cap})"],
+      ["숨 용량이 늘어난다 (숨 {cap})"],
+      ["숨 용량이 늘어난다 (숨 {cap})"],
+      ["숨 용량이 늘어난다 (숨 {cap})"]
+    ],
+    "levels_en": [
+      ["Hold your breath longer (breath {cap})", "Engraving 'Parry Breath': parries restore breath"],
+      ["Larger breath capacity (breath {cap})"],
+      ["Larger breath capacity (breath {cap})"],
+      ["Larger breath capacity (breath {cap})"],
+      ["Larger breath capacity (breath {cap})"]
+    ],
+    "hint": "숨막이 갱 너머로 갈 수 있다", "hint_en": "You can cross the Choking Shaft"
+  },
+  "burrow": {
+    "name": "굴착의 룬", "name_en": "Rune of Burrowing", "key": "C",
+    "levels": [["대시 · 무른 흙벽을 뚫고 지나간다"], ["↓+A 낙반 · 깨지는 바닥을 부순다"], ["단단한 흙벽 통과 · 대시 거리 증가"]],
+    "levels_en": [["Dash through soft earth walls"], ["↓+A Rockfall breaks fragile floors"], ["Pass hard earth walls · longer dash"]],
+    "hint": "이끼 동굴의 흙벽 너머로", "hint_en": "Beyond the earth walls of the Moss Cave"
+  },
+  "brace": {
+    "name": "버팀의 룬", "name_en": "Rune of Bracing", "key": "→",
+    "levels": [["벽에 매달리고 벽을 차고 오른다"], ["가시 덩굴벽에도 매달린다"], ["매달린 동안 숨이 덜 줄어든다"]],
+    "levels_en": [["Cling to walls and wall-jump"], ["Cling to thorn-vine walls"], ["Use less breath while clinging"]],
+    "hint": "회랑 서쪽의 수직 갱", "hint_en": "The vertical shaft west of the halls"
+  },
+  "crystal": {
+    "name": "결정의 룬", "name_en": "Rune of Crystal", "key": "Z",
+    "levels": [["공중에 결정을 딛고 한 번 더 뛴다"], ["A: 결정 화살로 먼 스위치를 친다"], ["결정 디딤 2회"]],
+    "levels_en": [["Step on a crystal mid-air"], ["A: crystal arrow hits far switches"], ["Two crystal steps"]],
+    "hint": "높은 턱 위로", "hint_en": "Up the high ledges"
+  },
+  "breakthrough": {
+    "name": "돌파의 룬", "name_en": "Rune of Breakthrough", "key": "D",
+    "levels": [["돌파로 긴 구덩이를 건넌다"], ["돌파 중 적을 꿰뚫는다"], ["공중에서도 돌파"]],
+    "levels_en": [["Breakthrough across long pits"], ["Breakthrough pierces enemies"], ["Breakthrough in mid-air"]],
+    "hint": "긴 구덩이 너머로", "hint_en": "Across the long pits"
+  },
+  "shadow": {
+    "name": "그림자의 룬", "name_en": "Rune of Shadow", "key": "C",
+    "levels": [["그림자 질풍: 무적, 장막 통과"], ["질풍 대기 시간 감소"], ["질풍 거리 증가"]],
+    "levels_en": [["Shadow Gale: invincible, passes veils"], ["Shorter gale cooldown"], ["Longer gale distance"]],
+    "hint": "그림자 장막 너머로", "hint_en": "Through the shadow veils"
+  },
+  "carver_line": "룬지기에게 가면 더 깊이 새길 수 있다",
+  "carver_line_en": "The Rune Carver can carve it deeper"
+}

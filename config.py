@@ -356,6 +356,34 @@ ABILITY_RUNE = dict(      # 능력 → (룬, 필요 레벨). player.can(능력)�
     breakthrough=('breakthrough', 1), breakthrough_pierce=('breakthrough', 2), air_breakthrough=('breakthrough', 3),
     shadow_dash=('shadow', 1),
 )
+RUNE_UPGRADE_COST = dict(  # 임시. 레벨 n→n+1 비용 (광석, 희귀 광석). 인덱스 0 = Lv1→2 (8.3)
+    breath=[(60, 0), (400, 1), (900, 1), (1600, 2)],   # 첫 강화 150 → 60 (R1에서 확실히 모을 수 있는 양)
+    burrow=[(300, 1), (900, 1)],
+    brace=[(400, 1), (1000, 1)],
+    crystal=[(500, 1), (1200, 2)],
+    breakthrough=[(700, 1), (1500, 2)],
+    shadow=[(900, 1), (1800, 2)],
+)
+RUNE_ORDER = ['breath', 'burrow', 'brace', 'crystal', 'breakthrough', 'shadow']   # 강화 목록 순서 (8.2 표)
+HINT_FAIL_COUNT = 2        # 숨막이 갱에서 기절한 횟수 → 보름 힌트, 한 번 더 기절하면 지도 물음표 (7.5)
+
+# 룬 획득 연출 (T43, 8.5). rune_get_mode. 흰색·빨간색은 쓰지 않는다
+RUNE_GET = dict(
+    hitstop=0.1,           # s, 처음 멈춤
+    dim=0.3,               # s, 화면이 어두워짐
+    absorb=0.8,            # s, 룬 문양이 플레이어에게 흡수
+    flash=0.3,             # s, 섬광 (구역색)
+    short=0.5,             # s, 강화 때 짧은 연출 (8.3). 문양 흡수 + 섬광을 이 시간에 몰아서
+    dim_alpha=170,         # 0~255
+    glyph_size=56,         # px, 룬 문양 한 변
+    glyph_rise=220,        # px, 문양이 처음 떠 있는 높이 (플레이어 머리 위)
+    flash_alpha=150,       # 0~255
+)
+RUNE_HINT_MAX_RUNES = 3    # 보유 룬이 이 수 이하일 때만 카드에 '룬지기' 안내 줄 (8.3 '처음 3번만')
+COLOR_RUNE_GLYPH = (140, 180, 220)
+RUNE_CARD = dict(w=560, h=300, pad=28, line_h=34)   # px, 설명 카드
+CARVER_CARD = dict(w=300, h=230, gap=24, top=560, visible=3)   # px, 강화 목록 카드 (top = 카드 위쪽 화면 y, visible장씩 ←→로 넘김)
+COLOR_MAP_QUESTION = (240, 200, 120)     # 지도 새김터 물음표 (7.5)
 
 # 각인 id (8.4 표 순서). T44에서 data/items.json으로 옮긴다. 지금은 F7 지급 메뉴만 쓴다
 ENGRAVING_IDS = ['third_strike', 'quick_hands', 'long_handle', 'miners_grit', 'last_stand', 'deep_lung',
