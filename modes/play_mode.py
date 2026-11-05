@@ -50,6 +50,8 @@ def enter_room(new_room, arrival):
     game_world.add_object(player, config.DEPTH_PLAYER)
     # 투사체는 생성될 때 b쪽에 스스로 등록한다
     game_world.add_collision_pair(projectile.GROUP_PLAYER, player, None)
+    for s in room.crystal_switches:
+        game_world.add_collision_pair(projectile.GROUP_SWITCH, s, None)
     camera.snap(player)  # 방 전환 직후 카메라는 즉시 목표 위치 (14.2)
     # 일반 적은 방에 들어올 때마다 spawns대로 다시 생긴다 (5.6)
     enemies = []

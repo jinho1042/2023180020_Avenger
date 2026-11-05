@@ -1,0 +1,10 @@
+{
+  "name": "석판",
+  "name_en": "Tablet",
+  "pages": [
+    ["보랏빛 수정 기둥은 곡괭이에 울리지 않는다.", "쏘아 보낸 힘을 그대로 되돌려 받을 때만", "기둥이 깨어나 길을 연다."]
+  ],
+  "pages_en": [
+    ["The violet crystal pillar does not ring to a pickaxe.", "Only when it takes back the very force it sent out", "does the pillar wake and open the way."]
+  ]
+}

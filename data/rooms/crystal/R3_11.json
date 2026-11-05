@@ -1,0 +1,28 @@
+{
+  "id": "R3_11",
+  "region": "crystal",
+  "size": [1, 1],
+  "map_cell": [7, 6],
+  "music": "crystal",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [1240, 64, 40, 336, "solid"],
+    [1240, 640, 40, 40, "solid"],
+    [840, 400, 400, 40, "solid"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R3_05", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 440, 16, 200], "to": "R4_01", "to_exit": "L"}
+  ],
+  "objects": [
+    ["tablet", 500, 64, "tablet_r3_ledge"]
+  ],
+  "spawns": [],
+  "safe_points": [
+    [300, 64]
+  ]
+}

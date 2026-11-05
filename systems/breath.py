@@ -251,13 +251,23 @@ def new_segment(start):
 
 
 def touch_air_vent(vent):
-    # 숨구멍에 닿음 (play_mode가 쿨다운이 끝난 숨구멍만 넘긴다). 회복 지점이므로 구간을 끊고 새로 잰다
+    # 숨구멍에 닿음 (play_mode가 쿨다운이 끝난 숨구멍만 넘긴다)
+    refill_point(config.AIR_VENT_REFILL, vent.gid)
+
+
+def touch_air_crystal(gid):
+    # 결정 숨주머니를 깸 (R3, 7.2). 한 번뿐이지만 숨구멍과 같은 회복 지점
+    refill_point(config.CRYSTAL_POCKET_REFILL, gid)
+
+
+def refill_point(amount, gid):
+    # 숨 회복 지점: 숨을 채우고 구간을 끊어 새로 잰다 (13.5)
     global segment, finished
-    add(config.AIR_VENT_REFILL)
+    add(amount)
     stop_suffocating()
     if segment is not None:
-        finished = dict(segment, to=vent.gid)
-    segment = new_segment(vent.gid)
+        finished = dict(segment, to=gid)
+    segment = new_segment(gid)
 
 
 # ---------- 질식 · 기절 ----------

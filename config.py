@@ -230,6 +230,20 @@ COLOR_CRACK_WIND = (175, 165, 150)
 COLOR_ORE_CHUNK = (95, 85, 80)
 COLOR_ORE = (240, 190, 90)
 ORE_CHUNK_DOTS = 4         # 광석 덩어리 표면의 광석 점 개수
+# 광맥벽 (T50은 위치만 보여 줌, 곡괭이 Lv ORE_VEIN_LEVEL부터 깨는 것은 T64): 어두운 바위에 희귀 광석 결
+COLOR_ORE_VEIN = (70, 60, 75)
+COLOR_ORE_VEIN_STREAK = (120, 230, 210)
+ORE_VEIN_STREAKS = dict(step=28, size=6)   # px, 광석 결 점 간격·크기 (대각선 줄)
+# 결정 숨주머니 (T50, 7.2): 곡괭이 hits번에 깨지고 숨 +CRYSTAL_POCKET_REFILL (영구). 안에 갇힌 공기 점이 위아래로 흔들린다
+AIR_CRYSTAL = dict(hits=1, bubbles=3, bubble=5, bob=4, period=1.4)
+COLOR_AIR_CRYSTAL = (150, 200, 235)
+COLOR_AIR_CRYSTAL_EDGE = (225, 245, 255)
+# 수정 스위치 (T50, 12.6): 투사체는 통과시키는 단단한 수정 기둥. 반사탄(결정 화살 포함)이 맞으면 켜지고 연결된 문이 열린다
+# switches [x, y, "crystal", id, gate id], (x, y) = 아래쪽 중심. 켜진 뒤에는 반사탄도 통과한다
+CRYSTAL_SWITCH = dict(w=40, h=180, facets=4)
+COLOR_CRYSTAL_SWITCH = (120, 90, 190)
+COLOR_CRYSTAL_SWITCH_ON = (200, 170, 255)
+COLOR_CRYSTAL_SWITCH_EDGE = (215, 200, 250)
 COLOR_GATE = (110, 60, 50)
 COLOR_GATE_BAR = (60, 40, 35)
 COLOR_ONE_WAY_MARK = (240, 220, 140)   # 한쪽 문의 열리는 쪽 표시
