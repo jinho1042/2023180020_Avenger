@@ -54,7 +54,6 @@ class Player:
         self.swing_strong = False  # 이번 휘두름이 세 번째 일격인가
         self.attack_hits = set()   # 이번 휘두름에 이미 맞힌 대상 (한 번 휘두름에 한 번만 피해)
         self.pickaxe_lv = 1
-        self.ore = 0               # 소지 광석. T38에서 systems/economy.py로 옮긴다
         # 반동: 옆 공격 적중 시 recoil_timer 동안 recoil_dir 쪽으로 ATTACK_RECOIL만큼 밀린다
         self.recoil_timer = 0.0
         self.recoil_dir = 0
@@ -300,7 +299,7 @@ class Player:
         return min(damage, config.DAMAGE_CAP)
 
     def lose_hp(self, damage):
-        # 체력을 깎고 무적을 건다. 체력 0이면 사망 (결과 화면 전환은 play_mode가 DEATH_DELAY 뒤에 한다)
+        # 체력을 깎고 무적을 건다. 체력 0이면 사망 (부활은 play_mode가 DEATH_DELAY 뒤에 한다)
         self.hp = max(0, self.hp - self.final_damage(damage))
         self.sitting = False
         self.parry_timer = 0
@@ -418,6 +417,18 @@ class Player:
 
     def end_blackout(self):
         self.blackout = False
+
+    def revive(self):
+        # 사망 부활 (13.2): 체력 전부. 자리·속도는 방에 들어올 때 enter_room이 정한다
+        self.dead = False
+        self.hp = self.max_hp
+        self.invincible_timer = 0.0
+        self.parry_timer = 0.0
+        self.parry_stun_timer = 0.0
+        self.mend_timer = 0.0
+        self.mend_wait = False
+        self.blackout = False
+        input.clear_buffers()
 
     def sit(self, seat_x):
         # 의자 가운데에 앉는다. 체력 회복·저장은 play_mode가 한다

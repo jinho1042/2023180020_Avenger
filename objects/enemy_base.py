@@ -5,7 +5,7 @@ from pico2d import *
 import config
 import game_framework
 import game_world
-from objects import effect
+from objects import effect, pickup
 from systems import camera, terrain
 
 # 공통 AI 상태: Idle → Chase → Telegraph → Windup → Active → Recover → (Chase)
@@ -48,6 +48,7 @@ class EnemyBase:
         self.player = player
         self.platforms = platforms
         self.parry_breath_count = 0  # 이 적에게서 패링 숨을 얻은 횟수 (일반 적만 센다, 8.4)
+        self.ore = stats.get('ore', 0)  # 처치 시 뿌리는 광석 (10.1)
 
         self.state = IDLE
         self.state_timer = 0.0
@@ -164,6 +165,7 @@ class EnemyBase:
         self.set_state(DEAD)
         game_world.remove_object(self)
         effect.enemy_killed(self.x, self.y + self.h / 2, self.color)
+        pickup.spill(self.x, self.y + self.h / 2, self.ore, self.player)
 
     def update(self):
         if not self.is_alive():

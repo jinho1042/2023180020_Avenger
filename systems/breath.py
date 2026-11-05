@@ -32,15 +32,22 @@ finished = None           # 마지막으로 끝난 구간 (F6가 기록하면 No
 
 def init(state):
     # 새 게임·이어하기: 숨 가득, 기절 복귀 지점은 rest_seat의 안전지대 (13.6)
-    global value, infinite, in_safe, grace, gate, locked_rate, suffocating, suffocate_timer
-    global last_safe_zone, blackout, blackout_timer, flash_timer, segment, finished
-    value = capacity()
+    global infinite, finished
     infinite = False
+    finished = None
+    refill(state)
+
+
+def refill(state):
+    # 숨 가득, 기절 복귀 지점은 rest_seat의 안전지대. 사망 부활도 이것을 부른다 (13.2). F5 숨 무한은 그대로 둔다
+    global value, in_safe, grace, gate, locked_rate, suffocating, suffocate_timer
+    global last_safe_zone, blackout, blackout_timer, flash_timer, segment
+    value = capacity()
     in_safe, grace, gate, locked_rate = False, 0.0, None, None
     suffocating, suffocate_timer = False, 0.0
     last_safe_zone = state.rest_seat
     blackout, blackout_timer, flash_timer = None, 0.0, 0.0
-    segment, finished = None, None
+    segment = None
 
 
 def base_capacity():

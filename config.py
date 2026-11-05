@@ -386,14 +386,15 @@ TELEGRAPH_BLINK = 0.06     # s, 예고 번쩍임 주기
 COLOR_ENEMY_WINDUP = (255, 240, 180)   # 공격 모션 중 무기 표시
 COLOR_ENEMY_SLASH = (255, 150, 60)     # 공격 판정 중 베기 표시
 COLOR_ENEMY_STAGGER = (220, 210, 90)   # 패링당해 비틀거리는 중 색
+# [v2] 적·보스의 ore = 처치 시 광석 (T38 임시. 10.2 도감 값은 T42 재테마·T45 보스에서)
 # 플라잉 몹: 플레이어 머리 위 hover_height에 떠 있다가 급강하. dive_time 동안(착지하면 즉시) 몸 전체가 공격 판정
-FLYER = dict(hp=20, speed=150, dive_speed=600, damage=1, telegraph=0.5,
+FLYER = dict(hp=20, ore=3, speed=150, dive_speed=600, damage=1, telegraph=0.5,
              w=40, h=32, color=(120, 90, 170), detect_range=800, hover_height=220,
              attack_range=60, hover_tolerance=40, ceiling_margin=40,
              windup=0.15, dive_time=0.5, recover=0.6, attack_cooldown=1.2)
 # 근거리 병사: 베기 2연타. 2타째는 combo_telegraph만큼 짧게 예고한다
 # 방패 돌진(빨간 예고, 패링 불가): shield_rush_chance 확률로 베기 대신 rush_time 동안 rush_speed로 앞으로 돌진
-MELEE = dict(hp=40, speed=180, damage=1, telegraph=0.5, shield_rush_chance=0.25,
+MELEE = dict(hp=40, ore=6, speed=180, damage=1, telegraph=0.5, shield_rush_chance=0.25,
              w=44, h=68, color=(170, 70, 70), detect_range=700, attack_range=80,
              windup=0.15, active=0.1, recover=0.25, combo_telegraph=0.3, combo_recover=0.6,
              attack_cooldown=0.8, hitbox=(70, 48),
@@ -401,7 +402,7 @@ MELEE = dict(hp=40, speed=180, damage=1, telegraph=0.5, shield_rush_chance=0.25,
              rush_damage=1, rush_hitbox=(24, 64))
 COLOR_SHIELD = (150, 150, 170)
 # 원거리 궁수: keep_distance ± distance_tolerance를 유지하고, shoot_range 안이면 플레이어를 조준해 화살을 쏜다
-ARCHER = dict(hp=30, keep_distance=400, arrow_speed=500, damage=1, telegraph=0.6,
+ARCHER = dict(hp=30, ore=4, keep_distance=400, arrow_speed=500, damage=1, telegraph=0.6,
               w=40, h=64, color=(70, 140, 90), detect_range=1280, speed=140,
               distance_tolerance=60, shoot_range=900,
               windup=0.2, active=0.05, recover=0.4, attack_cooldown=1.0)
@@ -413,7 +414,7 @@ DISC_STEP = 3              # px, 원형 투사체를 가로 띠로 나눠 그리
 
 # [v2] 적 - 마법사 루트
 # 견습 마법사: 궁수처럼 keep_distance ± distance_tolerance 유지, shoot_range 안이면 조준해 마력탄 1발 (흰색)
-APPRENTICE_MAGE = dict(hp=25, speed=120, keep_distance=450, bolt_speed=350,
+APPRENTICE_MAGE = dict(hp=25, ore=4, speed=120, keep_distance=450, bolt_speed=350,
                        damage=1, telegraph=0.7, cast_cooldown=2.0,
                        w=38, h=60, color=(110, 80, 170), detect_range=1280,
                        distance_tolerance=60, shoot_range=900,
@@ -421,7 +422,7 @@ APPRENTICE_MAGE = dict(hp=25, speed=120, keep_distance=450, bolt_speed=350,
 # 숙련 마법사: 마력탄 bolt_count발 부채꼴(사이각 bolt_spread도, 흰색) 또는
 #   circle_chance 확률로 플레이어 발밑 마법진(빨간색, 패링 불가)
 #   blink_trigger_dist 안으로 들어오면 blink_dist만큼 순간 후퇴 (예고 없음, blink_cooldown)
-ADEPT_MAGE = dict(hp=45, speed=120, keep_distance=400, bolt_speed=450, bolt_count=3,
+ADEPT_MAGE = dict(hp=45, ore=8, speed=120, keep_distance=400, bolt_speed=450, bolt_count=3,
                   bolt_spread=15, damage=1, telegraph=0.6, cast_cooldown=2.5,
                   circle_chance=0.35, circle_radius=90, circle_delay=0.8,
                   blink_trigger_dist=150, blink_dist=250, blink_cooldown=4.0,
@@ -441,7 +442,7 @@ MAGIC_CIRCLE = dict(active=0.12, pillar_h=150, ring_flat=0.3, ring_dots=24, dot=
 # [v2] 적 - 쌍검 루트
 # 쌍단검 병사: 빠르게 접근해 combo연속 베기 (흰색). 첫 타 예고 telegraph, 이후 각 타는 combo_interval 예고
 #   패링해도 연타가 끊기지 않고 다음 타로 이어간다 (연속 패링 연습). 마지막 타를 패링하면 비틀거린다
-DUAL_DAGGER = dict(hp=35, speed=260, damage=1, telegraph=0.35,
+DUAL_DAGGER = dict(hp=35, ore=7, speed=260, damage=1, telegraph=0.35,
                    combo=3, combo_interval=0.3,       # combo_interval >= TELEGRAPH_MIN
                    w=40, h=62, color=(60, 130, 150), detect_range=900, attack_range=70,
                    windup=0.08, active=0.08, recover=0.12, last_recover=0.7,
@@ -451,7 +452,7 @@ DUAL_DAGGER = dict(hp=35, speed=260, damage=1, telegraph=0.35,
 #      (teleport_cooldown. 등 뒤가 벽·화면 밖이면 앞쪽에 나타난다)
 #   ② stab_chance 확률로(또는 기습 쿨타임 중이면) 걸어서 접근해 정면 찌르기 (흰색)
 #   흐려지는 동안 몸 알파값은 fade_alpha[0] → fade_alpha[1]
-ASSASSIN = dict(hp=30, speed=200, damage=1, telegraph=0.5,
+ASSASSIN = dict(hp=30, ore=7, speed=200, damage=1, telegraph=0.5,
                 teleport_cooldown=4.0, fade_time=0.4, stab_chance=0.5,
                 w=38, h=64, color=(120, 60, 110), detect_range=1280, attack_range=80,
                 keep_distance=320, distance_tolerance=60, attack_cooldown=1.2,
@@ -471,7 +472,7 @@ COLOR_BOSS_GROGGY = (230, 200, 60)
 # 대검 기사: 느리고 묵직. 넉백을 받지 않는다
 # 패턴 선택: 거리 near_range 이하면 near 가중치, thrust_range 이하면 far 가중치로 랜덤 (같은 패턴 3연속 금지)
 # 가중치가 모두 0이면 걸어서 접근한다
-BOSS_GREATSWORD = dict(hp=400, damage=1, heavy_damage=2,   # 빨간(패링 불가) 패턴 = heavy_damage
+BOSS_GREATSWORD = dict(hp=400, ore=300, damage=1, heavy_damage=2,   # 빨간(패링 불가) 패턴 = heavy_damage
                        w=80, h=120, color=(110, 110, 140), speed=110, detect_range=1280,
                        attack_cooldown=0.9, near_range=200, thrust_range=750,
                        near=dict(slam=3, spin=2, thrust=0), far=dict(slam=0, spin=0, thrust=1),
@@ -488,7 +489,7 @@ COLOR_GREATSWORD = (200, 200, 220)
 # 2페이즈(체력 phase2_hp_ratio 이하): 모든 동작 시간 ÷ phase2_speed_mult (예고는 TELEGRAPH_MIN 이상 유지),
 #   이동 속도 × phase2_speed_mult, phase2_near/far 가중치(빨간 예고 비율 증가),
 #   feint_chance 확률로 페이크(예고만 하고 공격하지 않은 채 feint_recover 동안 멈춤)
-BOSS_TWINBLADE = dict(hp=600, damage=1, heavy_damage=2,   # 빨간(패링 불가) 패턴 = heavy_damage
+BOSS_TWINBLADE = dict(hp=600, ore=500, damage=1, heavy_damage=2,   # 빨간(패링 불가) 패턴 = heavy_damage
                       phase2_hp_ratio=0.5, phase2_speed_mult=1.2,
                       w=56, h=100, color=(70, 90, 140), color_phase2=(140, 60, 120),
                       speed=220, detect_range=1280, attack_cooldown=0.7, near_range=160,
@@ -508,7 +509,7 @@ BOSS_TWINBLADE = dict(hp=600, damage=1, heavy_damage=2,   # 빨간(패링 불가
 # 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치로 랜덤 (같은 패턴 3연속 금지)
 # 순간이동: 플레이어가 blink_trigger_dist 안이면 반대쪽으로 blink_dist (공격 아님, 예고 없음, blink_cooldown)
 # 견습 소환: 동시에 최대 summon_max, 쿨타임 summon_cooldown. 보스 좌우 summon_offset px에 나타난다
-BOSS_MAGE = dict(hp=500, damage=1,
+BOSS_MAGE = dict(hp=500, ore=350, damage=1,
                  volley_count=5, volley_interval=0.3, bolt_speed=450,
                  orb_speed=250, orb_reflect_mult=3.0,
                  circle_count=3, circle_radius=100, circle_delay=0.8, circle_interval=0.4,
@@ -544,7 +545,23 @@ SAVE_VERSION = 5
 
 # 진행
 UPGRADE_CHOICES = 3
-DEATH_DELAY = 1.5          # s, 사망 후 결과 화면으로 넘어가기 전 대기
+DEATH_DELAY = 1.5          # s, 사망 연출 뒤 암전 → 마지막으로 앉은 안전지대에서 부활 (13.2)
+
+# 광석 · 사망 (T38, 13.2)
+ORE_PICKUP_RADIUS = 40
+ORE_MAGNET_RADIUS = 200    # 각인 '광석 자석'
+DEATH_ORE_LOSS = 1.0       # 임시. 사망 시 소지(미보관) 광석 손실 비율
+# 바닥 광석 조각: 처치·채굴 시 1~max_value짜리 조각으로 위로 튄다 (10.1). delay 동안은 흡수되지 않아 튀는 게 보인다
+# 흡수 범위 안에 들어오면 absorb_speed로 몸에 빨려 들어간다. 바닥에서는 friction(px/s^2)으로 미끄러짐이 멈춘다
+ORE_PIECE = dict(max_value=5, speed=(300, 520), spread=0.6, delay=0.35, absorb_speed=900,
+                 friction=1500, size=6, size_per_value=1.5)
+ORE_COLLECT_SPARK = dict(count=3, speed=(60, 140), life=0.25, size=4)   # 조각이 몸에 닿을 때. 색은 COLOR_ORE
+# HUD 광석 줄 (14.1 '보관 840 (+소지 120)'). 보관 연출: 소지 숫자가 보관 쪽으로 미끄러지며 보관 숫자가 올라간다
+ORE_HUD_GAP = 6            # px, 숨 게이지와 광석 줄 사이
+ORE_BANK_TIME = 0.6        # s, 보관 연출 길이
+ORE_BANK_SLIDE = 120       # px, 소지 숫자가 왼쪽으로 미끄러지는 거리
+COLOR_ORE_CARRIED = (255, 230, 170)
+HUD_FONT_NARROW = 0.55    # 숫자·영문·공백 글자 폭 ÷ 글자 크기 (글자 폭 어림)
 
 # 강화 (효과 구현은 systems/upgrades.py)
 UPGRADE_PARRY_WINDOW_BONUS = 0.05  # s
@@ -632,7 +649,7 @@ SOUND_DIR = 'assets/sounds'
 SOUND_VOLUME = dict(
     parry=110, parry_miss=60, swing=45, hit=100, enemy_hurt=60, kill=80,
     telegraph_white=55, telegraph_red=70, groggy=110, phase2=110,
-    dash=55, jump=35, shoot=55, door=70, death=100, cursor=50, select=60, chest=80)
+    dash=55, jump=35, shoot=55, door=70, death=100, cursor=50, select=60, chest=80, ore=40, bank=80)
 SOUND_MIN_INTERVAL = 0.03  # s, 같은 소리가 한 프레임에 겹쳐 커지는 것 방지
 # 배경음 (파일을 넣으면 재생, 없으면 생략). ogg/mp3/wav
 MUSIC_FILES = dict(battle='bgm_battle.ogg', boss='bgm_boss.ogg')

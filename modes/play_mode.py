@@ -6,7 +6,7 @@ import game_framework
 import game_world
 from objects import effect, projectile
 from objects.player import Player
-from systems import breath, camera, combat, hitstop, input, runes, save, sound, world
+from systems import breath, camera, combat, economy, hitstop, input, runes, save, sound, world
 from ui import hud
 
 player = None
@@ -15,6 +15,8 @@ enemies = []
 boss = None      # 현재 방의 보스 (없으면 None), 보스 HUD용
 play_time = 0.0  # 세이브 play_time·결과 화면 통계 (s)
 death_timer = 0.0
+respawning = False  # 사망 → 부활 방으로 전환 중. 방에 들어오는 순간 되살린다
+ore_lost = 0        # 이번 사망으로 잃은 소지 광석 (부활 후 알림)
 load_path = None  # 이어하기면 불러올 세이브 경로, 새 게임이면 None. title_mode가 change_mode 직전에 start()로 정한다
 DEBUG_KEY = {getattr(pico2d, name): action for action, name in config.DEBUG_KEYS.items()}
 
@@ -24,6 +26,8 @@ def enter_room(new_room, arrival):
     # 플레이어 객체는 그대로 옮겨 체력 등을 유지한다. 투사체·이펙트는 game_world.clear()로 정리된다
     global room, enemies, boss
     game_world.clear()
+    if respawning:
+        revive()
     hitstop.reset()
     camera.reset()
     room = new_room
@@ -65,10 +69,12 @@ def start(path=None):
 
 
 def init():
-    global player, play_time, death_timer
+    global player, play_time, death_timer, respawning
     play_time = 0.0
     death_timer = 0.0
+    respawning = False
     hud.init()
+    economy.init()
     player = Player([], (0, 0))
     loaded = None
     if load_path:
@@ -137,14 +143,14 @@ def update():
     dt = game_framework.frame_time
     world.update(dt)
     hud.update(dt)
+    economy.update(dt)
     if world.frozen():
         return  # 방 전환으로 어두워지는 동안 월드 정지 (누름 상태는 handle_events가 계속 받는다)
     if player.dead:
-        # 사망 연출을 잠깐 보여준 뒤 결과 화면으로 (T38에서 안전지대 부활로 교체)
+        # 사망 연출을 잠깐 보여준 뒤 암전 → 마지막으로 앉은 안전지대에서 부활 (13.2)
         death_timer += dt
-        if death_timer >= config.DEATH_DELAY:
-            end_run()
-            return
+        if death_timer >= config.DEATH_DELAY and not respawning:
+            start_respawn()
     else:
         play_time += dt
     # 이번 프레임이 히트스톱 중인지 먼저 정하고 타이머를 줄인다 (이벤트는 그대로 받아 선입력에 저장됨)
@@ -191,6 +197,7 @@ def check_safe_zones():
             continue
         inside = inside or zone
         world.state.safe_zones_found.add(zone.gid)
+        economy.bank()   # 영역 안에 들어오기만 해도 소지 광석 자동 보관 (13.2)
         if zone.can_sit(player):
             zone.prompt = True
             if input.consume('up'):
@@ -239,11 +246,31 @@ def check_exits():
             return
 
 
-def end_run():
-    from modes import result_mode
-    sound.stop_music()
-    result_mode.set_result(False, len(world.state.visited), len(world.room_ids()), player.parry_count, play_time, [])
-    game_framework.change_mode(result_mode)
+def start_respawn():
+    # 사망 (13.2): 소지 광석 일부를 잃고 마지막으로 앉은 자리로 (앉은 적이 없으면 새 게임 첫 방)
+    # 보관·희귀 광석은 그대로. 게이트 기절(7.3)은 사망이 아니므로 여기를 거치지 않는다
+    global respawning, ore_lost
+    respawning = True
+    ore_lost = economy.lose_on_death()
+    world.state.stats['deaths'] += 1
+    seat = world.state.rest_seat
+    print(f'[사망] 소지 광석 {ore_lost} 잃음 → {seat or config.START_ROOM}')
+    if seat and seat.split(':')[0] in world.room_paths:
+        room_id, zone_id = seat.split(':')
+        world.warp(room_id, seat=zone_id)
+    else:
+        world.warp(config.START_ROOM)
+
+
+def revive():
+    # 부활 방에 들어오는 순간 (화면이 가장 어두울 때): 체력 전부, 숨 가득
+    global respawning, death_timer
+    respawning = False
+    death_timer = 0.0
+    player.revive()
+    breath.refill(world.state)
+    if ore_lost:
+        hud.show_message(f'광석 {ore_lost} 잃음')
 
 
 def background_color():
