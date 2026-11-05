@@ -54,6 +54,11 @@ ATTACK_RECOIL = 60         # px, 옆 공격 적중 시 플레이어가 밀리는
 ATTACK_RECOIL_TIME = 0.08  # s, 반동 거리를 이 시간 동안 나눠 민다
 POGO_SPEED = 700
 ENEMY_KNOCKBACK = 60
+CRACK_WALL_HITS = 3
+ORE_VEIN_HITS = 5
+ORE_VEIN_LEVEL = 3         # 광맥벽은 곡괭이 Lv3 이상
+ORE_CHUNK_HITS = 5
+ORE_PER_CHUNK_HIT = 2
 INPUT_BUFFER = 0.1         # s, 공격·패링·대시 선입력
 THIRD_STRIKE = dict(interval=0.6, damage_mult=2.0, knockback=150, shake=dict(amp=5, time=0.12))  # interval = 적중과 적중 사이 최대 간격
 
@@ -122,6 +127,26 @@ COLOR_DEBUG_EXIT = (255, 255, 0)  # 방 출구
 # 지형
 COLOR_SOLID = (90, 90, 100)
 COLOR_ONEWAY = (150, 130, 90)
+
+# 환경 기믹 (T35, 12.6). 크기가 방 JSON에 없는 레버만 여기서 정한다
+COLOR_SPIKE = (200, 200, 215)
+COLOR_ACID = (120, 200, 60)
+SPIKE_W = 16               # px, 가시 한 개의 밑변
+SPIKE_STEP = 4             # px, 가시 삼각형을 쌓아 그리는 가로줄 두께
+COLOR_CRACK_WALL = (110, 100, 95)
+COLOR_CRACK_LINE = (40, 35, 35)
+COLOR_ORE_CHUNK = (95, 85, 80)
+COLOR_ORE = (240, 190, 90)
+ORE_CHUNK_DOTS = 4         # 광석 덩어리 표면의 광석 점 개수
+COLOR_GATE = (110, 60, 50)
+COLOR_GATE_BAR = (60, 40, 35)
+COLOR_ONE_WAY_MARK = (240, 220, 140)   # 한쪽 문의 열리는 쪽 표시
+GATE_BAR_GAP = 16          # px, 문 창살 간격
+LEVER_W, LEVER_H = 24, 48  # px, (x, y)는 레버 아래쪽 중심
+LEVER_STICK = 36           # px, 손잡이 길이
+COLOR_LEVER_BASE = (80, 70, 60)
+COLOR_LEVER = (200, 170, 90)
+COLOR_LEVER_ON = (130, 220, 120)
 
 # 방 · 문
 DOOR_W, DOOR_H = 60, 100   # px
@@ -244,6 +269,8 @@ KILL_PARTICLE = dict(count=18, speed=(150, 450), life=0.5, size=8)  # 색은 적
 HIT_PARTICLE = dict(count=10, speed=(150, 350), life=0.3, size=6)   # 색은 COLOR_HIT_FLASH
 PARRY_MISS_PUFF = dict(count=6, speed=(40, 120), life=0.3, size=6, color=(140, 140, 170))
 DOOR_SPARK = dict(count=24, speed=(80, 300), life=0.6, size=6)      # 색은 COLOR_DOOR_OPEN
+WALL_DEBRIS = dict(count=20, speed=(100, 380), life=0.5, size=8)    # 벽·덩어리가 부서질 때. 색은 벽 색
+ORE_SPARK = dict(count=6, speed=(120, 300), life=0.4, size=5)       # 광석 덩어리를 칠 때. 색은 COLOR_ORE
 # 빛줄기: length는 (최소, 최대) 뻗는 길이 px, width는 굵기 px
 PARRY_STREAK = dict(count=8, length=(70, 130), life=0.18, width=3, color=(255, 255, 230))
 KILL_STREAK = dict(count=6, length=(40, 80), life=0.15, width=2, color=(255, 255, 255))

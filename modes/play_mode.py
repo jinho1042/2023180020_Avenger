@@ -30,6 +30,7 @@ def enter_room(new_room, arrival):
     camera.set_room(room.width, room.height)
     game_world.add_objects(room.platforms, config.DEPTH_MAP)
     game_world.add_objects(room.exits, config.DEPTH_MAP)
+    game_world.add_objects(room.gimmicks, config.DEPTH_MAP)
     world.place_player(player, room, arrival)
     game_world.add_object(player, config.DEPTH_PLAYER)
     # 투사체는 생성될 때 b쪽에 스스로 등록한다
@@ -123,11 +124,22 @@ def update():
     game_framework.frame_time = dt * hitstop.time_scale()
     game_world.update()
     add_enemies([s for e in enemies for s in e.pop_summons()])
-    combat.resolve(player, enemies)
+    combat.resolve(player, enemies, room.gimmicks)
     game_world.handle_collisions()
     game_framework.frame_time = dt
     enemies = [e for e in enemies if e.is_alive()]
+    check_hazards()
     check_exits()
+
+
+def check_hazards():
+    # 가시·산성·구덩이에 몸이 닿으면 환경 피해 → 안전 지점 (6.8). 포고가 먼저 되도록 공격 판정 뒤에 본다
+    if player.dead or player.is_hazard_respawning():
+        return
+    for hazard in room.hazard_objects:
+        if game_world.collide(player, hazard):
+            player.hazard_hit()
+            return
 
 
 def check_exits():
