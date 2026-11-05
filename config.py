@@ -40,6 +40,12 @@ JUMP_BUFFER = 0.1
 CORNER_CORRECTION = 8      # px
 HARD_LAND_FALL_TIME = 1.1  # s
 HARD_LAND_LOCK = 0.25      # s
+# 벽 매달리기 · 벽점프 (버팀의 룬, 6.4. T49). 공중에서 벽 쪽 방향키 → 미끄러짐, Z → 벽 반대쪽으로 도약
+WALL_SLIDE_SPEED = -300    # px/s, 매달린 동안 최대 낙하 속도
+WALL_JUMP_SPEED_X = 357    # px/s, 벽점프 가로 속도 (WALL_JUMP_LOCK 동안 수평 입력 무시)
+WALL_JUMP_LOCK = 0.12      # s
+WALL_SLIDE_SPARK = dict(interval=0.06, count=2, speed=(60, 180), life=0.25, size=4, color=(255, 210, 120))   # 곡괭이 불꽃
+WALL_PICK = dict(w=18, h=8, y=0.75)   # 벽에 박은 곡괭이 그림 (h = 두께, y = 몸 높이 비율)
 DASH_DIST = 215            # px
 DASH_TIME = 0.25
 DASH_COOLDOWN = 0.6
@@ -694,22 +700,39 @@ COLOR_BORER_CRACK = (90, 70, 55)       # 잠행 균열
 BOSS_FIGHT_TARGET = dict(  # 임시. 보스전 예상 시간(초). 아레나 숨구멍 수를 정할 때 참고 (7.6 목표 3)
     borer=50, moss_warden=80, archsage=90, colossus=100, scythe=110, king=180, first_miner=90,
 )
-BOSS_RUNE = dict(borer='burrow')   # 처치 보상 룬 (11.4 보상). 다른 보스는 해당 보스 작업(T49~)에서 넣는다
-# 대검 기사: 느리고 묵직. 넉백을 받지 않는다
-# 패턴 선택: 거리 near_range 이하면 near 가중치, thrust_range 이하면 far 가중치 (11.2 패턴 선택 규칙)
-# 가중치가 모두 0이면 걸어서 접근한다
-BOSS_GREATSWORD = dict(hp=400, ore=300, damage=1, heavy_damage=2,   # 빨간(패링 불가) 패턴 = heavy_damage
-                       w=80, h=120, color=(110, 110, 140), speed=110, detect_range=1280,
-                       near_range=200, thrust_range=750,
-                       near=dict(slam=3, spin=2, thrust=0), far=dict(slam=0, spin=0, thrust=1),
-                       # 내려찍기 (흰색): 정직한 단발
-                       slam=dict(telegraph=0.7, windup=0.3, active=0.12, recover=0.8, hitbox=(140, 130)),
-                       # 회전 베기 (빨간색): 몸 중심 좌우 광역, 대시로 회피
-                       spin=dict(telegraph=0.8, windup=0.25, active=0.45, recover=0.9, hitbox=(360, 90)),
-                       # 돌진 찌르기 (흰색): Active 동안 speed로 앞으로 돌진
-                       thrust=dict(telegraph=0.6, windup=0.2, active=0.4, recover=0.9, hitbox=(70, 40),
-                                   speed=900))
+BOSS_RUNE = dict(borer='burrow', moss_warden='brace')   # 처치 보상 룬 (11.4 보상). 다른 보스는 해당 보스 작업(T52~)에서 넣는다
+# B2 이끼 수문장 (T49, ← v2 대검 기사). 첫 줄은 4장 값 그대로, 둘째 줄부터 행동·그림 값. 넉백을 받지 않는다
+# 패턴 선택: 거리 < near_range → near 표(내려찍기·회전), 아니면 far 표(돌진·도약) (11.4 선택 규칙). 회전 쿨 spin_cooldown
+# 2페이즈(체력 phase_hp 아래): 이끼 갑옷이 벗겨짐(color_phase2, 균열) + 내려찍기+충격파·도약 내려찍기 추가 (phase2_near·far)
+BOSS_MOSS_WARDEN = dict(hp=320, damage=1, heavy_damage=2, phase_hp=[0.5],
+                        spin_radius=180, shockwave_speed=500, ore=300,
+                        w=80, h=120, color=(95, 125, 90), color_phase2=(135, 130, 115), speed=110, detect_range=1280,
+                        near_range=200, spin_cooldown=5.0,
+                        near=dict(slam=3, spin=2), far=dict(thrust=1),
+                        phase2_near=dict(slam=2, spin=2, slam_wave=2), phase2_far=dict(thrust=1, leap=2),
+                        # 내려찍기 (흰): 대검을 머리 위로 → 정직한 단발
+                        slam=dict(telegraph=0.6, windup=0.2, active=0.12, recover=0.8, hitbox=(140, 130)),
+                        # 회전 베기 (빨강, heavy_damage): 몸을 비틂 + '!' → 몸 중심 반경 spin_radius. 끝나면 어지러움 recover초
+                        spin=dict(telegraph=0.7, windup=0.2, active=0.45, recover=1.0, hitbox_h=90),
+                        # 돌진 찌르기 (흰): 대검을 수평으로 → speed로 직진. 예고 시작 때 플레이어까지 거리 + overshoot만큼
+                        #   (최소 min_dist, active는 상한). 벽에 막히면 끝
+                        thrust=dict(telegraph=0.5, windup=0.15, active=0.9, recover=0.6, hitbox=(70, 40),
+                                    speed=900, overshoot=60, min_dist=200),
+                        # 내려찍기 + 충격파 (2페이즈): 내려찍기(흰) → 바닥이 빛남 glow초(빨강 예고) → 양쪽으로 충격파
+                        #   (shockwave_speed, 벽까지, 점프로 넘기). 반격 틈은 충격파 뒤 recover초
+                        slam_wave=dict(glow=0.3, recover=0.8, wave_w=40, wave_h=40),
+                        # 도약 내려찍기 (흰, 2페이즈): 무릎을 굽힘 → 플레이어 발밑(최대 max_dist)으로 air_time초 포물선,
+                        #   떨어질 자리에 그림자. 내려오는 동안만 몸 아래 판정 → 착지 후 recover초
+                        leap=dict(telegraph=0.5, windup=0.1, air_time=0.8, recover=1.0, hitbox=(120, 60), max_dist=700,
+                                  shadow_w=120, shadow_h=10),
+                        # 그림 (도형): 이끼 조각 수·크기, 어지러움 별, 착지·충격파 먼지
+                        moss_tufts=5, moss_size=14, dizzy=dict(dots=3, radius=26, speed=6.0, size=6),
+                        dust=dict(count=10, speed=(80, 260), life=0.4, size=7), land_shake=(8, 0.2),
+                        peel=dict(count=24, speed=(150, 420), life=0.7, size=9))
 COLOR_GREATSWORD = (200, 200, 220)
+COLOR_MOSS_ARMOR = (70, 140, 70)        # 1페이즈 이끼 갑옷 조각
+COLOR_SHOCKWAVE = (239, 68, 68)         # 충격파 (빨강 = 패링 불가)
+COLOR_LEAP_SHADOW = (20, 20, 20)        # 도약 내려찍기 떨어질 자리
 # 쌍검 기사: 빠르고 날렵. 넉백을 받지 않는다
 # 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치 (11.2 패턴 선택 규칙)
 # 2페이즈(체력 phase_hp 이하): 모든 동작 시간 ÷ phase2_speed_mult (예고는 TELEGRAPH_MIN 이상 유지),
@@ -827,7 +850,7 @@ COLOR_BOSS_HP = (200, 50, 50)
 COLOR_POSTURE_BACK = (50, 50, 60)
 COLOR_POSTURE_FILL = (255, 220, 120)
 # 보스 이름·칭호 (11.4). 키 = 방 JSON boss · bosses_met · bosses_defeated 값
-# [v2] moss_warden·archsage·scythe는 아직 v2 대검 기사·대마법사·쌍검 기사 행동 (T49·T52·T56에서 교체)
+# [v2] archsage·scythe는 아직 v2 대마법사·쌍검 기사 행동 (T52·T56에서 교체)
 BOSS_NAME = dict(borer='바위껍질 굴착충', moss_warden='이끼 수문장', archsage='수정 대술사',
                  colossus='신전 골렘 거상', scythe='쌍낫 군주', king='타락한 왕 에르딘',
                  first_miner='먼저 떨어진 광부')
