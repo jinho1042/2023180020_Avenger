@@ -28,6 +28,7 @@ flash_timer = 0.0         # 패링 숨을 얻었을 때 게이지 반짝
 # 디버그 구간 측정 (13.5): 마지막 숨 회복 지점(안전지대·숨구멍)을 떠난 뒤 경과 시간·쓴 숨
 segment = None            # 진행 중인 구간 dict(start, time, used, gate). 안전지대 안이면 None
 finished = None           # 마지막으로 끝난 구간 (F6가 기록하면 None)
+clouds = []               # 지금 방의 포자 구름 (objects/spore_cloud.py가 넣고 뺀다). 방에 들어올 때 비운다
 
 
 def init(state):
@@ -142,14 +143,14 @@ def base_air(room):
 
 
 def drain_multiplier(room, player):
-    # 7.2 순서 2: 몸 중심이 들어 있는 영역 배율과 기본 배율 중 가장 큰 값 하나 (곱하지 않는다). 반환: (배율, 공기 이름)
-    # 순서 3(안전지대)은 update가, 순서 4(버팀 Lv3 매달림)는 T65에서
+    # 7.2 순서 2: 몸 중심이 들어 있는 영역(포자 구름 포함) 배율과 기본 배율 중 가장 큰 값 하나 (곱하지 않는다)
+    # 반환: (배율, 공기 이름). 순서 3(안전지대)은 update가, 순서 4(버팀 Lv3 매달림)는 T65에서
     name = base_air(room)
     if name is None:
         return None, None
     m = config.BREATH_DRAIN_MULT[name]
     x, y = body_center(player)
-    for zone in room.breath_zone_objects:
+    for zone in room.breath_zone_objects + clouds:
         zone_m = config.BREATH_DRAIN_MULT[zone.air]
         if zone_m > m and contains(zone, x, y):
             m, name = zone_m, zone.air

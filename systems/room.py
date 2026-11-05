@@ -17,7 +17,9 @@ from objects.enemies.crystal_sprite import CrystalSprite
 from objects.enemies.scythe_mantis import ScytheMantis
 from objects.enemies.shadow_stalker import ShadowStalker
 from objects.enemies.shell_warrior import ShellWarrior
+from objects.enemies.spore_shroom import SporeShroom
 from objects.enemies.thorn_flower import ThornFlower
+from objects.enemies.vine_lurker import VineLurker
 from objects.exit_zone import ExitZone
 from objects.gate import Gate
 from objects.hazard import Hazard, Rockfall
@@ -27,8 +29,9 @@ from objects.safe_zone import SafeZone
 from objects.switch import Switch
 from objects.training_statue import TrainingStatue
 
-# spawns의 이름 → 적 클래스 (10.2). 포자 버섯·덩굴 매복충·독 거머리·유적 골렘은 해당 작업에서
+# spawns의 이름 → 적 클래스 (10.2). 독 거머리·유적 골렘은 T53
 ENEMY_TYPES = {'crawler': Crawler, 'bat': Bat, 'shell_warrior': ShellWarrior, 'thorn_flower': ThornFlower,
+               'spore_shroom': SporeShroom, 'vine_lurker': VineLurker,
                'crystal_sprite': CrystalSprite, 'crystal_sage': CrystalSage,
                'scythe_mantis': ScytheMantis, 'shadow_stalker': ShadowStalker}
 # 보스 (11.4): 방 JSON boss 값 = 키. 보스 자리는 spawns에 같은 이름으로 둔다 ([종류, x, y])
@@ -89,7 +92,7 @@ class Room:
         self.breath_zone_objects = ([BreathZone(*z) for z in self.breath_zones]
                                     + [BreathZone(*w[:4], 'water') for w in self.water])
         self.breath_gate_objects = [BreathGate(*g) for g in self.breath_gates]
-        self.air_vent_objects = [AirVent(self.id, *v) for v in self.air_vents]
+        self.air_vent_objects = [AirVent(self.id, *v, self.region) for v in self.air_vents]
         # NPC·석판·룬지기 (2.5): ↑로 말 걸기. 지형이 아니라 곡괭이에도 맞지 않는다
         self.npc_objects = [Npc(*o[:4]) for o in self.objects if o[0] in ('npc', 'tablet', 'carver')]
         # 연습 석상 (9.5): 부서진 것은 만들지 않는다. 적 목록에 넣어 패링 판정을 쓴다 (spawn_enemies)

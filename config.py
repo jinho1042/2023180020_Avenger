@@ -146,6 +146,9 @@ AIR_VENT_RADIUS = 14       # px, 숨구멍 (x, y는 중심). 닿는 판정은 �
 AIR_VENT_WIND = dict(count=3, rise=40, period=1.2, size=4)  # 숨구멍 위로 오르는 공기 점 (rise px를 period초에)
 COLOR_AIR_VENT = (120, 200, 240)
 COLOR_AIR_VENT_USED = (60, 90, 110)
+AIR_VENT_MOSS_TUFTS = [(-1.1, -0.6), (1.1, -0.6), (-0.7, 0.9), (0.8, 0.8), (0, -1.2)]  # 이끼 숨구멍 이끼 덩이 자리 (× 반지름)
+AIR_VENT_MOSS_SIZE = 0.6   # 이끼 덩이 반지름 / 숨구멍 반지름
+COLOR_AIR_VENT_MOSS = (70, 150, 80)
 BREATH_ZONE_ALPHA = 50     # 0~255, 숨 배율 영역 칠
 BREATH_ZONE_DOT_GAP = 40   # px, 포자 지대 점 무늬 간격
 BREATH_ZONE_DOT = 4        # px
@@ -513,7 +516,27 @@ COLOR_THORN_BUD = (200, 90, 130)
 ARROW = dict(size=14, length=36, color=(240, 230, 200))
 COLOR_REFLECTED = (120, 255, 255)  # 반사되어 플레이어 소유가 된 투사체
 DISC_STEP = 3              # px, 원형 투사체를 가로 띠로 나눠 그리는 간격
-# 포자 버섯·덩굴 매복충 (T47), 독 거머리·유적 골렘 (T53), 정예 (T48·T53)는 해당 작업에서
+# 포자 버섯 (T47, 10.3): 제자리 고정. 플레이어가 trigger_dist 안이면 부풂(빨간 예고) → 자기 자리에 포자 구름
+#   구름 = 반지름 cloud_radius, cloud_time초 동안 남는 장판. 닿으면 한 번 피해 + 안에 있으면 숨 spore 배율. 죽을 때도 구름
+SPORE_SHROOM = dict(hp=12, trigger_dist=120, damage=1, telegraph=0.6, cloud_radius=80, cloud_time=2.0, ore=3,
+                    w=48, h=44, color=(150, 120, 80), speed=0, detect_range=0, attack_range=0,
+                    windup=0.15, recover=1.2, attack_cooldown=1.5,
+                    swell=0.35)       # 예고 중 몸이 이 비율만큼 커진다 (그림만)
+COLOR_SHROOM_CAP = (200, 170, 70)
+SPORE_CLOUD = dict(alpha=110, fade=0.4, dots=14, dot=5, drift=18, hit_h=1.6)   # hit_h = 판정 높이 / 반지름
+COLOR_SPORE_CLOUD = (220, 200, 80)
+# 덩굴 매복충 (T47, 10.3): 땅속(바닥에 둔 경우) 또는 천장(spawn y가 공중)에 숨어 hitbox 없음, 흙 무더기·늘어진 덩굴로 위치 힌트
+#   몸 중심에서 가로 ambush_dist 안에 오면 빨간 예고(telegraph) → 튀어나와 물기(패링 불가). 천장이면 떨어지며 문다
+#   그 뒤로는 근접 적: 접근해 할퀴기 (흰 예고 claw_telegraph, 패링 가능)
+VINE_LURKER = dict(hp=18, ambush_dist=150, damage=1, telegraph=0.4, claw_telegraph=0.5, ore=5,
+                   w=46, h=40, color=(80, 110, 60), speed=150, detect_range=700, attack_range=70,
+                   bite_windup=0.1, bite_active=0.25, bite_recover=0.6, bite_rise=520, bite_hitbox=(60, 50),
+                   bite_lunge=500,   # px/s, 물기 중 플레이어 쪽으로 튀어나가는 속도 (천장이면 떨어지는 동안 가로 속도 상한)
+                   claw_windup=0.12, claw_active=0.1, claw_recover=0.45, claw_hitbox=(60, 40),
+                   attack_cooldown=1.0, ceiling_probe=8)   # px, spawn 바로 아래 이만큼 안에 바닥이 없으면 천장 매복
+COLOR_LURKER_MOUND = (95, 75, 50)
+COLOR_LURKER_VINE = (70, 120, 55)
+# 독 거머리·유적 골렘 (T53), 정예 (T48·T53)는 해당 작업에서
 
 # 수정 유생 (← v2 견습 마법사): keep_distance ± distance_tolerance 유지, shoot_range 안이면 조준해 수정탄 1발 (흰색)
 CRYSTAL_SPRITE = dict(hp=13, speed=120, keep_distance=450, bolt_speed=350,

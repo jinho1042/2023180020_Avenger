@@ -29,6 +29,7 @@ def enter_room(new_room, arrival):
     # 플레이어 객체는 그대로 옮겨 체력 등을 유지한다. 투사체·이펙트는 game_world.clear()로 정리된다
     global room, enemies, boss
     game_world.clear()
+    breath.clouds.clear()   # 포자 구름은 월드와 함께 사라진다
     if respawning:
         revive()
     hitstop.reset()

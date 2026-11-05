@@ -55,6 +55,10 @@
                     "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
   "rare_ore_r1_b": {"kind": "rare_ore", "name": "희귀 광석", "name_en": "Rare Ore",
                     "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
+  "rare_ore_r2_a": {"kind": "rare_ore", "name": "희귀 광석", "name_en": "Rare Ore",
+                    "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
+  "rare_ore_r2_b": {"kind": "rare_ore", "name": "희귀 광석", "name_en": "Rare Ore",
+                    "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
   "map_stone_r1": {"kind": "map_stone", "name": "회랑 지도석", "name_en": "Corridor Map Stone",
                    "desc": ["잊힌 회랑의 지도가 새겨져 있다"], "desc_en": ["The Forgotten Corridor is carved on it"]},
 

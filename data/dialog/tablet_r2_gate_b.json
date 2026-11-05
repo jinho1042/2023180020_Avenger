@@ -1,0 +1,10 @@
+{
+  "name": "경고 석판",
+  "name_en": "Warning Tablet",
+  "pages": [
+    ["위쪽 굴은 포자가 고여 숨이 막힌다.", "숨의 룬이 얕은 자는 들어서자마자 쓰러진다."]
+  ],
+  "pages_en": [
+    ["Spores pool in the hollow above and choke the breath.", "One whose breath rune is shallow falls the moment they step in."]
+  ]
+}
