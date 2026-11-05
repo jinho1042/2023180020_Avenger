@@ -36,6 +36,9 @@ class Player:
         self.jump_elapsed = 0.0
         self.coyote_timer = 0.0
         self.jumps_left = 0  # 공중 추가 점프 남은 횟수 (결정 디딤은 T52. 그 전에는 max_jumps = 1)
+        # ↓+Z 내려가기: drop_timer 동안 drop_platforms(밟고 있던 one-way 발판)에 서지 않는다
+        self.drop_platforms = []
+        self.drop_timer = 0.0
         # 강착지: 내려가는 동안 fall_time을 세고, 길면 착지 후 hard_land_timer 동안 입력 잠금
         self.fall_time = 0.0
         self.hard_land_timer = 0.0
@@ -143,6 +146,8 @@ class Player:
         self.recoil_timer = 0.0
         self.attack_active = 0.0
         self.hit_timer = 0.0
+        self.drop_platforms = []
+        self.drop_timer = 0.0
         self.platforms = platforms
 
     def clear_input(self):
@@ -211,7 +216,10 @@ class Player:
             self.start_dash()
         if self.is_dashing():
             return  # 대시는 점프·공격으로 캔슬되지 않는다
-        if input.buffered('jump') and self.can_jump():
+        if input.buffered('jump') and self.can_drop():
+            input.consume('jump')
+            self.start_drop()
+        elif input.buffered('jump') and self.can_jump():
             input.consume('jump')
             self.start_jump()
         if input.buffered('attack') and self.attack_cooldown <= 0:
@@ -249,6 +257,18 @@ class Player:
         self.fall_time = 0.0  # 대시는 체공 시간 리셋 (강착지)
         self.attack_active = 0  # 공격 캔슬
         sound.play('dash')
+
+    def can_drop(self):
+        # ↓를 누른 채 Z: one-way 발판 위에 서 있으면 점프 대신 아래로 내려간다 (명세 밖 조작, 18장)
+        return (self.on_ground and input.pressed('down')
+                and bool(terrain.oneway_under(self.x, self.y, config.PLAYER_W, self.platforms)))
+
+    def start_drop(self):
+        self.drop_platforms = terrain.oneway_under(self.x, self.y, config.PLAYER_W, self.platforms)
+        self.drop_timer = config.DROP_THROUGH_TIME
+        self.on_ground = False
+        self.coyote_timer = 0.0   # 내려가는 중에 코요테 점프로 다시 올라가지 않게
+        self.vy = 0.0
 
     def can_jump(self):
         return self.on_ground or self.coyote_timer > 0 or self.jumps_left > 0
@@ -689,8 +709,10 @@ class Player:
         if dy > 0:
             self.x = terrain.corner_correct(self.x, prev_y, new_y, config.PLAYER_W, config.PLAYER_H,
                                             self.platforms, config.CORNER_CORRECTION)
+        self.drop_timer = max(0.0, self.drop_timer - dt)
+        ignore = self.drop_platforms if self.drop_timer > 0 else ()
         self.y, self.vy, self.on_ground = terrain.resolve_y(
-            self.x, prev_y, new_y, self.vy, config.PLAYER_W, config.PLAYER_H, self.platforms)
+            self.x, prev_y, new_y, self.vy, config.PLAYER_W, config.PLAYER_H, self.platforms, ignore)
         if self.vy == 0 and dy > 0:
             self.jump_rising = False  # 천장에 머리를 박음
 
