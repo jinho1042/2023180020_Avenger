@@ -288,6 +288,14 @@ def collectible_kind(obj, items):
     return None
 
 
+def count_ore_veins(rooms, region):
+    # 광맥벽(breakables 'ore_vein')도 희귀 광석 1개로 센다 (12.7 '구역별 3개 중 1개는 광맥벽', T64)
+    # 최소판은 곡괭이 Lv1 고정이라 방에 만들지 않으므로(room.py) 세지 않는다
+    if config.SCOPE == 'minimum':
+        return 0
+    return sum(1 for r in region_rooms(rooms, region) for b in rooms[r].get('breakables', []) if b[4] == 'ore_vein')
+
+
 def check_collectibles(rooms, complete, items):
     table = config.COLLECTIBLE_COUNTS[config.SCOPE]
     for kind, per_region in table.items():
@@ -296,6 +304,8 @@ def check_collectibles(rooms, complete, items):
                 continue
             have = sum(1 for r in region_rooms(rooms, region) for o in rooms[r].get('objects', [])
                        if collectible_kind(o, items) == kind)
+            if kind == 'rare_ore':
+                have += count_ore_veins(rooms, region)
             if have != need:
                 report(COLLECTIBLE_STRICT and complete[region], region, f'{kind} {have}개 (12.7 표 {need}개)')
 

@@ -28,7 +28,8 @@
     [492, 480, 48, 200, "soil", "soil_a"],
     [260, 480, 48, 200, "soil", "soil_b"],
     [180, 480, 56, 56, "ore_chunk", "chunk_a"],
-    [60, 480, 56, 56, "ore_chunk", "chunk_b"]
+    [60, 480, 56, 56, "ore_chunk", "chunk_b"],
+    [1800, 64, 100, 120, "ore_vein", "vein_a"]
   ],
   "exits": [
     {"id": "L", "rect": [0, 64, 16, 200], "to": "R2_04", "to_exit": "R"},

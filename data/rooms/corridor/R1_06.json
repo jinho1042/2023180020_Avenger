@@ -24,6 +24,9 @@
   "air_vents": [
     [1150, 110, "vent_a"]
   ],
+  "breakables": [
+    [880, 64, 100, 120, "ore_vein", "vein_a"]
+  ],
   "exits": [
     {"id": "L", "rect": [0, 64, 16, 200], "to": "R1_07", "to_exit": "R"},
     {"id": "U", "rect": [720, 1424, 200, 16], "to": "R1_04", "to_exit": "D"}

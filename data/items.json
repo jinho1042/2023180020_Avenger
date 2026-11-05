@@ -74,5 +74,7 @@
                  "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
 
   "armor": {"kind": "forge", "name": "광부 갑옷", "name_en": "Miner's Armor",
-            "desc": ["하르가 판을 덧대 준다"], "desc_en": ["Har plates it for you"]}
+            "desc": ["하르가 판을 덧대 준다"], "desc_en": ["Har plates it for you"]},
+  "pickaxe": {"kind": "forge", "name": "곡괭이", "name_en": "Pickaxe",
+              "desc": ["수정 숫돌로 날을 벼린다"], "desc_en": ["Honed on the crystal whetstone"]}
 }

@@ -10,8 +10,8 @@ class Breakable:
     # kind = 'solid'는 systems/terrain.py가 보는 값이고 기믹 종류는 type. 부서지면 kind = None (지형에서 빠짐)
     # 무른 흙벽(soil)은 곡괭이로는 안 부서지고 굴착 대시로 닿으면 파고 통과한다 (6.4, player.dig_soil)
     # 단단한 흙벽(hard_soil)은 굴착 Lv3 대시로, 깨지는 바닥(floor)은 낙반 착지로만 부서진다 (12.6, T51)
-    # 결정 숨주머니(air_crystal)는 곡괭이로 깨면 숨 회복 (7.2, T50). 광맥벽(ore_vein)은 T50에서 위치만 보여 주고
-    # 곡괭이에는 반동·스파크만 (곡괭이 Lv ORE_VEIN_LEVEL부터 깨지는 것은 T64)
+    # 결정 숨주머니(air_crystal)는 곡괭이로 깨면 숨 회복 (7.2, T50)
+    # 광맥벽(ore_vein)은 곡괭이 Lv ORE_VEIN_LEVEL부터 ORE_VEIN_HITS번에 깨지고 희귀 광석 (12.6, T64). 그 전에는 반동·스파크만
     KINDS = ('crack', 'ore_chunk', 'soil', 'hard_soil', 'floor', 'air_crystal', 'ore_vein')
     DIGGABLE = ('soil', 'hard_soil', 'floor')   # 곡괭이로는 안 부서지고 룬 동작(dig)으로만
     HITS = dict(crack=config.CRACK_WALL_HITS, air_crystal=config.AIR_CRYSTAL['hits'], ore_vein=config.ORE_VEIN_HITS)
@@ -50,8 +50,10 @@ class Breakable:
         # 반환: 이번 휘두름이 이 대상에 '맞았는가' (combat이 반동·포고·스파크를 처리)
         if self.kind is None:
             return False
-        if self.type in self.DIGGABLE or self.type == 'ore_vein':
-            return True   # 흙벽·깨지는 바닥·광맥벽(T64 전)은 곡괭이로 부서지지 않는다 (반동·포고만)
+        if self.type in self.DIGGABLE:
+            return True   # 흙벽·깨지는 바닥은 곡괭이로 부서지지 않는다 (반동·포고만)
+        if self.type == 'ore_vein' and player.pickaxe_lv < config.ORE_VEIN_LEVEL:
+            return True   # 곡괭이가 약하면 광맥벽은 튕겨 낸다 (반동·포고만)
         self.hits += 1
         self.state.mined[self.gid] = self.hits
         cx, cy = self.x + self.w / 2, self.y + self.h / 2
@@ -80,6 +82,18 @@ class Breakable:
             from systems import breath   # breath → world → room → breakable 순환을 피한다
             breath.touch_air_crystal(self.gid)
             effect.air_burst(self.x + self.w / 2, self.y + self.h / 2)
+        elif self.type == 'ore_vein':
+            self.give_rare_ore()
+
+    def give_rare_ore(self):
+        # 광맥벽 보상 (12.6): 희귀 광석. 아이템 줍기(T61) 전이라 바로 더하고 저장한다 (13.6 '아이템 획득')
+        from modes import play_mode   # play_mode → room → breakable 순환을 피한다
+        from ui import hud
+        p = self.state.player
+        p.rare_ore += config.ORE_VEIN_RARE_ORE
+        effect.ore_mined(self.x + self.w / 2, self.y + self.h / 2)
+        play_mode.save_game()
+        hud.show_message(f'희귀 광석 +{config.ORE_VEIN_RARE_ORE}')   # 저장 메시지 대신 보여 준다
 
     def color(self):
         return {'crack': config.COLOR_CRACK_WALL, 'soil': config.COLOR_SOIL, 'hard_soil': config.COLOR_HARD_SOIL,

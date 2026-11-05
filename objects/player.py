@@ -950,6 +950,10 @@ class Player:
         band = (t - b) * config.SLASH_BAND_RATIO
         return (l, t - band, r, t) if self.swing_alt else (l, b, r, b + band)
 
+    def pickaxe_color(self):
+        # 곡괭이 레벨마다 색이 바뀐다 (13.3, T64)
+        return config.COLOR_PICKAXE[self.pickaxe_lv - 1]
+
     def draw(self):
         l, b, r, t = self.get_bb()
         attack_bb = self.get_attack_bb()
@@ -977,7 +981,7 @@ class Player:
                 py = b + config.PLAYER_H * pick['y']
                 camera.draw_rect(min(px, px + self.wall_dir * pick['w']), py - pick['h'] / 2,
                                  max(px, px + self.wall_dir * pick['w']), py + pick['h'] / 2,
-                                 *config.COLOR_PLAYER_SLASH, filled=True)
+                                 *self.pickaxe_color(), filled=True)
             if self.is_parrying():
                 # 몸 앞쪽에 방패 표시
                 sx = r if self.face_dir > 0 else l - config.PARRY_SHIELD_W
@@ -987,7 +991,7 @@ class Player:
             eye = config.PLAYER_W / 8
             camera.draw_rect(eye_x - eye / 2, t - eye * 3, eye_x + eye / 2, t - eye * 2, *config.COLOR_TEXT, filled=True)
             if attack_bb:
-                camera.draw_rect(*self.slash_rect(attack_bb), *config.COLOR_PLAYER_SLASH, filled=True)
+                camera.draw_rect(*self.slash_rect(attack_bb), *self.pickaxe_color(), filled=True)
         if self.is_mending():
             # 숨 고르기: 몸 둘레 점 고리가 완료에 가까울수록 조여든다
             ring = config.MEND_RING

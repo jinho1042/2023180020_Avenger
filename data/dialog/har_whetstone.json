@@ -1,0 +1,28 @@
+{
+  "name": "하르",
+  "name_en": "Har",
+  "pages": [
+    [
+      "...그 빛, 수정 숫돌이로군. 대술사의 결정에서 떼어 왔나.",
+      "이거면 그 무딘 날도 벼릴 수 있다."
+    ],
+    [
+      "곡괭이를 두고 가라. 광석과 희귀 광석만 있으면",
+      "한 번 벼릴 때마다 더 깊이 박힌다.",
+      "광맥벽도 세 번째 날부터는 버티지 못할 거다."
+    ]
+  ],
+  "pages_en": [
+    [
+      "...That glow. A crystal whetstone, off the Archsage.",
+      "With this I can hone that dull edge."
+    ],
+    [
+      "Leave your pick. Bring ore and rare ore,",
+      "and each honing bites deeper.",
+      "From the third edge on, even ore veins give way."
+    ]
+  ],
+  "forge": true,
+  "flag": "har_whetstone"
+}

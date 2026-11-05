@@ -87,7 +87,8 @@ class Room:
                                + [Rockfall(*h) for h in self.hazards if h[4] in Rockfall.KINDS] + bolt_traps
                                + thorn_vines)
         breakables = [Breakable(self.id, *b, state) for b in self.breakables
-                      if b[4] in Breakable.KINDS and f'{self.id}:{b[5]}' not in state.broken]
+                      if b[4] in Breakable.KINDS and f'{self.id}:{b[5]}' not in state.broken
+                      and not (b[4] == 'ore_vein' and config.SCOPE == 'minimum')]   # 최소판은 곡괭이 Lv1 고정 (12.7)
         gates = {g[5]: Gate(self.id, *g, state) for g in self.gates
                  if g[4] in Gate.KINDS and f'{self.id}:{g[5]}' not in state.opened}
         switches = [Switch(self.id, *s, gates.get(s[4]), state) for s in self.switches if s[2] in Switch.KINDS]
