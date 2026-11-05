@@ -104,7 +104,7 @@ class Room:
         self.breath_gate_objects = [BreathGate(*g) for g in self.breath_gates]
         self.air_vent_objects = [AirVent(self.id, *v, self.region) for v in self.air_vents]
         # NPC·석판·룬지기 (2.5): ↑로 말 걸기. 지형이 아니라 곡괭이에도 맞지 않는다
-        self.npc_objects = [Npc(*o[:4]) for o in self.objects if o[0] in ('npc', 'tablet', 'carver')]
+        self.npc_objects = [Npc(*o[:4]) for o in self.objects if o[0] in ('npc', 'tablet', 'warning_tablet', 'carver')]
         # 연습 석상 (9.5): 부서진 것은 만들지 않는다. 적 목록에 넣어 패링 판정을 쓴다 (spawn_enemies)
         self.statues = [(o[1], o[2], o[3]) for o in self.objects
                         if o[0] == 'statue' and f'{self.id}:{o[3]}' not in state.broken]

@@ -37,7 +37,7 @@
     {"id": "U", "rect": [1100, 704, 200, 16], "to": "R2_10", "to_exit": "D"}
   ],
   "objects": [
-    ["tablet", 980, 64, "tablet_r2_gate_b"]
+    ["warning_tablet", 980, 64, "tablet_r2_gate_b"]
   ],
   "spawns": [
     ["vine_lurker", 600, 64],

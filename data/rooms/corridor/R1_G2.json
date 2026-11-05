@@ -31,7 +31,7 @@
     {"id": "R", "rect": [3824, 680, 16, 200], "to": "R2_01", "to_exit": "L"}
   ],
   "objects": [
-    ["tablet", 3300, 64, "tablet_r1_choke_b"]
+    ["warning_tablet", 3300, 64, "tablet_r1_choke_b"]
   ],
   "spawns": [
     ["bat", 2800, 1000]
