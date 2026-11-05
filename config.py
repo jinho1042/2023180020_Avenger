@@ -66,6 +66,7 @@ ENEMY_KNOCKBACK = 60
 CRACK_WALL_HITS = 3
 ORE_VEIN_HITS = 5
 ORE_VEIN_LEVEL = 3         # 광맥벽은 곡괭이 Lv3 이상
+ORE_VEIN_RARE_ORE = 1      # 광맥벽 하나를 깨면 얻는 희귀 광석 (12.6, T64. 아이템 줍기 전이라 바로 희귀 광석에 더한다)
 ORE_CHUNK_HITS = 5
 ORE_PER_CHUNK_HIT = 2
 INPUT_BUFFER = 0.1         # s, 공격·패링·대시 선입력
@@ -190,7 +191,9 @@ SLASH_BAND_RATIO = 0.6     # 옆 공격 베기 그림: hitbox 높이 중 위/아
 COLOR_PLAYER = (80, 160, 255)
 COLOR_PLAYER_HARD_LAND = (60, 120, 200)  # 강착지 입력 잠금 중 색
 COLOR_PLAYER_DASH = (180, 220, 255)  # 대시(무적) 중 색
-COLOR_PLAYER_SLASH = (220, 240, 255)  # 공격 판정 중 베기 표시
+COLOR_PLAYER_SLASH = (220, 240, 255)  # 공격 판정 중 베기 표시 (곡괭이 Lv1 색)
+# 곡괭이 Lv1~5 색 (13.3 '색이 바뀐다', T64): 베기 표시·벽에 박은 곡괭이. 무쇠 → 강철 → 수정 → 청록 → 금
+COLOR_PICKAXE = [COLOR_PLAYER_SLASH, (170, 200, 230), (200, 150, 255), (110, 240, 210), (255, 215, 90)]
 COLOR_PLAYER_DEAD = (70, 70, 80)
 COLOR_PLAYER_PARRY = (120, 255, 255)  # 패링 판정 중 몸 앞 방패 표시
 COLOR_PLAYER_STUN = (110, 110, 150)   # 헛입력 경직 중 색
@@ -235,7 +238,7 @@ COLOR_CRACK_WIND = (175, 165, 150)
 COLOR_ORE_CHUNK = (95, 85, 80)
 COLOR_ORE = (240, 190, 90)
 ORE_CHUNK_DOTS = 4         # 광석 덩어리 표면의 광석 점 개수
-# 광맥벽 (T50은 위치만 보여 줌, 곡괭이 Lv ORE_VEIN_LEVEL부터 깨는 것은 T64): 어두운 바위에 희귀 광석 결
+# 광맥벽 (T50 위치 표시, T64 곡괭이 Lv ORE_VEIN_LEVEL부터 깸. 최소판은 곡괭이 Lv1 고정이라 방에 만들지 않음): 어두운 바위에 희귀 광석 결
 COLOR_ORE_VEIN = (70, 60, 75)
 COLOR_ORE_VEIN_STREAK = (120, 230, 210)
 ORE_VEIN_STREAKS = dict(step=28, size=6)   # px, 광석 결 점 간격·크기 (대각선 줄)
@@ -962,8 +965,9 @@ SHOP = dict(               # 보름 상점: (가격, 판매 조건). 조건 'reg
 )
 SHOP_RARE_ORE = 1          # 각인이 아닌 상품(rare_ore_*) 하나에 든 희귀 광석 수
 # 대장간 하르 (T62, 13.3). (보관 광석, 희귀 광석). 인덱스 0 = Lv1→2. 목록은 상점과 같은 카드 화면 (data/dialog/har.json의 forge)
-FORGE_PICKAXE_COST = [(250, 1), (800, 1), (2000, 1), (4000, 1)]  # 임시. Lv2~5 (강화는 T64)
+FORGE_PICKAXE_COST = [(250, 1), (800, 1), (2000, 1), (4000, 1)]  # 임시. Lv2~5. 피해 PICKAXE_DAMAGE, 각인 홈 PICKAXE_ENGRAVE_SLOTS
 FORGE_PICKAXE_UNLOCK_FLAG = 'whetstone'  # B3 처치 보상 '수정 숫돌'. 없으면 곡괭이 강화 목록 숨김
+FORGE_WHETSTONE_TALKED_FLAG = 'har_whetstone'   # 숫돌을 가져와 하르의 첫 대사(har_whetstone.json)를 들었다 (T64)
 BOSS_ITEM_FLAG = dict(archsage=FORGE_PICKAXE_UNLOCK_FLAG)   # 처치 보상 아이템 플래그 → 룬 카드 뒤에 그 아이템 카드 (rune_get_mode, 11.4 B3)
 FORGE_ARMOR_COST = [(300, 1), (900, 1), (1800, 2), (3000, 2)]    # 임시. 체력 6~9칸 (Lv n = HP_START + n - 1칸)
 

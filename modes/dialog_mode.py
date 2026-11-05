@@ -16,7 +16,8 @@ from ui import font
 # 상점 상품 이름·설명은 data/items.json
 # 글자는 DIALOG_CHARS_PER_SEC로 한 글자씩 나온다. Z·X·↑·Enter·Space: 다 나오기 전이면 끝까지, 다 나왔으면 다음 페이지
 # 마지막 페이지 뒤 shop이면 상점 목록 (←→ 선택, X 구매, Z·Esc 닫기). Esc는 언제든 닫는다
-# forge면 같은 카드 화면에 대장간 목록 (T62, 13.3): 갑옷 Lv2~5. 숫돌 플래그가 없으면 하르의 no_whetstone 한 줄
+# forge면 같은 카드 화면에 대장간 목록 (T62·T64, 13.3): 곡괭이 Lv2~5(숫돌 뒤)·갑옷 Lv2~5. 숫돌 플래그가 없으면 하르의 no_whetstone 한 줄
+# flag가 있으면 목록을 열 때 world_state.flags에 더한다 (숫돌 첫 대사 har_whetstone을 한 번만)
 # start(id, after): 마지막 페이지를 넘기면 닫고 after()를 부른다 (룬지기 → 룬 획득·강화 목록). Esc로 닫으면 부르지 않는다
 
 DIALOG_PATH = os.path.join(os.path.dirname(__file__), '..', config.DIALOG_DIR)
@@ -90,7 +91,9 @@ def next_page():
         sound.play('select')
     elif dialog.get('forge'):
         view, market, stock, selected = 'shop', 'forge', economy.forge_stock(), 0
-        notice = '' if config.FORGE_PICKAXE_UNLOCK_FLAG in world.state.flags else font.text(
+        if dialog.get('flag'):
+            world.state.flags.add(dialog['flag'])
+        notice = '' if economy.pickaxe_unlocked() else font.text(
             dialog.get('no_whetstone', ''), dialog.get('no_whetstone_en', ''))
         sound.play('select')
     else:
@@ -138,6 +141,10 @@ def forge():
     if key == 'armor':
         play_mode.player.raise_max_hp(p.hp_max)
         notice = font.text(f'갑옷 Lv{p.armor_level} — 최대 체력 {p.hp_max}칸', f'Armor Lv{p.armor_level} — {p.hp_max} max HP')
+    elif key == 'pickaxe':
+        play_mode.player.pickaxe_lv = p.pickaxe_level
+        notice = font.text(f'곡괭이 Lv{p.pickaxe_level} — 피해 {config.PICKAXE_DAMAGE[p.pickaxe_level - 1]}',
+                           f'Pickaxe Lv{p.pickaxe_level} — damage {config.PICKAXE_DAMAGE[p.pickaxe_level - 1]}')
     sound.play('chest')
     play_mode.save_game()    # 강화하면 저장 (13.6 '구매')
     stock = economy.forge_stock()
@@ -212,9 +219,11 @@ def draw_talk():
 
 
 def item_name(key):
-    # 상품 이름·설명은 data/items.json (상품 키 = 각인 id 또는 rare_ore_*, 대장간은 armor)
-    if market == 'forge' and key == 'armor':
-        return f'{engravings.item_name(key)} Lv{world.state.player.armor_level + 1}'
+    # 상품 이름·설명은 data/items.json (상품 키 = 각인 id 또는 rare_ore_*, 대장간은 armor·pickaxe)
+    p = world.state.player
+    if market == 'forge' and key in ('armor', 'pickaxe'):
+        level = p.armor_level if key == 'armor' else p.pickaxe_level
+        return f'{engravings.item_name(key)} Lv{level + 1}'
     return engravings.item_name(key)
 
 
@@ -224,6 +233,13 @@ def item_desc(key):
         p = world.state.player
         now, after = p.hp_max, economy.armor_hp(p.armor_level + 1)
         lines = lines + [font.text(f'최대 체력 {now} → {after}칸', f'Max HP {now} → {after}')]
+    elif market == 'forge' and key == 'pickaxe':
+        lv = world.state.player.pickaxe_level
+        dmg, slots = config.PICKAXE_DAMAGE, config.PICKAXE_ENGRAVE_SLOTS
+        lines = lines + [font.text(f'피해 {dmg[lv - 1]} → {dmg[lv]}', f'Damage {dmg[lv - 1]} → {dmg[lv]}'),
+                         font.text(f'각인 홈 {slots[lv - 1]} → {slots[lv]}', f'Slots {slots[lv - 1]} → {slots[lv]}')]
+        if lv + 1 == config.ORE_VEIN_LEVEL:
+            lines.append(font.text('광맥벽을 캘 수 있다', 'Can mine ore veins'))
     return lines
 
 

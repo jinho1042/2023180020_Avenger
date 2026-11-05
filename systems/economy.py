@@ -120,12 +120,20 @@ def forge_cost(key):
     p = world.state.player
     if key == 'armor' and p.armor_level <= len(config.FORGE_ARMOR_COST):
         return config.FORGE_ARMOR_COST[p.armor_level - 1]
+    if key == 'pickaxe' and p.pickaxe_level <= len(config.FORGE_PICKAXE_COST):
+        return config.FORGE_PICKAXE_COST[p.pickaxe_level - 1]
     return None
 
 
+def pickaxe_unlocked():
+    # 곡괭이 강화는 수정 숫돌(B3 보상)을 가져온 뒤부터 (13.3, T64)
+    return config.FORGE_PICKAXE_UNLOCK_FLAG in world.state.flags
+
+
 def forge_stock():
-    # 대장간 목록 (13.3): 갑옷은 처음부터. 곡괭이는 숫돌(FORGE_PICKAXE_UNLOCK_FLAG)을 가져온 뒤 T64에서 더한다
-    return [key for key in ('armor',) if forge_cost(key)]
+    # 대장간 목록 (13.3): 곡괭이는 숫돌(FORGE_PICKAXE_UNLOCK_FLAG)을 가져온 뒤부터 맨 앞에, 갑옷은 처음부터
+    keys = ('pickaxe', 'armor') if pickaxe_unlocked() else ('armor',)
+    return [key for key in keys if forge_cost(key)]
 
 
 def forge_buy(key):
@@ -137,6 +145,8 @@ def forge_buy(key):
     if key == 'armor':
         p.armor_level += 1
         p.hp_max = armor_hp(p.armor_level)
+    elif key == 'pickaxe':
+        p.pickaxe_level += 1
     return True
 
 
