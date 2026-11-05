@@ -1,0 +1,64 @@
+import config
+import game_world
+from systems import camera
+
+
+class Npc:
+    # NPC·석판 (2.5): objects의 ["npc", x, y, NPC id], ["tablet", x, y, 석판 id]. (x, y) = 아래쪽 중심
+    # 가까이 서서 ↑를 누르면 대화 (play_mode.check_npcs → dialog_mode). 대사는 data/dialog/<id>.json
+    # T39는 보름(상점)과 석판. 하르(T62)·룬지기(T43)·실종 광부(T61)는 해당 작업에서
+    def __init__(self, kind, x, y, npc_id):
+        self.kind = kind          # 'npc' | 'tablet'
+        self.x, self.y = x, y
+        self.id = npc_id
+        self.w, self.h = (config.TABLET_W, config.TABLET_H) if kind == 'tablet' else (config.NPC_W, config.NPC_H)
+        self.prompt = False       # 말 걸 수 있으면 머리 위에 ↑ 표시 (play_mode가 매 프레임 정함)
+
+    def update(self):
+        pass
+
+    def can_talk(self, player):
+        if not player.on_ground or player.is_locked():
+            return False
+        return abs(player.x - self.x) <= config.NPC_TALK_RADIUS and abs(player.y - self.y) <= self.h
+
+    def draw(self):
+        if self.kind == 'tablet':
+            self.draw_tablet()
+        else:
+            self.draw_npc()
+        if self.prompt:
+            self.draw_prompt(self.x, self.y + self.h + config.TALK_PROMPT_GAP)
+        if game_world.show_hitbox:
+            camera.draw_rect(*self.get_bb(), *config.COLOR_TALK_PROMPT)
+
+    def draw_npc(self):
+        # 몸 사각형 + 헬멧 랜턴 (14.5 도형 규칙의 광부 모양)
+        l, b, r, t = self.get_bb()
+        camera.draw_rect(l, b, r, t, *config.COLOR_NPC.get(self.id, config.COLOR_NPC_DEFAULT), filled=True)
+        lamp = config.NPC_LAMP / 2
+        camera.draw_rect(self.x - lamp, t, self.x + lamp, t + config.NPC_LAMP, *config.COLOR_NPC_LAMP, filled=True)
+
+    def draw_tablet(self):
+        # 돌판 + 가운데 룬 문양 줄
+        l, b, r, t = self.get_bb()
+        camera.draw_rect(l, b, r, t, *config.COLOR_TABLET, filled=True)
+        pad = self.w / 4
+        for i in range(3):
+            y = t - pad - i * pad
+            camera.draw_rect(l + pad, y - 2, r - pad, y + 2, *config.COLOR_TABLET_RUNE, filled=True)
+
+    def draw_prompt(self, cx, y):
+        # ↑ 화살표 (가로줄 쌓기 삼각형 + 막대)
+        size = config.TALK_PROMPT_SIZE
+        color = config.COLOR_TALK_PROMPT
+        camera.draw_rect(cx - size / 6, y, cx + size / 6, y + size, *color, filled=True)
+        for i in range(0, int(size), 3):
+            half = size / 2 * (1 - i / size)
+            camera.draw_rect(cx - half, y + size + i, cx + half, y + size + i + 3, *color, filled=True)
+
+    def get_bb(self):
+        return self.x - self.w / 2, self.y, self.x + self.w / 2, self.y + self.h
+
+    def handle_collision(self, group, other):
+        pass

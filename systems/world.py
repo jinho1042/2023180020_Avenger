@@ -60,6 +60,12 @@ def room_ids():
     return sorted(room_paths)
 
 
+def room_region(room_id):
+    # 방 파일이 든 폴더 이름 = 구역 (12.5 data/rooms/<구역>/<방id>.json). 없는 방이면 None
+    path = room_paths.get(room_id)
+    return os.path.basename(os.path.dirname(path)) if path else None
+
+
 def load(room_id, arrival=None):
     # 페이드 없이 바로 방을 바꾼다 (새 게임 첫 방). 평소에는 go_through·warp
     room = Room(room_paths[room_id])

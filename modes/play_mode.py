@@ -40,6 +40,7 @@ def enter_room(new_room, arrival):
     game_world.add_objects(room.platforms, config.DEPTH_MAP)
     game_world.add_objects(room.exits, config.DEPTH_MAP)
     game_world.add_objects(room.gimmicks, config.DEPTH_MAP)
+    game_world.add_objects(room.npc_objects, config.DEPTH_MAP)
     world.place_player(player, room, arrival)
     game_world.add_object(player, config.DEPTH_PLAYER)
     # 투사체는 생성될 때 b쪽에 스스로 등록한다
@@ -169,6 +170,8 @@ def update():
     game_framework.frame_time = dt
     enemies = [e for e in enemies if e.is_alive()]
     check_hazards()
+    if check_npcs():
+        return   # 대화를 열었다 (dialog_mode가 위에 올라와 월드·숨 정지)
     zone = check_safe_zones()
     check_air_vents()
     if world.phase is None:
@@ -185,6 +188,26 @@ def check_hazards():
         if game_world.collide(player, hazard):
             player.hazard_hit()
             return
+
+
+def check_npcs():
+    # 말 걸 수 있는 NPC·석판 머리 위에 ↑ 표시, ↑를 누르면 대화 (2.5). 앉는 자리보다 먼저 ↑를 받는다
+    # 반환: 대화를 열었으면 True. 방 전환·사망·기절 중에는 열지 않는다
+    near = None
+    for npc in room.npc_objects:
+        npc.prompt = False
+        if near is None and world.phase is None and not player.dead and not player.blackout and npc.can_talk(player):
+            near = npc
+    if near is None:
+        return False
+    near.prompt = True
+    if not input.consume('up'):
+        return False
+    near.prompt = False
+    from modes import dialog_mode
+    dialog_mode.start(near.id)
+    game_framework.push_mode(dialog_mode)
+    return True
 
 
 def check_safe_zones():

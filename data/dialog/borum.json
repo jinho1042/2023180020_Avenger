@@ -1,0 +1,15 @@
+{
+  "name": "보름",
+  "name_en": "Borum",
+  "pages": [
+    ["살아 있었구나! 무너질 때 나도 같이 떨어졌어.", "여긴 공기가 거의 없어. 숨이 차면 무리하지 말고", "바람 드는 곳으로 돌아와."],
+    ["캐 온 광석은 안전지대에 들어서면 알아서 쌓여.", "쌓아 둔 광석이면 내 물건을 사 갈 수 있지."],
+    ["떨어지면서 건진 것들이야. 골라 봐."]
+  ],
+  "pages_en": [
+    ["You made it! I fell down here too when it caved in.", "There's barely any air. When you run short,", "head back to where the wind blows in."],
+    ["Ore you carry gets stored once you reach a safe zone.", "Stored ore buys my goods."],
+    ["Stuff I grabbed on the way down. Take a look."]
+  ],
+  "shop": true
+}

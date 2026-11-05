@@ -21,7 +21,9 @@
     [40, 80, 360, 320, "safe_a"]
   ],
   "objects": [
-    ["seat", 220, 80, "safe_a"]
+    ["seat", 220, 80, "safe_a"],
+    ["npc", 340, 80, "borum"],
+    ["tablet", 600, 80, "tablet_test"]
   ],
   "spawns": [
     ["melee", 900, 80]
