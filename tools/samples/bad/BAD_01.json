@@ -1,0 +1,15 @@
+{
+  "id": "BAD_01",
+  "region": "test",
+  "size": [1, 1],
+  "map_cell": [0, 0],
+  "hub": false,
+  "platforms": [[0, 0, 1280, 80, "solid"]],
+  "breath_gates": [],
+  "exits": [
+    {"id": "R", "rect": [1264, 80, 16, 200], "to": "BAD_02", "to_exit": "X"},
+    {"id": "U", "rect": [540, 672, 200, 48], "to": "BAD_99", "to_exit": "D"}
+  ],
+  "spawns": [],
+  "safe_points": [[160, 80]]
+}

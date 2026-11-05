@@ -1,0 +1,42 @@
+{
+  "id": "TEST_05",
+  "region": "test",
+  "size": [1, 1],
+  "map_cell": [2, 0],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 80, "solid"],
+    [0, 280, 40, 440, "solid"],
+    [1240, 80, 40, 640, "solid"],
+    [40, 680, 1200, 40, "solid"],
+    [500, 260, 240, 24, "oneway"],
+    [850, 380, 240, 24, "oneway"]
+  ],
+  "hazards": [],
+  "water": [],
+  "breath_zones": [],
+  "breath_gates": [
+    [0, 0, 1280, 720, "test_gate", 1]
+  ],
+  "safe_zones": [],
+  "breakables": [],
+  "gates": [
+    [1000, 80, 48, 200, "one_way", "short_a", {"open_from": "right", "to_hub": false}]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 80, 16, 200], "to": "TEST_04", "to_exit": "R"}
+  ],
+  "triggers": [],
+  "air_vents": [],
+  "switches": [],
+  "spawns": [
+    ["melee", 700, 80]
+  ],
+  "objects": [],
+  "safe_points": [
+    [160, 80]
+  ],
+  "boss": null
+}

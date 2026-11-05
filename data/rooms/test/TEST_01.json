@@ -1,0 +1,24 @@
+{
+  "id": "TEST_01",
+  "region": "test",
+  "size": [1, 1],
+  "map_cell": [0, 1],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 80, "solid"],
+    [0, 80, 40, 640, "solid"],
+    [1240, 280, 40, 440, "solid"],
+    [40, 680, 1200, 40, "solid"],
+    [450, 240, 240, 24, "oneway"],
+    [800, 400, 240, 24, "oneway"]
+  ],
+  "exits": [
+    {"id": "R", "rect": [1264, 80, 16, 200], "to": "TEST_02", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["melee", 900, 80]
+  ],
+  "safe_points": [[160, 80]]
+}

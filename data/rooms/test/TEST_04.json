@@ -1,0 +1,27 @@
+{
+  "id": "TEST_04",
+  "region": "test",
+  "size": [1, 1],
+  "map_cell": [1, 0],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 80, "solid"],
+    [0, 80, 40, 640, "solid"],
+    [1240, 280, 40, 440, "solid"],
+    [40, 680, 500, 40, "solid"],
+    [740, 680, 500, 40, "solid"],
+    [250, 250, 200, 24, "oneway"],
+    [540, 440, 200, 24, "oneway"],
+    [830, 250, 200, 24, "oneway"]
+  ],
+  "exits": [
+    {"id": "U", "rect": [540, 672, 200, 48], "to": "TEST_02", "to_exit": "D"},
+    {"id": "R", "rect": [1264, 80, 16, 200], "to": "TEST_05", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["archer", 1100, 80]
+  ],
+  "safe_points": [[640, 80]]
+}

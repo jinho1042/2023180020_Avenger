@@ -107,38 +107,9 @@ def draw_boss_bar(boss):
         font.draw(l, t + config.BOSS_NAME_GAP, config.BOSS_NAME[boss.boss_key], config.COLOR_TEXT)
 
 
-def draw_route_progress(run_state):
-    # [v2] 대시 쿨타임 아래(오른쪽 정렬): 루트 안에서는 층마다 사각형 + '대검 2/3'(보스방이면 '대검 BOSS')
-    # 안전지대에서는 루트마다 사각형(처치한 루트만 루트 색) + '보스 n/3'
-    name = run_state['route']
-    if name is None:
-        cleared = run_state['cleared']
-        marks = [config.ROUTE_COLOR[n] if n in cleared else config.COLOR_ROUTE_MARK_EMPTY
-                 for n in config.ROUTE_ORDER]
-        text = f'보스 {len(cleared)}/{len(config.ROUTE_ORDER)}'
-    else:
-        layer = run_state['layer']
-        marks = [config.ROUTE_COLOR[name] if i <= layer else config.COLOR_ROUTE_MARK_EMPTY
-                 for i in range(config.ROUTE_LAYERS + 1)]
-        floor = 'BOSS' if layer == config.ROUTE_LAYERS else f'{layer + 1}/{config.ROUTE_LAYERS}'
-        text = f'{config.ROUTE_NAME[name]} {floor}'
-    size, gap, edge = config.HUD_ROUTE_MARK, config.HUD_ROUTE_MARK_GAP, config.HP_BAR_BORDER
-    r = config.SCREEN_W - config.HUD_MARGIN
-    t = config.SCREEN_H - config.HUD_MARGIN - config.DASH_ICON_RADIUS * 2 - config.HUD_ROUTE_GAP
-    l = r - len(marks) * size - (len(marks) - 1) * gap
-    for color in marks:
-        draw_rectangle(l - edge, t - size - edge, l + size + edge, t + edge, *config.COLOR_HUD_FRAME, filled=True)
-        draw_rectangle(l, t - size, l + size, t, *color, filled=True)
-        l += size + gap
-    if font:
-        font.draw(r - config.HUD_ROUTE_TEXT_W, t - size - config.HUD_ROUTE_GAP, text, config.COLOR_TEXT)
-
-
-def draw(player, boss=None, run_state=None):
+def draw(player, boss=None):
     draw_hp_cells(player)
     draw_dash_icon(player)
     draw_upgrade_icons(player)
-    if run_state:
-        draw_route_progress(run_state)
     if boss:
         draw_boss_bar(boss)
