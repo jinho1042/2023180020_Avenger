@@ -1,3 +1,5 @@
+import math
+
 import config
 import game_world
 from objects import effect
@@ -24,6 +26,8 @@ def resolve(player, enemies, gimmicks=()):
                     e.add_posture(config.POSTURE_PER_HIT)   # 곡괭이 적중 자세 (9.4)
                 effect.attack_hit(x, y, player.attack_angle(), strong, not e.is_alive())
 
+    skill_hits(player, enemies)
+
     body_bb = player.get_bb()
     for e in enemies:
         if not e.is_alive() or e.attack_hit:
@@ -47,6 +51,31 @@ def resolve(player, enemies, gimmicks=()):
         if e.is_alive() and e.deals_contact() and game_world.overlap(e.get_bb(), body_bb):
             if player.take_hit(config.CONTACT_DAMAGE, e.x):
                 effect.player_hit(player.x, player.y + config.PLAYER_H / 2)
+
+
+def skill_hits(player, enemies):
+    # 낙반 (8.2): 낙하 중 몸에 닿은 적은 damage (낙하당 1번), 착지 충격파에 닿은 적은 shockwave_damage
+    # 보스·정예 적중 시 자세 +POSTURE_PER_SKILL. 연습 석상·무적 보스는 회색 스파크만
+    spec = config.SKILLS['rockfall']
+    areas = []
+    if player.rockfall:
+        areas.append((player.get_bb(), spec['damage'], player.rockfall_hits))
+    wave = player.take_shockwave()
+    if wave:
+        areas.append((wave, spec['shockwave_damage'], set()))
+    for bb, damage, hits in areas:
+        for e in enemies:
+            if not e.is_alive() or e in hits or not game_world.overlap(bb, e.get_bb()):
+                continue
+            hits.add(e)
+            x, y = contact_point(bb, e.get_bb())
+            if e.kind == 'statue' or e.invulnerable():
+                effect.statue_spark(x, y)
+                continue
+            e.take_damage(damage, config.ENEMY_KNOCKBACK if e.x >= player.x else -config.ENEMY_KNOCKBACK)
+            if e.is_boss:
+                e.add_posture(config.POSTURE_PER_SKILL)
+            effect.attack_hit(x, y, -math.pi / 2, False, not e.is_alive())
 
 
 def hit_gimmicks(player, attack_bb, gimmicks):

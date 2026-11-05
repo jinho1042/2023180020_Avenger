@@ -8,7 +8,7 @@ import game_world
 from objects import effect
 from systems import breath, camera, engravings, input, runes, sound, terrain
 
-# 동작 시작 순서: 패링 → 대시 → 점프 → 공격 (같은 프레임에 버퍼에 있으면 이 순서로 처리)
+# 동작 시작 순서: 패링 → 대시 → 룬 기술 → 점프 → 공격 (같은 프레임에 버퍼에 있으면 이 순서로 처리)
 # 입력은 handle_event에서 systems/input.py에 저장만 하고, 실제 동작은 update에서 버퍼를 꺼내 시작한다 (6.3 입력 버퍼)
 
 
@@ -111,6 +111,12 @@ class Player:
         self.swing_mult = 1.0  # 이번 한 번 휘두름의 추가 배율 (engravings.on_attack_start가 정함)
         self.max_jumps = 1
         self.dash_strike_timer = 0.0   # 「질풍 일격」: 대시가 끝난 뒤 남은 시간 (> 0이면 첫 공격 강화)
+        # 룬 기술 (A 짧게, 8.2): cast_timer > 0인 동안 Cast (공중에 멈춤, 피격 시 취소)
+        # 낙반(↓+A, 굴착 Lv2): Cast가 끝나면 숨을 내고 rockfall = True로 무적 낙하. 착지하면 shockwave를 한 번 남긴다
+        self.cast_timer = 0.0
+        self.rockfall = False
+        self.rockfall_hits = set()   # 이번 낙하에 몸으로 이미 맞힌 적 (한 번 낙하에 한 번만 피해)
+        self.shockwave = None        # 착지 충격파 판정 (l, b, r, t). combat이 한 번 꺼내 쓴다
 
     # ---------- 각인으로 바뀌는 수치 (8.4): 매번 기본값 × 장착 각인으로 계산 (누적 대입 없음) ----------
 
@@ -128,7 +134,11 @@ class Player:
 
     @property
     def dash_dist(self):
-        return engravings.dash_dist()
+        # 기본값 × 각인(「긴 질주」) × 굴착 Lv3 (8.2)
+        dist = engravings.dash_dist()
+        if self.can('hard_soil'):
+            dist *= config.RUNE_LV_EFFECT['burrow_lv3_dash_mult']
+        return dist
 
     @property
     def dash_cooldown_time(self):
@@ -156,6 +166,7 @@ class Player:
         self.wall_jump_lock = 0.0
         self.drop_platforms = []
         self.drop_timer = 0.0
+        self.end_skill()
         self.platforms = platforms
 
     def clear_input(self):
@@ -177,8 +188,9 @@ class Player:
         return self.dash_timer > 0
 
     def is_invincible(self):
+        # 낙반 낙하 중 무적 (8.2)
         return ((self.is_dashing() and config.DASH_INVINCIBLE) or self.invincible_timer > 0 or self.dead
-                or self.is_hazard_respawning() or self.blackout or self.cutscene)
+                or self.is_hazard_respawning() or self.blackout or self.cutscene or self.rockfall)
 
     def is_hazard_respawning(self):
         return self.hazard_timer > 0
@@ -202,6 +214,13 @@ class Player:
     def is_wall_sliding(self):
         return self.wall_dir != 0
 
+    def is_casting(self):
+        return self.cast_timer > 0
+
+    def is_skill_active(self):
+        # Cast 또는 낙반 낙하 중
+        return self.is_casting() or self.rockfall
+
     def is_attacking(self):
         # 공격 hitbox가 살아 있는 동안 (공격은 이동을 막지 않는다)
         return self.attack_active > 0
@@ -210,7 +229,7 @@ class Player:
         # 새 동작을 시작할 수 없는 상태. 패링은 캔슬 불가 (6.3)
         return (self.dead or self.is_hit() or self.is_parrying() or self.is_parry_stunned()
                 or self.is_hard_landing() or self.is_hazard_respawning() or self.sitting
-                or self.is_mending() or self.blackout or self.cutscene)
+                or self.is_mending() or self.blackout or self.cutscene or self.is_skill_active())
 
     # ---------- 동작 시작 ----------
 
@@ -227,6 +246,12 @@ class Player:
             self.start_dash()
         if self.is_dashing():
             return  # 대시는 점프·공격으로 캔슬되지 않는다
+        if input.buffered('rune_tap'):
+            # A 짧게: ↓+A = 낙반. 해금 전·숨 부족이면 아무 반응 없이 버린다 (6.1. 그냥 A = 결정 화살은 T52)
+            input.consume('rune_tap')
+            if self.can_rockfall():
+                self.start_cast()
+                return
         if input.buffered('jump') and self.can_drop():
             input.consume('jump')
             self.start_drop()
@@ -271,6 +296,34 @@ class Player:
         self.fall_time = 0.0  # 대시는 체공 시간 리셋 (강착지)
         self.attack_active = 0  # 공격 캔슬
         sound.play('dash')
+
+    def can_rockfall(self):
+        return (self.can('rockfall') and input.pressed('down')
+                and (breath.infinite or breath.value >= config.SKILL_BREATH_COST))
+
+    def start_cast(self):
+        # Cast (8.2): SKILL_CAST_TIME 동안 그 자리에 멈춘다. 공격·매달리기는 끊는다
+        self.cast_timer = config.SKILL_CAST_TIME
+        self.attack_active = 0
+        self.jump_rising = False
+        self.wall_dir = 0
+        self.vx, self.vy = 0.0, 0.0
+
+    def start_rockfall(self):
+        # Cast가 끝난 순간 숨을 낸다. 그새 숨이 모자라졌으면 취소 (숨 그대로)
+        if not breath.spend(config.SKILL_BREATH_COST):
+            return
+        self.rockfall = True
+        self.rockfall_hits.clear()
+        self.vy = -config.SKILLS['rockfall']['fall_speed']
+        self.on_ground = False
+        self.fall_time = 0.0
+
+    def end_skill(self):
+        # 피격·환경 피해·기절·방 이동 시 룬 기술을 끊는다 (Cast 중 취소면 숨 차감 없음)
+        self.cast_timer = 0.0
+        self.rockfall = False
+        self.shockwave = None
 
     def can_drop(self):
         # ↓를 누른 채 Z: one-way 발판 위에 서 있으면 점프 대신 아래로 내려간다 (명세 밖 조작, 18장)
@@ -370,6 +423,7 @@ class Player:
         self.invincible_timer = self.invincible_on_hit
         self.attack_active = 0  # 공격 중이면 끊는다
         self.cancel_mend()      # 숨 고르기 중이면 숨 차감 없이 취소 (6.3)
+        self.cast_timer = 0.0   # Cast 중 피격 시 취소 (6.3). 숨은 낙하를 시작할 때 내므로 잃지 않는다
         self.jump_rising = False
         if self.hp == 0:
             self.dead = True
@@ -408,6 +462,7 @@ class Player:
         self.hazard_warped = False
         self.hit_timer = 0
         self.dash_timer = 0
+        self.end_skill()
         self.recoil_timer = 0
         self.vx, self.vy = 0.0, 0.0
         input.clear_buffers()
@@ -433,7 +488,7 @@ class Player:
 
     def update_mend(self, dt):
         # 숨 고르기 (6.7): A를 RUNE_HOLD_THRESHOLD 이상 누르면 시작. 떼면 취소 (숨은 완료 시에만 내므로 잃는 숨 없음)
-        # 계속 누르고 있으면 다음 칸을 이어서 시작한다 (다시 시작 조건 확인). 짧게 누르는 룬 기술은 T51
+        # 계속 누르고 있으면 다음 칸을 이어서 시작한다 (다시 시작 조건 확인). 짧게 누르는 룬 기술은 input의 rune_tap
         if not input.pressed('rune'):
             self.mend_timer = 0.0
             self.mend_wait = False
@@ -474,6 +529,7 @@ class Player:
         self.cancel_mend()
         self.attack_active = 0
         self.dash_timer = 0
+        self.end_skill()
         self.parry_timer = 0
         self.recoil_timer = 0
         self.jump_rising = False
@@ -507,6 +563,7 @@ class Player:
         self.mend_timer = 0.0
         self.mend_wait = False
         self.blackout = False
+        self.end_skill()
         input.clear_buffers()
 
     def sit(self, seat_x):
@@ -653,6 +710,10 @@ class Player:
         was_on_ground = self.on_ground
         if self.is_dashing():
             self.update_dash(dt)
+        elif self.is_casting():
+            self.update_cast(dt)
+        elif self.rockfall:
+            self.update_rockfall(dt)
         else:
             self.update_move_x(dt)
             self.update_move_y(dt)
@@ -676,13 +737,53 @@ class Player:
             engravings.on_dash_end(self)
 
     def dig_soil(self, x):
-        # 굴착 대시 (6.4): 몸을 x에 두면 닿는 무른 흙벽을 파고 지나간다 (막히기 전에 먼저 부순다)
+        # 굴착 대시 (6.4): 몸을 x에 두면 닿는 무른 흙벽(Lv3부터 단단한 흙벽도)을 파고 지나간다 (막히기 전에 먼저 부순다)
         half_w = config.PLAYER_W / 2
+        types = ('soil', 'hard_soil') if self.can('hard_soil') else ('soil',)
         for p in self.platforms:
-            if (getattr(p, 'type', None) == 'soil' and p.kind == 'solid'
+            if (getattr(p, 'type', None) in types and p.kind == 'solid'
                     and x + half_w >= p.left and x - half_w <= p.right
                     and self.y + config.PLAYER_H > p.bottom and self.y < p.top):
                 p.dig()
+
+    def update_cast(self, dt):
+        # Cast: 중력 없이 제자리. 끝나면 낙반 낙하 시작
+        self.vx, self.vy = 0.0, 0.0
+        self.cast_timer = max(0.0, self.cast_timer - dt)
+        if self.cast_timer <= 0:
+            self.start_rockfall()
+
+    def update_rockfall(self, dt):
+        # 낙반 낙하 (8.2): 수직으로 fall_speed, 무적. 깨지는 바닥은 착지 순간 부수고 계속 떨어진다 (12.6)
+        self.vx = 0.0
+        self.vy = -config.SKILLS['rockfall']['fall_speed']
+        prev_y = self.y
+        new_y = self.y + self.vy * dt
+        self.break_floors(prev_y, new_y)
+        self.y, self.vy, self.on_ground = terrain.resolve_y(
+            self.x, prev_y, new_y, self.vy, config.PLAYER_W, config.PLAYER_H, self.platforms)
+        if self.on_ground:
+            self.land_rockfall()
+
+    def break_floors(self, prev_y, new_y):
+        # 이번 낙하 구간에서 발이 닿는 깨지는 바닥을 부순다
+        for p in self.platforms:
+            if (getattr(p, 'type', None) == 'floor' and p.kind == 'solid'
+                    and terrain.overlaps_x(self.x, config.PLAYER_W, p) and prev_y >= p.top >= new_y):
+                p.dig()
+
+    def land_rockfall(self):
+        # 착지: 발밑 좌우로 충격파 (판정은 combat이 이번 프레임에 한 번 본다). 강착지 잠금 없음
+        self.rockfall = False
+        self.fall_time = 0.0
+        spec = config.SKILLS['rockfall']
+        half = spec['shockwave_w'] / 2
+        self.shockwave = (self.x - half, self.y, self.x + half, self.y + spec['shockwave_h'])
+        effect.rockfall_land(self.x, self.y, spec['shockwave_w'])
+
+    def take_shockwave(self):
+        wave, self.shockwave = self.shockwave, None
+        return wave
 
     def update_move_x(self, dt):
         if self.dead or self.is_parry_stunned() or self.is_hard_landing() or self.is_mending():
@@ -774,6 +875,7 @@ class Player:
         # 매달린 동안 대시·공중 점프 재충전, 체공 시간 리셋 (강착지 없음). 같은 벽에 다시 매달릴 수 있다
         move = input.axis_x()
         cling = (move != 0 and not self.on_ground and self.can('wall_cling') and not self.is_dashing()
+                 and not self.is_skill_active()
                  and self.wall_jump_lock <= 0 and not self.dead and not self.is_hit() and not self.is_mending()
                  and terrain.body_blocked(self.x + move, self.y + config.PLAYER_H * 0.25, config.PLAYER_W,
                                           config.PLAYER_H * 0.5, self.platforms))
@@ -815,6 +917,8 @@ class Player:
         if not self.is_blink_hidden():
             if self.dead:
                 color = config.COLOR_PLAYER_DEAD
+            elif self.is_skill_active():
+                color = config.COLOR_PLAYER_ROCKFALL
             elif self.is_dashing():
                 color = config.COLOR_PLAYER_DASH
             elif self.is_parry_stunned():
