@@ -6,33 +6,25 @@ from pico2d import *
 import config
 
 from objects import effect
-from systems import breath, economy, upgrades
+from systems import breath, economy
 
 font = None
-icon_font = None
 message = ''          # 하단 중앙 알림 문구 ('저장했습니다' 등). message_timer > 0인 동안 보인다
 message_timer = 0.0
 hide_breath = False   # 도입부 추락·깨어남 동안 숨 게이지를 숨긴다 (2.2 '숨 게이지가 처음 나타남', script.py)
 
 
 def init():
-    global font, icon_font, message, message_timer, hide_breath
+    global font, message, message_timer, hide_breath
     message, message_timer = '', 0.0
     hide_breath = False
     if os.path.exists(config.FONT_PATH):
         font = load_font(config.FONT_PATH, config.FONT_SIZE_TEXT)
-        icon_font = load_font(config.FONT_PATH, config.FONT_SIZE_ICON)
 
 
 def finish():
-    global font, icon_font
+    global font
     font = None
-    icon_font = None
-
-
-def hp_cells_right(player):
-    # 체력 칸 줄의 오른쪽 끝 x (그 오른쪽부터 강화 아이콘)
-    return config.HUD_MARGIN + player.max_hp * (config.HP_CELL + config.HP_CELL_GAP) - config.HP_CELL_GAP
 
 
 def draw_hp_cells(player):
@@ -181,22 +173,6 @@ def draw_dash_icon(player):
         draw_rectangle(cx - inner, cy - inner, cx + inner, cy + inner, *config.COLOR_DASH_READY, filled=True)
 
 
-def draw_upgrade_icons(player):
-    # 체력 칸 오른쪽에 획득한 강화를 카테고리 색 사각형 + 두 글자로 나열
-    size = config.UPGRADE_ICON
-    l = hp_cells_right(player) + config.HUD_MARGIN
-    t = config.SCREEN_H - config.HUD_MARGIN + (size - config.HP_CELL) / 2
-    for key in player.upgrades:
-        u = upgrades.BY_KEY[key]
-        draw_rectangle(l, t - size, l + size, t, *config.COLOR_HUD_FRAME, filled=True)
-        edge = config.HP_BAR_BORDER
-        draw_rectangle(l + edge, t - size + edge, l + size - edge, t - edge,
-                       *config.COLOR_UPGRADE[u.category], filled=True)
-        if icon_font:
-            icon_font.draw(l + config.UPGRADE_ICON_PAD, t - size / 2, u.icon, config.COLOR_HUD_FRAME)
-        l += size + config.UPGRADE_ICON_GAP
-
-
 def draw_boss_bar(boss):
     # 하단 중앙: 이름 · 체력 바 · 그 아래 자세 게이지 (패링 성공마다 한 칸)
     edge = config.HP_BAR_BORDER
@@ -246,7 +222,6 @@ def draw(player, boss=None):
     draw_ore()
     draw_breath_debug()
     draw_dash_icon(player)
-    draw_upgrade_icons(player)
     if boss:
         draw_boss_bar(boss)
     draw_message()

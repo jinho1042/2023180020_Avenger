@@ -7,7 +7,7 @@ import config
 import game_framework
 from modes import play_mode
 from objects import effect
-from systems import sound, world
+from systems import engravings, sound, world
 
 # play_mode 위에 push되는 디버그 메뉴 (0장 15번). config.DEBUG일 때만 열린다
 # F4 방 이동: ↑↓로 방을 고르고 Z·Enter로 워프
@@ -32,7 +32,7 @@ def open_menu(menu_kind):
 
 def give_entries():
     return ([('rune', r) for r in config.RUNE_MAX_LEVEL] + [('flag', f) for f in config.DEBUG_GIVE_FLAGS]
-            + [('engraving', e) for e in config.ENGRAVING_IDS])
+            + [('engraving', e) for e in engravings.IDS])
 
 
 def init():

@@ -3,7 +3,7 @@
 # 안전지대 영역에 들어가면 소지 광석이 전부 보관되고, 죽으면 소지 광석의 DEATH_ORE_LOSS 비율을 잃는다
 
 import config
-from systems import sound, world
+from systems import engravings, sound, world
 
 carried = 0
 bank_timer = 0.0     # 보관 연출 남은 시간 (HUD가 소지 → 보관 숫자 이동을 그린다)
@@ -102,7 +102,7 @@ def buy(key):
     if key not in shop_stock() or not pay(price):
         return False
     p = world.state.player
-    if key in config.ENGRAVING_IDS:
+    if key in engravings.IDS:
         p.engravings_owned.add(key)
     else:
         p.rare_ore += config.SHOP_RARE_ORE
