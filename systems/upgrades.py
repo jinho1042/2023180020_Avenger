@@ -105,8 +105,7 @@ def apply(player, upgrade):
 
 
 def on_parry_success(player, target):
-    if has(player, 'parry_heal'):
-        player.hp = min(player.max_hp, player.hp + config.UPGRADE_PARRY_HEAL)
+    # T37: v2 '흡수'(parry_heal, 패링 회복)는 패링 경로에서 뺐다. 패링 보상은 engravings.parry_breath_gain 한 곳 (8.4)
     if has(player, 'parry_wave'):
         wave = config.SWORD_WAVE
         p = projectile.fire(player.x, player.y + config.PLAYER_H / 2, player.face_dir, 0,

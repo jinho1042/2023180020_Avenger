@@ -16,6 +16,7 @@ class BossBase(EnemyBase):
     # 보스 공통: 패링당할 때마다 자세(posture)가 쌓이고 POSTURE_MAX에 도달하면 그로기
     # 패턴은 가중치 랜덤으로 고르고, 같은 패턴 3연속은 금지한다
     is_boss = True
+    kind = 'boss'
 
     def __init__(self, x, y, stats, player, platforms):
         # 공격 사거리는 패턴마다 다르므로 attack_range는 쓰지 않는다

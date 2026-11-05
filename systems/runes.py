@@ -18,7 +18,12 @@ def can(world_state, ability):
 
 
 def unlock_all(world_state):
-    # F3 디버그: 모든 룬 최대 레벨 + 반사 플래그. 이후 저장은 save_debug.json으로 (13.6)
-    world_state.player.runes = dict(config.RUNE_MAX_LEVEL)
+    # F3 디버그: 모든 룬 최대 레벨 + 반사 플래그 + 「받아친 숨」 장착(숨의 룬 1번 홈, T37). 이후 저장은 save_debug.json으로 (13.6)
+    p = world_state.player
+    p.runes = dict(config.RUNE_MAX_LEVEL)
     world_state.flags.add(config.REFLECT_UNLOCK_FLAG)
+    p.engravings_owned.add('parry_breath')
+    breath_slots = p.engravings_set.setdefault('breath', [])
+    if 'parry_breath' not in breath_slots:
+        breath_slots.insert(0, 'parry_breath')
     world_state.debug_unlocked = True

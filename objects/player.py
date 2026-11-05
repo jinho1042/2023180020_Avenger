@@ -6,7 +6,7 @@ import config
 import game_framework
 import game_world
 from objects import effect
-from systems import camera, input, runes, sound, terrain, upgrades
+from systems import breath, camera, engravings, input, runes, sound, terrain, upgrades
 
 # 동작 시작 순서: 패링 → 대시 → 점프 → 공격 (같은 프레임에 버퍼에 있으면 이 순서로 처리)
 # 입력은 handle_event에서 systems/input.py에 저장만 하고, 실제 동작은 update에서 버퍼를 꺼내 시작한다 (6.3 입력 버퍼)
@@ -70,6 +70,13 @@ class Player:
         self.parry_cooldown = 0.0
         self.parry_stun_timer = 0.0
         self.parry_count = 0  # 결과 화면 통계
+        # 숨 고르기 (Mend, 6.7): mend_timer > 0인 동안 이동 불가, 끝나면 숨을 내고 1칸 회복
+        # mend_wait = 시작하지 못했거나 끊긴 뒤 A를 뗄 때까지 다시 시작하지 않음
+        self.mend_timer = 0.0
+        self.mend_time = 0.0
+        self.mend_wait = False
+        # 숨 게이트 기절 (Blackout, 7.3): 입력 잠금·무적. 시작·끝은 systems/breath.py가 정한다
+        self.blackout = False
         # 피격: hit_timer > 0인 동안 경직(조작 불가, 밀려남), 무적은 invincible_timer로 따로 센다
         # 체력은 칸 단위 정수 (6.7)
         self.hp = config.HP_START
@@ -142,8 +149,8 @@ class Player:
         return self.dash_timer > 0
 
     def is_invincible(self):
-        return ((self.is_dashing() and config.DASH_INVINCIBLE)
-                or self.invincible_timer > 0 or self.dead or self.is_hazard_respawning())
+        return ((self.is_dashing() and config.DASH_INVINCIBLE) or self.invincible_timer > 0 or self.dead
+                or self.is_hazard_respawning() or self.blackout)
 
     def is_hazard_respawning(self):
         return self.hazard_timer > 0
@@ -158,6 +165,9 @@ class Player:
     def is_parry_stunned(self):
         return self.parry_stun_timer > 0
 
+    def is_mending(self):
+        return self.mend_timer > 0
+
     def is_hard_landing(self):
         return self.hard_land_timer > 0
 
@@ -168,7 +178,8 @@ class Player:
     def is_locked(self):
         # 새 동작을 시작할 수 없는 상태. 패링은 캔슬 불가 (6.3)
         return (self.dead or self.is_hit() or self.is_parrying() or self.is_parry_stunned()
-                or self.is_hard_landing() or self.is_hazard_respawning() or self.sitting)
+                or self.is_hard_landing() or self.is_hazard_respawning() or self.sitting
+                or self.is_mending() or self.blackout)
 
     # ---------- 동작 시작 ----------
 
@@ -266,6 +277,7 @@ class Player:
         self.parry_success = True
         self.parry_cooldown = 0
         self.parry_count += 1
+        breath.add(engravings.parry_breath_gain(target))   # 패링 숨은 여기서 한 번만 (8.4)
         upgrades.on_parry_success(self, target)
 
     def update_parry(self, dt):
@@ -295,7 +307,17 @@ class Player:
         self.parry_stun_timer = 0
         self.invincible_timer = self.invincible_on_hit
         self.attack_active = 0  # 공격 중이면 끊는다
+        self.cancel_mend()      # 숨 고르기 중이면 숨 차감 없이 취소 (6.3)
         self.jump_rising = False
+        if self.hp == 0:
+            self.dead = True
+            effect.player_dead()
+
+    def suffocate_hit(self):
+        # 질식 피해 (7.3): 1칸. 히트스톱·경직·무적 없이, 피격 무적 중에도 들어간다
+        self.hp = max(0, self.hp - 1)
+        self.sitting = False
+        self.cancel_mend()
         if self.hp == 0:
             self.dead = True
             effect.player_dead()
@@ -343,6 +365,59 @@ class Player:
             self.jump_rising = False
             self.fall_time = 0.0
             self.ground_time = 0.0
+
+    # ---------- 숨 고르기 · 기절 ----------
+
+    def update_mend(self, dt):
+        # 숨 고르기 (6.7): A를 RUNE_HOLD_THRESHOLD 이상 누르면 시작. 떼면 취소 (숨은 완료 시에만 내므로 잃는 숨 없음)
+        # 계속 누르고 있으면 다음 칸을 이어서 시작한다 (다시 시작 조건 확인). 짧게 누르는 룬 기술은 T51
+        if not input.pressed('rune'):
+            self.mend_timer = 0.0
+            self.mend_wait = False
+            return
+        if self.is_mending():
+            self.mend_timer -= dt
+            if self.mend_timer <= 0:
+                self.mend_timer = 0.0
+                self.finish_mend()
+            return
+        if not self.mend_wait and input.held_for('rune') >= config.RUNE_HOLD_THRESHOLD and not self.is_locked():
+            self.start_mend()
+
+    def start_mend(self):
+        # 숨이 비용보다 적으면(질식 중 포함) 시작하지 않는다. 체력이 가득이어도 시작하지 않는다
+        if self.hp >= self.max_hp or breath.value < breath.heal_cost():
+            self.mend_wait = True
+            return
+        self.mend_time = self.mend_timer = breath.heal_time()
+        self.attack_active = 0
+
+    def finish_mend(self):
+        # 그 순간 숨이 비용 이상이면 차감하고 1칸, 모자라면 회복 없이 취소하고 숨은 그대로 (6.3)
+        if breath.spend(breath.heal_cost()):
+            self.hp = min(self.max_hp, self.hp + 1)
+        else:
+            self.mend_wait = True
+
+    def cancel_mend(self):
+        if self.is_mending():
+            self.mend_timer = 0.0
+            self.mend_wait = True
+
+    def start_blackout(self):
+        # 숨 게이트 기절: 하던 동작을 모두 끊고 쓰러진다 (7.3)
+        self.blackout = True
+        self.sitting = False
+        self.cancel_mend()
+        self.attack_active = 0
+        self.dash_timer = 0
+        self.parry_timer = 0
+        self.recoil_timer = 0
+        self.jump_rising = False
+        input.clear_buffers()
+
+    def end_blackout(self):
+        self.blackout = False
 
     def sit(self, seat_x):
         # 의자 가운데에 앉는다. 체력 회복·저장은 play_mode가 한다
@@ -466,7 +541,15 @@ class Player:
             self.update_sitting()
             input.update(dt)
             return
+        if self.blackout:
+            # Blackout: 입력 잠금, 중력만 받는다
+            self.vx = 0.0
+            self.update_move_y(dt)
+            input.update(dt)
+            input.clear_buffers()
+            return
         self.update_parry(dt)
+        self.update_mend(dt)
         self.handle_actions()
 
         was_on_ground = self.on_ground
@@ -493,7 +576,7 @@ class Player:
             upgrades.on_dash_end(self)
 
     def update_move_x(self, dt):
-        if self.dead or self.is_parry_stunned() or self.is_hard_landing():
+        if self.dead or self.is_parry_stunned() or self.is_hard_landing() or self.is_mending():
             self.vx = 0
         elif self.is_hit():
             # 경직 중에는 조작 없이 맞은 반대쪽으로 밀려난다
@@ -611,6 +694,13 @@ class Player:
             camera.draw_rect(eye_x - eye / 2, t - eye * 3, eye_x + eye / 2, t - eye * 2, *config.COLOR_TEXT, filled=True)
             if attack_bb:
                 camera.draw_rect(*self.slash_rect(attack_bb), *config.COLOR_PLAYER_SLASH, filled=True)
+        if self.is_mending():
+            # 숨 고르기: 몸 둘레 점 고리가 완료에 가까울수록 조여든다
+            ring = config.MEND_RING
+            progress = 1 - self.mend_timer / self.mend_time
+            radius = ring['radius'][0] + (ring['radius'][1] - ring['radius'][0]) * progress
+            effect.draw_ring(self.x, self.y + config.PLAYER_H / 2, radius, radius,
+                             ring['dots'], ring['size'], config.COLOR_MEND)
         if game_world.show_hitbox:
             camera.draw_rect(l, b, r, t, *config.COLOR_DEBUG_BODY)
             if attack_bb:

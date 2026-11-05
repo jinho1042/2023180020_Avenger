@@ -5,7 +5,8 @@ from pico2d import *
 
 import config
 
-from systems import upgrades
+from objects import effect
+from systems import breath, upgrades
 
 font = None
 icon_font = None
@@ -43,6 +44,85 @@ def draw_hp_cells(player):
         draw_rectangle(l - edge, b - edge, l + size + edge, t + edge, *config.COLOR_HUD_FRAME, filled=True)
         color = fill if i < player.hp else config.COLOR_HP_BACK
         draw_rectangle(l, b, l + size, t, *color, filled=True)
+
+
+def draw_breath_bar():
+    # 체력 칸 아래 숨 게이지 (14.1): 하늘색 가로 막대, 길이는 용량에 비례. 광산(숨 게이지 없음)에서는 숨김
+    if not breath.has_gauge:
+        return
+    edge = config.HP_BAR_BORDER
+    l = config.HUD_MARGIN
+    t = config.SCREEN_H - config.HUD_MARGIN - config.HP_CELL - config.BREATH_BAR_GAP
+    b = t - config.BREATH_BAR_H
+    r = l + breath.capacity() * config.BREATH_BAR_PX
+    frame = config.COLOR_HUD_FRAME
+    draw_rectangle(l - edge, b - edge, r + edge, t + edge, *frame, filled=True)
+    if breath.gate:
+        # 숨 게이트 방 안: 테두리에 빗금
+        hatch = config.BREATH_GATE_HATCH
+        for x in range(int(l - edge), int(r + edge), hatch * 2):
+            draw_rectangle(x, b - edge, min(x + hatch, r + edge), t + edge, *config.COLOR_BREATH_GATE, filled=True)
+    draw_rectangle(l, b, r, t, *config.COLOR_BREATH_BACK, filled=True)
+    fill_r = l + breath.value * config.BREATH_BAR_PX
+    if fill_r <= l:
+        return
+    if breath.flash_timer > 0:
+        color = config.COLOR_BREATH_FLASH          # 패링 숨을 얻음
+    elif breath.in_safe:
+        color = config.COLOR_BREATH_REFILL         # 안전지대 안에서 차오름
+    elif breath.is_low() and int(get_time() / config.BREATH_LOW_BLINK) % 2:
+        color = config.COLOR_BREATH_LOW            # 숨 부족 깜빡임
+    else:
+        color = config.COLOR_BREATH
+    draw_rectangle(l, b, fill_r, t, *color, filled=True)
+    if breath.mult > 1:
+        draw_breath_flow(l, b, fill_r, t)
+
+
+def draw_breath_flow(l, b, r, t):
+    # 배율이 1보다 크면 게이지 안에 줄어드는 쪽(왼쪽)으로 흐르는 무늬 + 막대 오른쪽에 공기 종류 표시 (14.1)
+    gap = config.BREATH_FLOW_GAP
+    shift = get_time() * config.BREATH_FLOW_SPEED * breath.mult % gap
+    stripe = gap / 3
+    x = r - shift
+    while x - stripe > l:
+        draw_rectangle(x - stripe, b, x, t, *config.COLOR_BREATH_FLOW, filled=True)
+        x -= gap
+    mark = config.COLOR_BREATH_ZONE.get(breath.air, config.COLOR_BREATH_FLOW)
+    right = config.HUD_MARGIN + breath.capacity() * config.BREATH_BAR_PX + config.HP_CELL_GAP * 2
+    draw_rectangle(right, b, right + config.BREATH_BAR_H, t, *mark, filled=True)
+
+
+def draw_breath_debug():
+    # DEBUG: 숨 게이지 아래 구간 타이머 (13.5) - 마지막 숨 회복 지점을 떠난 뒤 시간·쓴 숨·현재 배율
+    if not (config.DEBUG and font and breath.has_gauge):
+        return
+    y = (config.SCREEN_H - config.HUD_MARGIN - config.HP_CELL - config.BREATH_BAR_GAP * 2
+         - config.BREATH_BAR_H - config.FONT_SIZE_TEXT / 2)
+    seg = breath.current_segment()
+    text = f'숨 {breath.value:.1f}/{breath.capacity():.0f}  배율 {breath.mult:g}'
+    if seg:
+        text += f"  구간 {seg['time']:.1f}s 쓴 숨 {seg['used']:.1f}"
+    if breath.infinite:
+        text += '  [F5 무한]'
+    font.draw(config.HUD_MARGIN, y, text, config.COLOR_TEXT_DIM)
+
+
+def draw_breath_vignette():
+    # 숨 부족 (7.3, 14.3): BREATH_LOW_RATIO 아래면 화면 가장자리가 점점 어두워진다. 숨 0이면 가장 진하게
+    if not breath.is_low() or breath.blackout:
+        return
+    strength = 1 - breath.ratio() / config.BREATH_LOW_RATIO
+    w, h = config.SCREEN_W, config.SCREEN_H
+    layers = config.BREATH_VIGNETTE_LAYERS
+    d = config.BREATH_VIGNETTE_W / layers
+    for i in range(layers):
+        alpha = config.BREATH_VIGNETTE_ALPHA * strength * (layers - i) / layers
+        o = d * i
+        effect.draw_screen_alpha_rect(o, o, w - o, o + d, config.COLOR_FADE, alpha)
+        effect.draw_screen_alpha_rect(o, h - o - d, w - o, h - o, config.COLOR_FADE, alpha)
+        effect.draw_screen_alpha_rect(o, o + d, o + d, h - o - d, config.COLOR_FADE, alpha)
+        effect.draw_screen_alpha_rect(w - o - d, o + d, w - o, h - o - d, config.COLOR_FADE, alpha)
 
 
 def draw_dash_icon(player):
@@ -129,6 +209,8 @@ def draw_message():
 
 def draw(player, boss=None):
     draw_hp_cells(player)
+    draw_breath_bar()
+    draw_breath_debug()
     draw_dash_icon(player)
     draw_upgrade_icons(player)
     if boss:

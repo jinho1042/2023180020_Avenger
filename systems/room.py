@@ -4,7 +4,9 @@ import random
 import config
 from objects.boss_greatsword import BossGreatsword
 from objects.boss_mage import BossMage
+from objects.air_vent import AirVent
 from objects.boss_twinblade import BossTwinblade
+from objects.breath_zone import BreathGate, BreathZone
 from objects.breakable import Breakable
 from objects.enemy_adept_mage import EnemyAdeptMage
 from objects.enemy_apprentice_mage import EnemyApprenticeMage
@@ -72,6 +74,11 @@ class Room:
                  if g[4] in Gate.KINDS and f'{self.id}:{g[5]}' not in state.opened}
         switches = [Switch(self.id, *s, gates.get(s[4]), state) for s in self.switches if s[2] in Switch.KINDS]
         self.safe_zone_objects = [SafeZone(self.id, *z, self.seat_of(z[4]), state) for z in self.safe_zones]
+        # 숨 (7.2): 배율 영역 + water(자동으로 water 배율), 숨 게이트, 숨구멍
+        self.breath_zone_objects = ([BreathZone(*z) for z in self.breath_zones]
+                                    + [BreathZone(*w[:4], 'water') for w in self.water])
+        self.breath_gate_objects = [BreathGate(*g) for g in self.breath_gates]
+        self.air_vent_objects = [AirVent(self.id, *v) for v in self.air_vents]
         self.terrain = self.platforms + breakables + list(gates.values())
         # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)
         self.gimmicks = self.hazard_objects + breakables + list(gates.values()) + switches
@@ -79,6 +86,11 @@ class Room:
     def seat_of(self, zone_id):
         # objects의 ["seat", x, y, 안전지대 id] → (x, y). 없으면 None
         return next(((o[1], o[2]) for o in self.objects if o[0] == 'seat' and o[3] == zone_id), None)
+
+    def zone_floor(self, zone_id):
+        # 안전지대 영역 바닥 가운데 (기절 복귀, 7.3). 없는 id면 None
+        zone = next((z for z in self.safe_zones if z[4] == zone_id), None)
+        return (zone[0] + zone[2] / 2, zone[1]) if zone else None
 
     def seat_spot(self, zone_id):
         # 이어하기·부활 자리: 앉는 자리, 없으면 안전지대 바닥 가운데. zone_id가 None이거나 없는 id면 None

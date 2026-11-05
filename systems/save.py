@@ -1,6 +1,6 @@
 # 세이브/로드 (13.6, 1슬롯). world.state를 13.6 JSON 모양으로 쓰고 읽는다
 # 저장 경로는 매번 state.debug_unlocked로 정한다: True면 SAVE_DEBUG_PATH (F3·F7을 쓴 뒤의 저장)
-# 소지 광석·현재 숨·last_safe_zone은 저장하지 않는다. 게임 데이터(적 체력 등)도 넣지 않는다
+# 소지 광석·현재 숨·기절 복귀 지점(breath.last_safe_zone)은 저장하지 않는다. 게임 데이터(적 체력 등)도 넣지 않는다
 
 import json
 import os
@@ -60,7 +60,6 @@ def load(path):
             setattr(state, k, v)
     state.stats.update(data.get('stats', {}))
     state.rest_seat = data.get('rest_seat')
-    state.last_safe_zone = state.rest_seat
     if path == config.SAVE_DEBUG_PATH:
         state.debug_unlocked = True   # 디버그 세이브는 파일 안 값과 상관없이 계속 디버그 저장
     return state, data.get('play_time', 0.0)

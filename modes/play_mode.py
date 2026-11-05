@@ -6,7 +6,7 @@ import game_framework
 import game_world
 from objects import effect, projectile
 from objects.player import Player
-from systems import camera, combat, hitstop, input, runes, save, sound, world
+from systems import breath, camera, combat, hitstop, input, runes, save, sound, world
 from ui import hud
 
 player = None
@@ -29,7 +29,10 @@ def enter_room(new_room, arrival):
     room = new_room
     game_world.set_room_size(room.width, room.height)
     camera.set_room(room.width, room.height)
+    game_world.add_objects(room.breath_gate_objects, config.DEPTH_BG)
+    game_world.add_objects(room.breath_zone_objects, config.DEPTH_BG)
     game_world.add_objects(room.safe_zone_objects, config.DEPTH_BG)
+    game_world.add_objects(room.air_vent_objects, config.DEPTH_MAP)
     game_world.add_objects(room.platforms, config.DEPTH_MAP)
     game_world.add_objects(room.exits, config.DEPTH_MAP)
     game_world.add_objects(room.gimmicks, config.DEPTH_MAP)
@@ -76,6 +79,7 @@ def init():
     player.max_hp = player.hp = state.player.hp_max
     player.pickaxe_lv = state.player.pickaxe_level
     player.parry_count = state.stats['parries']
+    breath.init(state)
     # 이어하기는 항상 마지막으로 앉은 자리에서 (13.6). 앉은 적이 없으면 새 게임 첫 방 (18장)
     if state.rest_seat and state.rest_seat.split(':')[0] in world.room_paths:
         world.load(*world.seat_arrival(state.rest_seat))
@@ -109,6 +113,14 @@ def handle_events():
         elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) == 'unlock_all':
             runes.unlock_all(world.state)
             print('[DEBUG] F3 전체 해금: 모든 룬 최대 레벨 + 반사')
+        elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) == 'infinite_breath':
+            on = breath.toggle_infinite()
+            hud.show_message(f"숨 무한 {'켬' if on else '끔'}")
+            print(f"[DEBUG] F5 숨 무한 {'켬' if on else '끔'}")
+        elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) == 'record_breath':
+            line = breath.record(room.id)
+            hud.show_message('숨 구간 기록' if line else '기록할 구간 없음')
+            print(f'[DEBUG] F6 숨 구간 기록: {line}')
         elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) in ('warp', 'give'):
             # F4 방 이동 메뉴 · F7 개별 지급 메뉴. 방 전환 중에는 열지 않는다
             if world.phase is None:
@@ -151,13 +163,17 @@ def update():
     game_framework.frame_time = dt
     enemies = [e for e in enemies if e.is_alive()]
     check_hazards()
-    check_safe_zones()
+    zone = check_safe_zones()
+    check_air_vents()
+    if world.phase is None:
+        # 숨은 방 전환 페이드 중에는 멈춘다 (7.2). 슬로모션이면 월드와 같은 속도로
+        breath.update(dt * hitstop.time_scale(), player, room, zone)
     check_exits()
 
 
 def check_hazards():
     # 가시·산성·구덩이에 몸이 닿으면 환경 피해 → 안전 지점 (6.8). 포고가 먼저 되도록 공격 판정 뒤에 본다
-    if player.dead or player.is_hazard_respawning():
+    if player.dead or player.is_hazard_respawning() or player.blackout:
         return
     for hazard in room.hazard_objects:
         if game_world.collide(player, hazard):
@@ -166,18 +182,30 @@ def check_hazards():
 
 
 def check_safe_zones():
-    # 영역에 들어오면 발견·기절 복귀 지점 갱신 (13.1). 앉는 자리에서 ↑를 누르면 앉는다
-    state = world.state
+    # 영역에 들어오면 발견 (13.1). 앉는 자리에서 ↑를 누르면 앉는다
+    # 반환: 몸이 들어 있는 안전지대 (없으면 None). 숨 회복·기절 복귀 지점 갱신은 breath.update가 한다
+    inside = None
     for zone in room.safe_zone_objects:
         zone.prompt = False
-        if player.dead or not game_world.collide(player, zone):
+        if player.dead or player.blackout or not game_world.collide(player, zone):
             continue
-        state.safe_zones_found.add(zone.gid)
-        state.last_safe_zone = zone.gid
+        inside = inside or zone
+        world.state.safe_zones_found.add(zone.gid)
         if zone.can_sit(player):
             zone.prompt = True
             if input.consume('up'):
                 sit(zone)
+    return inside
+
+
+def check_air_vents():
+    # 쿨다운이 끝난 숨구멍에 몸이 닿으면 숨 회복 (7.2)
+    if player.dead or player.blackout:
+        return
+    for vent in room.air_vent_objects:
+        if vent.ready() and game_world.collide(player, vent):
+            vent.use()
+            breath.touch_air_vent(vent)
 
 
 def sit(zone):
@@ -203,7 +231,7 @@ def save_game():
 
 def check_exits():
     # 출구에 몸이 닿으면 그 방으로. 두 출구에 동시에 닿아도 하나만 처리한다
-    if player.dead or player.is_hazard_respawning() or not world.can_exit():
+    if player.dead or player.is_hazard_respawning() or player.blackout or not world.can_exit():
         return
     for exit_zone in room.exits:
         if game_world.collide(player, exit_zone):
@@ -234,7 +262,8 @@ def draw_scene():
     camera.begin()
     game_world.render()
     camera.end()
-    alpha = world.fade_alpha()
+    hud.draw_breath_vignette()
+    alpha = max(world.fade_alpha(), breath.blackout_alpha())
     if alpha > 0:
         effect.draw_screen_alpha_rect(0, 0, config.SCREEN_W, config.SCREEN_H, config.COLOR_FADE, alpha)
     hud.draw(player, boss if boss and boss.is_alive() else None)

@@ -4,7 +4,7 @@
   "size": [1, 1],
   "map_cell": [2, 0],
   "music": null,
-  "air": null,
+  "air": "normal",
   "hub": false,
   "platforms": [
     [0, 0, 1280, 80, "solid"],
@@ -18,7 +18,7 @@
   "water": [],
   "breath_zones": [],
   "breath_gates": [
-    [0, 0, 1280, 720, "test_gate", 1]
+    [0, 0, 1280, 720, "choke", 1]
   ],
   "safe_zones": [],
   "breakables": [],
