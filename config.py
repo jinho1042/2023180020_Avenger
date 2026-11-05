@@ -201,6 +201,9 @@ COLOR_ACID = (120, 200, 60)
 SPIKE_W = 16               # px, 가시 한 개의 밑변
 SPIKE_STEP = 4             # px, 가시 삼각형을 쌓아 그리는 가로줄 두께
 COLOR_CRACK_WALL = (110, 100, 95)
+COLOR_SOIL = (125, 95, 65)         # 무른 흙벽 (굴착 대시로 통과, T46)
+COLOR_SOIL_DOT = (90, 65, 45)      # 흙벽 표면 흙덩이 점
+SOIL_DOTS = dict(step=24, size=6)  # px, 흙덩이 점 간격·크기
 COLOR_CRACK_LINE = (40, 35, 35)
 CRACK_WIND = dict(count=6, dist=70, period=1.6, size=3)   # 균열벽(숨은 벽) 바람 단서: 양옆 dist px에서 균열로 빨려 드는 먼지 (7.5)
 COLOR_CRACK_WIND = (175, 165, 150)
@@ -597,6 +600,42 @@ BOSS_DEATH_FLASH = dict(color=(255, 255, 255), alpha=200, time=0.4)
 COLOR_ARENA_GATE = (90, 85, 80)        # 아레나 돌문
 BOSS_PARRY_RECOIL = 0.5    # s, 보스는 패링당해도 길게 비틀거리지 않고 이만큼만 멈칫한다
 COLOR_BOSS_GROGGY = (230, 200, 60)
+# ===== 보스 (11.4). 체력은 T58 숨 예산에 맞춰 다시 조정할 수 있음 =====
+# B1 바위껍질 굴착충 (T46). 첫 줄은 4장 값 그대로, 둘째 줄부터 행동·그림 값
+# 패턴 선택: base 가중치에서 거리 > far_dist면 charge = far_weight, 거리 < near_range면 tail = near_weight (11.4 선택 규칙)
+#   잠행(burrow)은 연속 금지, 낙석(rockfall)은 쿨 rockfall_cooldown, 연속 돌진(double_charge)은 2페이즈부터
+# 2페이즈: 걷기·돌진 속도 × p2_speed_mult (예고·반격 틈 시간은 그대로), 낙석 rock_count[1]개
+BOSS_BORER = dict(hp=200, damage=1, phase_hp=[0.5], p2_speed_mult=1.2,
+                  rock_count=[4, 6], charge_speed=700, ore=200,
+                  w=170, h=84, color=(125, 105, 85), color_phase2=(150, 95, 70), speed=90, detect_range=1280,
+                  near_range=150, far_dist=400, far_weight=3, near_weight=3,
+                  base=dict(charge=1, tail=1, burrow=1, rockfall=1, double_charge=0),
+                  phase2_base=dict(charge=1, tail=1, burrow=1, rockfall=1, double_charge=2),
+                  rockfall_cooldown=8.0,
+                  # 돌진 (흰): 몸을 뒤로 웅크림 telegraph → 벽에 닿을 때까지 직진 (active는 상한) → 벽에 부딪혀 recover초 멈춤
+                  charge=dict(telegraph=0.6, windup=0.1, active=3.0, recover=1.0, hitbox=(40, 70)),
+                  # 연속 돌진 (흰, 2페이즈): 돌진 2회 왕복. 첫 충돌 뒤 turn_recover초에 돌아서 next_telegraph 예고 후 다시 돌진
+                  double_charge=dict(turn_recover=0.3, next_telegraph=0.3),
+                  # 꼬리 휘두르기 (흰): 플레이어에게 등을 돌려 꼬리를 듦 → 몸 뒤쪽(플레이어 쪽) 반원
+                  tail=dict(telegraph=0.5, windup=0.1, active=0.15, recover=0.6, hitbox=(170, 150)),
+                  # 잠행 돌격 (빨강): 예고 시작 때 플레이어 발밑 x를 정함. dig초 동안 땅으로 파고들고, 예고 내내 그 자리에 균열·먼지
+                  #   → 그 자리에서 솟구침 (몸 위로 hitbox) → 착지 recover초
+                  burrow=dict(telegraph=0.8, windup=0.1, active=0.3, recover=0.8, hitbox=(150, 220), dig=0.3,
+                              crack_w=150, crack_h=14),
+                  # 낙석 (빨강): 천장 박치기 telegraph → 그림자 shadow초 → 낙석. 보스는 recover초 정지 (active는 박치기 순간)
+                  #   낙석 자리: 하나는 플레이어 발밑, 하나는 숨구멍 위(있으면), 나머지는 아레나 안에 고르게
+                  rockfall=dict(telegraph=0.6, windup=0.1, active=0.1, recover=1.2, shadow=0.7,
+                                rock_w=70, rock_h=60, hit_h=110, fall_time=0.25, hit_time=0.12, margin=120),
+                  # 그림 (도형): 껍질 마디 수, 머리·꼬리 크기
+                  segments=4, head_w=36, head_h=50, tail_len=60, tail_h=22, dig_dust=dict(count=8, speed=(60, 200), life=0.4, size=6),
+                  wall_shake=(8, 0.2), shell_burst=dict(count=26, speed=(150, 480), life=0.7, size=10))
+COLOR_BORER_SHELL = (150, 135, 115)    # 등껍질 마디
+COLOR_BORER_BELLY = (200, 150, 120)    # 그로기·2페이즈에 드러나는 몸통
+COLOR_BORER_CRACK = (90, 70, 55)       # 잠행 균열
+BOSS_FIGHT_TARGET = dict(  # 임시. 보스전 예상 시간(초). 아레나 숨구멍 수를 정할 때 참고 (7.6 목표 3)
+    borer=50, moss_warden=80, archsage=90, colossus=100, scythe=110, king=180, first_miner=90,
+)
+BOSS_RUNE = dict(borer='burrow')   # 처치 보상 룬 (11.4 보상). 다른 보스는 해당 보스 작업(T49~)에서 넣는다
 # 대검 기사: 느리고 묵직. 넉백을 받지 않는다
 # 패턴 선택: 거리 near_range 이하면 near 가중치, thrust_range 이하면 far 가중치 (11.2 패턴 선택 규칙)
 # 가중치가 모두 0이면 걸어서 접근한다

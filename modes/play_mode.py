@@ -295,11 +295,18 @@ def save_game():
 
 def on_boss_defeated(defeated):
     # 보스가 쓰러짐 (11.2, script.Arena가 문을 연 뒤 부른다): 품고 있던 공기가 풀려 아레나 전체가
-    # 영구 안전지대가 되고, 처치 기록 → 자동 저장 → BGM 멈춤
+    # 영구 안전지대가 되고, 처치 기록 → 보상 룬 → 자동 저장 → BGM 멈춤 → 룬 획득 연출 (8.5)
     world.state.bosses_defeated.add(defeated.boss_key)
     game_world.add_object(room.release_air(world.state), config.DEPTH_BG)
+    rune = config.BOSS_RUNE.get(defeated.boss_key)
+    if rune:
+        runes.grant(world.state, rune)
     sound.stop_music()
     save_game()
+    if rune:
+        from modes import rune_get_mode
+        rune_get_mode.start(rune, 1)
+        game_framework.push_mode(rune_get_mode)
 
 
 def check_exits():

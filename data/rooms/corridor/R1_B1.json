@@ -1,0 +1,48 @@
+{
+  "id": "R1_B1",
+  "region": "corridor",
+  "size": [1, 1],
+  "map_cell": [4, 4],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [0, 64, 40, 616, "solid"],
+    [1240, 264, 40, 416, "solid"],
+    [40, 300, 300, 380, "solid"],
+    [400, 200, 200, 16, "oneway"],
+    [960, 200, 200, 16, "oneway"]
+  ],
+  "hazards": [],
+  "water": [],
+  "breath_zones": [],
+  "breath_gates": [],
+  "safe_zones": [],
+  "air_vents": [
+    [1060, 260, "vent_a"]
+  ],
+  "breakables": [
+    [292, 64, 48, 236, "soil", "soil_b1"],
+    [80, 64, 64, 64, "ore_chunk", "chunk_b1"]
+  ],
+  "gates": [
+    [1232, 64, 32, 200, "arena", "arena_door"]
+  ],
+  "switches": [],
+  "exits": [
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R1_09", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["borer", 560, 64]
+  ],
+  "objects": [],
+  "safe_points": [
+    [1150, 64]
+  ],
+  "triggers": [
+    [1100, 64, 40, 400, "arena", "arena_b1"]
+  ],
+  "boss": "borer"
+}
