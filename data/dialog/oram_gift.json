@@ -1,0 +1,12 @@
+{
+  "name": "오람",
+  "name_en": "Oram",
+  "pages": [
+    ["숨의 룬 첫 홈에 「받아친 숨」을 함께 새겼다.", "받아칠 때 숨이 돌아올 거다.", "각인은 숨방에 앉아 바꿔 새길 수 있다."],
+    ["룬은 광석으로 더 깊이 새길 수 있다.", "광석 60이면 숨이 한 번 더 길어지지.", "지금 새길지는 네가 정해라. 갱은 지금도 건널 수 있다."]
+  ],
+  "pages_en": [
+    ["I also carved 'Parry Breath' into the rune's first slot.", "Your breath will come back when you parry.", "Engravings can be recarved while resting at an air room."],
+    ["Runes can be carved deeper with ore.", "With 60 ore your breath grows longer still.", "Your choice. You can cross the shaft as you are."]
+  ]
+}

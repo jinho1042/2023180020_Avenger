@@ -218,8 +218,12 @@ def check_npcs():
     if not input.consume('up'):
         return False
     near.prompt = False
+    if near.kind == 'carver':
+        from modes import carver_mode
+        carver_mode.talk()   # 룬지기: 대화 → 숨의 룬·강화 목록 (8.3)
+        return True
     from modes import dialog_mode
-    dialog_mode.start(near.id)
+    dialog_mode.start(near.dialog_id(world.state))
     game_framework.push_mode(dialog_mode)
     return True
 

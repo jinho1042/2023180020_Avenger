@@ -1,0 +1,14 @@
+{
+  "name": "오람",
+  "name_en": "Oram",
+  "pages": [
+    ["...바람을 따라왔구나. 위에서 떨어진 광부인가.", "나는 오람. 이 왕국의 마지막 룬 새김꾼이다."],
+    ["이 아래엔 공기가 없다. 숨을 길게 잇는 룬 없이는", "갱 너머로 아무도 가지 못했지."],
+    ["가만히 있어라. 네 숨에 룬을 새겨 주마."]
+  ],
+  "pages_en": [
+    ["...You followed the wind. A miner who fell from above?", "I am Oram, the last rune carver of this kingdom."],
+    ["There is no air down here. Without a rune to stretch", "your breath, no one has crossed the shaft."],
+    ["Hold still. I will carve a rune into your breath."]
+  ]
+}
