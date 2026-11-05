@@ -15,6 +15,12 @@
     [1300, 64, 60, 120, "solid"],
     [1900, 64, 60, 120, "solid"]
   ],
+  "hazards": [
+    [670, 74, 30, 40, "bolt_trap"],
+    [1270, 74, 30, 40, "bolt_trap"],
+    [1870, 74, 30, 40, "bolt_trap"],
+    [1870, 134, 30, 40, "bolt_trap"]
+  ],
   "air_vents": [
     [2300, 100, "vent_a"]
   ],
@@ -22,10 +28,10 @@
     {"id": "L", "rect": [0, 64, 16, 200], "to": "R2_11", "to_exit": "R"},
     {"id": "R", "rect": [2544, 64, 16, 200], "to": "R2_08", "to_exit": "L"}
   ],
-  "objects": [],
-  "spawns": [
-    ["crawler", 1000, 64]
+  "objects": [
+    ["tablet", 150, 64, "tablet_r2_crossbow"]
   ],
+  "spawns": [],
   "safe_points": [
     [300, 64],
     [1000, 64],

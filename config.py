@@ -536,7 +536,7 @@ VINE_LURKER = dict(hp=18, ambush_dist=150, damage=1, telegraph=0.4, claw_telegra
                    attack_cooldown=1.0, ceiling_probe=8)   # px, spawn 바로 아래 이만큼 안에 바닥이 없으면 천장 매복
 COLOR_LURKER_MOUND = (95, 75, 50)
 COLOR_LURKER_VINE = (70, 120, 55)
-# 독 거머리·유적 골렘 (T53), 정예 (T48·T53)는 해당 작업에서
+# 독 거머리·유적 골렘 (T53), 정예 신전 골렘 (T53)은 해당 작업에서. 갑각 대장은 아래 ELITE_SHELL_CAPTAIN
 
 # 수정 유생 (← v2 견습 마법사): keep_distance ± distance_tolerance 유지, shoot_range 안이면 조준해 수정탄 1발 (흰색)
 CRYSTAL_SPRITE = dict(hp=13, speed=120, keep_distance=450, bolt_speed=350,
@@ -591,6 +591,41 @@ TRAINING_STATUE = dict(interval=3.0, telegraph=0.5, hits_to_break=3, ore=20,   #
                        windup=0.15, active=0.1, recover=0.5, hitbox=(80, 90), recoil=0.4)
 COLOR_STATUE_CRACK = (60, 60, 65)
 STATUE_SPARK = dict(count=5, color=(150, 150, 155))   # 곡괭이로 쳤을 때 회색 스파크
+
+# 쇠뇌 함정 (T48, 12.6): hazards [x, y, w, h, "bolt_trap"] = 벽면에 박힌 쇠뇌 몸통. 방 가운데 쪽으로 수평 발사
+#   플레이어가 쏘는 쪽 앞 range px 안 + 몸이 쇠뇌 높이 ± band px 안이면 interval마다 흰 예고(telegraph) → 화살 1발
+#   화살은 흰색(패링 가능). 반사 해금 전 패링 = 튕겨 사라짐, 해금 후 = 반사. 패링 숨 0 (owner = 함정, kind 'hazard')
+TRAP_BOLT = dict(speed=600, interval=1.5, damage=1, telegraph=0.4,   # 함정: 패링 숨 0
+                 range=700, band=160,
+                 size=14, length=40, color=(230, 225, 205))   # 화살 (projectile spec)
+COLOR_BOLT_TRAP = (110, 95, 80)
+COLOR_BOLT_TRAP_BOW = (160, 140, 110)
+# 쇠뇌 과녁 (T48, 9.5): objects ["target", x, y, id] (x, y = 아래쪽 중심). 반사 해금 뒤에만 나타나는 연습용 쇠뇌
+#   face 쪽(플레이어 쪽)으로 interval마다 흰 예고 → 화살. 반사한 화살이 과녁에 hits_to_break번 맞으면 부서지며 광석 (영구)
+#   곡괭이로 치면 회색 스파크만, 패링 숨 0 (kind 'statue')
+BOLT_TARGET = dict(interval=2.0, telegraph=0.5, hits_to_break=3, ore=20, range=1100,
+                   w=56, h=96, color=(120, 105, 85), muzzle_h=40,   # muzzle_h = 발 위 화살이 나가는 높이
+                   ring_r=22, ring_y=0.7, ring_colors=((230, 80, 70), (240, 235, 220)),   # 과녁판 (ring_y = 높이 비율)
+                   bow=(8, 48))   # 쇠뇌 활 그림 (가로, 세로)
+
+# 정예 갑각 대장 (T48, 10.4): R2 반격의 시련. objects ["elite", x, y, "shell_captain", id]
+#   보스 공통 구조(11.2)의 아레나 잠금·자세 게이지만 쓴다 (타이틀 카드·페이즈·처치 후 안전지대 없음). 투사체 없음
+#   ① 3연베기 (흰): slash.telegraph → 2·3타는 combo_telegraph (TELEGRAPH_MIN 이상)
+#   ② 도약 내려찍기 (흰): 웅크림 → 플레이어 발밑으로 포물선 도약(air_time초) → 착지까지 몸 아래 hitbox
+#   ③ 방패 돌진 (빨강): 갑각 전사와 같음, 더 빠르고 길다
+#   패턴 고르기: 거리 near_range 이하면 near 가중치, 아니면 far 가중치. 패턴 사이 BOSS_IDLE_GAP
+ELITE_SHELL_CAPTAIN = dict(hp=80, speed=200, damage=1, telegraph=0.5, ore=60,
+                           w=60, h=92, color=(80, 100, 130), detect_range=1280, near_range=130,
+                           near=dict(slash3=3, leap=1, rush=1), far=dict(slash3=0, leap=2, rush=2),
+                           slash=dict(windup=0.15, active=0.1, recover=0.2, hitbox=(80, 60)),
+                           combo_telegraph=0.3, last_recover=0.7,
+                           leap=dict(windup=0.2, air_time=0.7, recover=0.8, hitbox=(110, 50), max_dist=520,
+                                     dust=dict(count=10, speed=(80, 260), life=0.4, size=7)),
+                           rush=dict(telegraph=0.6, windup=0.2, active=0.55, recover=0.9, speed=720,
+                                     hitbox=(28, 84)))
+ELITE_NAME = dict(shell_captain='갑각 대장')          # 하단 이름 (보스 HUD를 같이 쓴다)
+ELITE_NAME_EN = dict(shell_captain='Shell Captain')
+ELITE_REWARD_ENGRAVINGS = dict(shell_captain=['counter_wave', 'breath_echo'])   # 처치 보상 각인 (10.4)
 
 # ===== 자세 · 보스 공통 (9.4, 11.2) =====
 POSTURE_MAX = 100

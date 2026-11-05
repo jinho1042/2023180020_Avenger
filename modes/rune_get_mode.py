@@ -13,7 +13,7 @@ from ui import font
 # 룬 획득·강화 연출 (8.5). play_mode(또는 carver_mode) 위에 push된다 (월드·숨 정지)
 # 획득: 히트스톱 → 화면이 어두워짐 → 룬 문양이 플레이어에게 흡수 → 섬광(구역색) → 설명 카드. 강화는 RUNE_GET.short에 몰아서
 # 카드: 룬 이름·레벨, 키 아이콘, 그 레벨의 한 줄 설명, 열리는 곳 힌트, (처음 몇 번만) 룬지기 안내. X: 확인
-# 문구는 data/dialog/runes.json. 반사 해금(T48)·수정 숫돌(T52)도 이 모드를 쓴다 (그때 문양 종류를 넣는다)
+# 문구는 data/dialog/runes.json. 반사 해금(T48, 'reflect' = 갑각 방패 조각 문양)·수정 숫돌(T52)도 이 모드를 쓴다
 
 RUNES_PATH = os.path.join(os.path.dirname(__file__), '..', config.DIALOG_DIR, 'runes.json')
 CONFIRM_KEYS = (SDLK_x, SDLK_RETURN, SDLK_SPACE)
@@ -108,10 +108,23 @@ def draw_glyph(progress):
     half = g['glyph_size'] / 2 * (1 - progress * 0.8)
     color = config.COLOR_RUNE_GLYPH
     bar = max(2, half / 6)
+    if rune == 'reflect':
+        draw_shield_shard(cx, cy, half, bar, color)
+        return
     effect.draw_ring(cx, cy, half, half, 16, bar * 1.5, color)
     camera.draw_rect(cx - bar / 2, cy - half * 0.7, cx + bar / 2, cy + half * 0.7, *color, filled=True)
     camera.draw_rect(cx - half * 0.5, cy + half * 0.2 - bar / 2, cx + half * 0.5, cy + half * 0.2 + bar / 2, *color, filled=True)
     camera.draw_rect(cx - half * 0.35, cy - half * 0.3 - bar / 2, cx + half * 0.35, cy - half * 0.3 + bar / 2, *color, filled=True)
+
+
+def draw_shield_shard(cx, cy, half, bar, color):
+    # 반사 해금: 갑각 방패 조각 (위가 넓고 아래로 좁아지는 판 + 가운데 금)
+    rows = max(1, int(half * 2 / bar))
+    for i in range(rows):
+        y = cy - half + i * bar
+        w = half * (0.35 + 0.65 * i / rows)
+        camera.draw_rect(cx - w, y, cx + w, y + bar, *color, filled=True)
+    camera.draw_rect(cx - bar / 4, cy - half * 0.6, cx + bar / 4, cy + half * 0.9, *config.COLOR_CARD, filled=True)
 
 
 def rune_text(key, default=''):
@@ -141,7 +154,8 @@ def draw_card():
         return
     pad, line_h = c['pad'], c['line_h']
     y = t - config.CARD_STRIPE_H - pad - config.FONT_SIZE_TEXT / 2
-    title = f"{rune_text('name', rune)}  Lv{level}"
+    # 룬이 아닌 해금(반사)은 레벨을 쓰지 않는다
+    title = rune_text('name', rune) if rune not in config.RUNE_MAX_LEVEL else f"{rune_text('name', rune)}  Lv{level}"
     text_font.draw(l + pad, y, title, config.COLOR_RUNE_GLYPH)
     # 키 아이콘: 오른쪽 위 작은 사각 안에 키 이름
     key = texts.get(rune, {}).get('key', '')

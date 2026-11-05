@@ -47,6 +47,12 @@
     "levels_en": [["Shadow Gale: invincible, passes veils"], ["Shorter gale cooldown"], ["Longer gale distance"]],
     "hint": "그림자 장막 너머로", "hint_en": "Through the shadow veils"
   },
+"reflect": {
+    "name": "반사", "name_en": "Reflect", "key": "S",
+    "levels": [["갑각 방패 조각: 패링한 투사체를 되돌려 보낸다", "각인 「반격 파동」 · 「되받은 숨」을 얻었다"]],
+    "levels_en": [["Shell shard: parried projectiles fly back", "Gained engravings 'Counter Wave' · 'Breath Echo'"]],
+    "hint": "쇠뇌 과녁에 화살을 되돌려 보내 보자", "hint_en": "Send the bolts back at the crossbow target"
+  },
   "carver_line": "룬지기에게 가면 더 깊이 새길 수 있다",
   "carver_line_en": "The Rune Carver can carve it deeper"
 }

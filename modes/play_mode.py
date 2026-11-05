@@ -295,6 +295,9 @@ def save_game():
 
 
 def on_boss_defeated(defeated):
+    if defeated.kind == 'elite':
+        on_elite_defeated(defeated)
+        return
     # 보스가 쓰러짐 (11.2, script.Arena가 문을 연 뒤 부른다): 품고 있던 공기가 풀려 아레나 전체가
     # 영구 안전지대가 되고, 처치 기록 → 보상 룬 → 자동 저장 → BGM 멈춤 → 룬 획득 연출 (8.5)
     world.state.bosses_defeated.add(defeated.boss_key)
@@ -307,6 +310,27 @@ def on_boss_defeated(defeated):
     if rune:
         from modes import rune_get_mode
         rune_get_mode.start(rune, 1)
+        game_framework.push_mode(rune_get_mode)
+
+
+def on_elite_defeated(elite):
+    # 정예 처치 (10.4): 기록 → 보상 → 자동 저장. 아레나는 안전지대가 되지 않는다
+    # 갑각 대장: 방패가 부서지며 반사 해금 + 각인 「반격 파동」·「되받은 숨」 → 반사 해금 연출(rune_get_mode)
+    #   → 같은 방의 쇠뇌 과녁이 나타나 반사 연습 (9.5)
+    state = world.state
+    state.elites_defeated.add(elite.gid)
+    rewards = config.ELITE_REWARD_ENGRAVINGS.get(elite.boss_key, [])
+    state.player.engravings_owned.update(rewards)
+    unlock = elite.boss_key == 'shell_captain'
+    if unlock:
+        state.flags.add(config.REFLECT_UNLOCK_FLAG)
+        add_enemies(room.spawn_targets(player))
+    sound.stop_music()
+    save_game()
+    print(f'[정예] {elite.gid} 처치 → 각인 {rewards}' + (', 반사 해금' if unlock else ''))
+    if unlock:
+        from modes import rune_get_mode
+        rune_get_mode.start('reflect', 1, carver=True)   # 룬이 아니므로 룬지기 안내 줄은 뺀다
         game_framework.push_mode(rune_get_mode)
 
 

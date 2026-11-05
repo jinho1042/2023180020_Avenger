@@ -68,6 +68,7 @@ def projectile_hit(player, p):
         # 반사 해금 전에는 튕겨 사라지고, 해금 후에는 되돌아간다 (9.3). 자세는 반사탄이 맞을 때 쌓인다
         if player.can('reflect'):
             p.on_parried(player, player.reflect_damage_mult)
+            player.world_state.stats['reflects'] += 1   # 통계 (13.6, 9.3: 해금 후 반사만 센다)
         else:
             p.on_blocked()
     # 밀려나는 방향은 투사체 진행 방향을 따른다

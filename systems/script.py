@@ -316,7 +316,7 @@ class AirShaft(Trigger):
 
 
 class Arena(Trigger):
-    # 보스 아레나 (11.2): 몸이 닿으면 출구의 아레나 돌문이 닫히고 보스 등장 (첫 만남이면 타이틀 카드)
+    # 보스·정예 아레나 (11.2, 10.4): 몸이 닿으면 출구의 아레나 돌문이 닫히고 보스 등장 (첫 만남이면 타이틀 카드)
     # 플레이어가 죽으면 문이 열린다. 보스가 쓰러지면 문 열림 → play_mode.on_boss_defeated (안전지대·기록·저장)
     # 처치한 아레나는 보스가 없으므로 아무것도 하지 않는다 (문은 열린 채)
     def __init__(self, *args):
@@ -347,11 +347,14 @@ class Arena(Trigger):
             return
         for gate in room.arena_gates:
             gate.close()
+        # 정예(10.4)도 같은 아레나를 쓰지만 bosses_met에 남기지 않고 타이틀 카드도 없다
         met = world.state.bosses_met
-        first = boss.boss_key not in met
-        met.add(boss.boss_key)
+        first = boss.kind == 'boss' and boss.boss_key not in met
+        if boss.kind == 'boss':
+            met.add(boss.boss_key)
         boss.wake(first)
-        print(f"[보스] {boss.boss_key} 등장 ({'첫 만남' if first else '재도전'})")
+        label = '정예' if boss.kind == 'elite' else ('첫 만남' if first else '재도전')
+        print(f'[보스] {boss.boss_key} 등장 ({label})')
 
     def open_gates(self):
         for gate in room.arena_gates:

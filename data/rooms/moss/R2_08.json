@@ -10,16 +10,30 @@
     [0, 0, 1280, 64, "solid"],
     [0, 264, 40, 456, "solid"],
     [1240, 264, 40, 456, "solid"],
-    [0, 680, 1280, 40, "solid"]
+    [0, 680, 1280, 40, "solid"],
+    [540, 220, 200, 16, "oneway"]
+  ],
+  "air_vents": [
+    [640, 280, "vent_a"]
+  ],
+  "gates": [
+    [16, 64, 32, 200, "arena", "arena_l"],
+    [1232, 64, 32, 200, "arena", "arena_r"]
   ],
   "exits": [
     {"id": "L", "rect": [0, 64, 16, 200], "to": "R2_07", "to_exit": "R"},
     {"id": "R", "rect": [1264, 64, 16, 200], "to": "R2_09", "to_exit": "L"}
   ],
-  "objects": [],
+  "objects": [
+    ["elite", 1000, 64, "shell_captain", "captain"],
+    ["target", 1150, 64, "target_a"]
+  ],
   "spawns": [],
   "safe_points": [
     [200, 64],
     [1080, 64]
+  ],
+  "triggers": [
+    [560, 64, 160, 400, "arena", "arena_trial"]
   ]
 }
