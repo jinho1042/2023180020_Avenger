@@ -221,6 +221,9 @@ HARD_SOIL_DOTS = dict(step=14, size=8)   # px, 무른 흙벽보다 촘촘하고 
 COLOR_FRAGILE_FLOOR = (120, 110, 100)    # 깨지는 바닥 (낙반으로 파괴, T51)
 COLOR_FRAGILE_LINE = (55, 50, 45)        # 깨지는 바닥 금
 FRAGILE_CRACK_STEP = 32                  # px, 깨지는 바닥 금 간격
+COLOR_THORN_VINE = (70, 95, 55)          # 가시 덩굴벽 (버팀 Lv2부터 매달림, Lv1 이하는 닿으면 환경 피해, T65)
+COLOR_THORN_VINE_SPIKE = (205, 190, 140)
+THORN_VINE = dict(touch=4, step=22, spike=6)   # px, 몸이 이만큼 가까우면 '닿음' · 양옆 가시 간격 · 가시 길이
 COLOR_CRACK_LINE = (40, 35, 35)
 CRACK_WIND = dict(count=6, dist=70, period=1.6, size=3)   # 균열벽(숨은 벽) 바람 단서: 양옆 dist px에서 균열로 빨려 드는 먼지 (7.5)
 COLOR_CRACK_WIND = (175, 165, 150)
@@ -373,7 +376,7 @@ CAMERA_CULL_MARGIN = 100   # px, 화면 밖 이만큼까지는 그린다 (5.3)
 RUNE_MAX_LEVEL = dict(breath=5, burrow=3, brace=3, crystal=3, breakthrough=3, shadow=3)
 ABILITY_RUNE = dict(      # 능력 → (룬, 필요 레벨). player.can(능력)이 본다 (6.2, 8.2 표)
     dash=('burrow', 1), rockfall=('burrow', 2), hard_soil=('burrow', 3),
-    wall_cling=('brace', 1), thorn_cling=('brace', 2),
+    wall_cling=('brace', 1), thorn_cling=('brace', 2), brace_breath=('brace', 3),
     crystal_step=('crystal', 1), crystal_arrow=('crystal', 2),
     breakthrough=('breakthrough', 1), breakthrough_pierce=('breakthrough', 2), air_breakthrough=('breakthrough', 3),
     shadow_dash=('shadow', 1),

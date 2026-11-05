@@ -14,7 +14,14 @@
     [1240, 64, 40, 616, "solid"],
     [0, 680, 1280, 40, "solid"],
     [700, 64, 200, 80, "solid"],
-    [520, 300, 200, 16, "oneway"]
+    [680, 300, 200, 16, "oneway"]
+  ],
+  "hazards": [
+    [440, 184, 24, 496, "thorn_vine"],
+    [624, 184, 24, 496, "thorn_vine"]
+  ],
+  "breakables": [
+    [516, 540, 56, 140, "ore_chunk", "chunk_vine"]
   ],
   "gates": [
     [200, 64, 48, 200, "one_way", "short_hub", {"open_from": "right", "to_hub": true}]

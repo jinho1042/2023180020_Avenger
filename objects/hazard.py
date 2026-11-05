@@ -122,6 +122,63 @@ class Rockfall(Hazard):
         return self.x, self.rock_y, self.x + self.w, self.rock_y + config.ROCKFALL_TRAP['rock_h']
 
 
+class ThornVine(Hazard):
+    # 가시 덩굴벽 (12.6, 버팀의 룬 Lv2): 지형(solid)이면서 함정. hazards [x, y, w, h, "thorn_vine"]
+    # 버팀 Lv2(thorn_cling) 전에는 닿으면 환경 피해 (play_mode.check_hazards) + 매달리지 못함 (player.update_wall)
+    # Lv2부터는 피해 없이 보통 벽처럼 매달리고 벽점프한다. 지형 판정은 left·right·bottom·top (Room.terrain)
+    # get_bb는 '닿음' 판정용으로 THORN_VINE touch만큼 넓힌 영역 (단단한 벽이라 몸이 겹칠 수 없으므로)
+    KINDS = ('thorn_vine',)
+    kind = 'solid'
+
+    def __init__(self, x, y, w, h, hazard_type):
+        super().__init__(x, y, w, h, hazard_type)
+        self.harmful = True   # notice가 매 프레임 플레이어 버팀 레벨로 정한다
+
+    @property
+    def left(self):
+        return self.x
+
+    @property
+    def right(self):
+        return self.x + self.w
+
+    @property
+    def bottom(self):
+        return self.y
+
+    @property
+    def top(self):
+        return self.y + self.h
+
+    def notice(self, player):
+        self.harmful = not player.can('thorn_cling')
+
+    def is_harmful(self):
+        return self.harmful
+
+    def on_pickaxe_hit(self, player):
+        return False
+
+    def draw(self):
+        spec = config.THORN_VINE
+        l, b, r, t = self.left, self.bottom, self.right, self.top
+        camera.draw_rect(l, b, r, t, *config.COLOR_THORN_VINE, filled=True)
+        # 양옆 면에 엇갈린 가시 (바깥으로 spike px)
+        half = spec['spike'] / 2
+        y, i = b + spec['step'] / 2, 0
+        while y < t:
+            x = l - spec['spike'] if i % 2 else r
+            camera.draw_rect(x, y - half, x + spec['spike'], y + half, *config.COLOR_THORN_VINE_SPIKE, filled=True)
+            y += spec['step'] / 2
+            i += 1
+        if game_world.show_hitbox:
+            camera.draw_rect(*self.get_bb(), *config.COLOR_DEBUG_ATTACK)
+
+    def get_bb(self):
+        m = config.THORN_VINE['touch']
+        return self.x - m, self.y - m, self.x + self.w + m, self.y + self.h + m
+
+
 def fire_bolt(x, y, dir_x, platforms, owner):
     # 쇠뇌 화살 (흰, 패링 가능) 한 발. owner = 쏜 함정·과녁 → 패링 숨 0 (8.4)
     spec = config.TRAP_BOLT

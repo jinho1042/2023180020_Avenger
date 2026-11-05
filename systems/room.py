@@ -23,7 +23,7 @@ from objects.enemies.thorn_flower import ThornFlower
 from objects.enemies.vine_lurker import VineLurker
 from objects.exit_zone import ExitZone
 from objects.gate import Gate
-from objects.hazard import BoltTarget, BoltTrap, Hazard, Rockfall
+from objects.hazard import BoltTarget, BoltTrap, Hazard, Rockfall, ThornVine
 from objects.npc import Npc
 from objects.platform import Platform
 from objects.safe_zone import SafeZone
@@ -81,8 +81,11 @@ class Room:
         # 기믹 객체를 만든다 (12.6). 부서진 벽·열린 문은 만들지 않는다 (5.6)
         # 닫힌 문·부서지기 전 벽은 terrain에 넣어 플레이어·적·투사체가 지형처럼 부딪힌다
         bolt_traps = [BoltTrap(*h, self.platforms, self.width) for h in self.hazards if h[4] in BoltTrap.KINDS]
+        # 가시 덩굴벽은 함정이면서 지형 (아래 terrain에도 넣는다, T65)
+        thorn_vines = [ThornVine(*h) for h in self.hazards if h[4] in ThornVine.KINDS]
         self.hazard_objects = ([Hazard(*h) for h in self.hazards if h[4] in Hazard.KINDS]
-                               + [Rockfall(*h) for h in self.hazards if h[4] in Rockfall.KINDS] + bolt_traps)
+                               + [Rockfall(*h) for h in self.hazards if h[4] in Rockfall.KINDS] + bolt_traps
+                               + thorn_vines)
         breakables = [Breakable(self.id, *b, state) for b in self.breakables
                       if b[4] in Breakable.KINDS and f'{self.id}:{b[5]}' not in state.broken]
         gates = {g[5]: Gate(self.id, *g, state) for g in self.gates
@@ -104,7 +107,7 @@ class Room:
                         if o[0] == 'statue' and f'{self.id}:{o[3]}' not in state.broken]
         self.state = state
         self.arena_gates = [g for g in gates.values() if g.type == 'arena']
-        self.terrain = self.platforms + breakables + list(gates.values())
+        self.terrain = self.platforms + breakables + list(gates.values()) + thorn_vines
         for trap in bolt_traps:
             trap.platforms = self.terrain   # 쇠뇌 화살은 닫힌 문·벽에도 부딪힌다
         # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)

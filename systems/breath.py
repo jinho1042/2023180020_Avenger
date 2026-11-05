@@ -144,7 +144,7 @@ def base_air(room):
 
 def drain_multiplier(room, player):
     # 7.2 순서 2: 몸 중심이 들어 있는 영역(포자 구름 포함) 배율과 기본 배율 중 가장 큰 값 하나 (곱하지 않는다)
-    # 반환: (배율, 공기 이름). 순서 3(안전지대)은 update가, 순서 4(버팀 Lv3 매달림)는 T65에서
+    # 반환: (배율, 공기 이름). 순서 3(안전지대)은 update가 (안전지대면 소모 0이라 순서 4와 겹치지 않는다)
     name = base_air(room)
     if name is None:
         return None, None
@@ -154,6 +154,9 @@ def drain_multiplier(room, player):
         zone_m = config.BREATH_DRAIN_MULT[zone.air]
         if zone_m > m and contains(zone, x, y):
             m, name = zone_m, zone.air
+    # 순서 4: 버팀의 룬 Lv3로 벽에 매달린 동안은 결과 × brace_lv3_drain_mult (T65)
+    if player.is_wall_sliding() and player.can('brace_breath'):
+        m *= config.RUNE_LV_EFFECT['brace_lv3_drain_mult']
     return m, name
 
 
