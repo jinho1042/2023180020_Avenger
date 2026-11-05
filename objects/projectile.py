@@ -101,7 +101,7 @@ class Projectile:
                 self.destroy()
                 return
             other.take_damage(self.damage)
-            # 반사탄이 보스에 맞으면 자세가 쌓인다 (9.3. 정예는 T48)
+            # 반사탄이 보스·정예(is_boss)에 맞으면 자세가 쌓인다 (9.3)
             if other.is_boss and other.is_alive():
                 other.add_posture(config.POSTURE_REFLECT)
             if other.is_alive():

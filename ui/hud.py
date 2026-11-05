@@ -175,6 +175,9 @@ def draw_dash_icon(player):
 
 
 def boss_name(key):
+    # 정예(10.4)도 보스 HUD(이름 + 자세 게이지)를 같이 쓴다
+    if key in config.ELITE_NAME:
+        return fonts.text(config.ELITE_NAME[key], config.ELITE_NAME_EN[key])
     return fonts.text(config.BOSS_NAME[key], config.BOSS_NAME_EN[key])
 
 

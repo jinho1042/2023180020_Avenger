@@ -1,0 +1,12 @@
+{
+  "name": "낡은 석판",
+  "name_en": "Worn Tablet",
+  "pages": [
+    ["쇠뇌 회랑. 갑각 무리가 지키던 길이다.", "화살은 하얗게 번쩍인 뒤 날아온다.", "피하거나, 받아쳐서 떨어뜨려라."],
+    ["회랑 끝의 대장을 꺾은 자는", "받아친 화살을 되돌려 보낼 수 있었다고 한다."]
+  ],
+  "pages_en": [
+    ["The Crossbow Gallery. The shell-folk once held this road.", "Bolts flash white before they fly.", "Dodge them, or parry them out of the air."],
+    ["It is said that whoever bested the captain at the gallery's end", "could send parried bolts flying back."]
+  ]
+}

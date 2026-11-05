@@ -12,6 +12,7 @@ from objects import enemy_base
 from objects.breakable import Breakable
 from objects.enemies.bat import Bat
 from objects.enemies.crawler import Crawler
+from objects.enemies.elites import ShellCaptain
 from objects.enemies.crystal_sage import CrystalSage
 from objects.enemies.crystal_sprite import CrystalSprite
 from objects.enemies.scythe_mantis import ScytheMantis
@@ -22,7 +23,7 @@ from objects.enemies.thorn_flower import ThornFlower
 from objects.enemies.vine_lurker import VineLurker
 from objects.exit_zone import ExitZone
 from objects.gate import Gate
-from objects.hazard import Hazard, Rockfall
+from objects.hazard import BoltTarget, BoltTrap, Hazard, Rockfall
 from objects.npc import Npc
 from objects.platform import Platform
 from objects.safe_zone import SafeZone
@@ -36,6 +37,8 @@ ENEMY_TYPES = {'crawler': Crawler, 'bat': Bat, 'shell_warrior': ShellWarrior, 't
                'scythe_mantis': ScytheMantis, 'shadow_stalker': ShadowStalker}
 # 보스 (11.4): 방 JSON boss 값 = 키. 보스 자리는 spawns에 같은 이름으로 둔다 ([종류, x, y])
 BOSS_TYPES = {'borer': RockshellBorer, 'moss_warden': MossWarden, 'archsage': CrystalArchsage, 'scythe': ScytheSovereign}
+# 정예 (10.4): objects ["elite", x, y, 종류, id]. 신전 골렘은 T53
+ELITE_TYPES = {'shell_captain': ShellCaptain}
 ARENA_ZONE_ID = 'arena'   # 처치 후 아레나 전체를 덮는 안전지대 id (앉는 자리 없음, 11.2)
 
 
@@ -77,8 +80,9 @@ class Room:
     def build(self, state):
         # 기믹 객체를 만든다 (12.6). 부서진 벽·열린 문은 만들지 않는다 (5.6)
         # 닫힌 문·부서지기 전 벽은 terrain에 넣어 플레이어·적·투사체가 지형처럼 부딪힌다
+        bolt_traps = [BoltTrap(*h, self.platforms, self.width) for h in self.hazards if h[4] in BoltTrap.KINDS]
         self.hazard_objects = ([Hazard(*h) for h in self.hazards if h[4] in Hazard.KINDS]
-                               + [Rockfall(*h) for h in self.hazards if h[4] in Rockfall.KINDS])
+                               + [Rockfall(*h) for h in self.hazards if h[4] in Rockfall.KINDS] + bolt_traps)
         breakables = [Breakable(self.id, *b, state) for b in self.breakables
                       if b[4] in Breakable.KINDS and f'{self.id}:{b[5]}' not in state.broken]
         gates = {g[5]: Gate(self.id, *g, state) for g in self.gates
@@ -101,6 +105,8 @@ class Room:
         self.state = state
         self.arena_gates = [g for g in gates.values() if g.type == 'arena']
         self.terrain = self.platforms + breakables + list(gates.values())
+        for trap in bolt_traps:
+            trap.platforms = self.terrain   # 쇠뇌 화살은 닫힌 문·벽에도 부딪힌다
         # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)
         self.gimmicks = self.hazard_objects + breakables + list(gates.values()) + switches
 
@@ -146,4 +152,22 @@ class Room:
             enemies += [BOSS_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns
                         if kind in BOSS_TYPES]
         statues = [TrainingStatue(self.id, x, y, sid, player, self.terrain, self.state) for x, y, sid in self.statues]
-        return enemies + statues
+        return enemies + self.spawn_elites(player) + statues + self.spawn_targets(player)
+
+    def spawn_elites(self, player):
+        # 정예는 한 번 처치하면 다시 나오지 않는다 (10.4, elites_defeated에 '방 id:정예 id')
+        result = []
+        for o in self.objects:
+            if o[0] != 'elite' or o[3] not in ELITE_TYPES:
+                continue
+            gid = f'{self.id}:{o[4]}'
+            if gid not in self.state.elites_defeated:
+                result.append(ELITE_TYPES[o[3]](o[1], o[2], player, self.terrain, gid))
+        return result
+
+    def spawn_targets(self, player):
+        # 쇠뇌 과녁 (9.5): 반사 해금 뒤, 부서지지 않은 것만. 해금 순간에는 play_mode가 다시 불러 넣는다
+        if config.REFLECT_UNLOCK_FLAG not in self.state.flags:
+            return []
+        return [BoltTarget(self.id, o[1], o[2], o[3], player, self.terrain, self.state) for o in self.objects
+                if o[0] == 'target' and f'{self.id}:{o[3]}' not in self.state.broken]
