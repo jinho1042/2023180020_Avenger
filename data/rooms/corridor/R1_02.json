@@ -16,13 +16,26 @@
     [1550, 64, 200, 150, "solid"],
     [2000, 64, 120, 80, "solid"]
   ],
+  "breakables": [
+    [1000, 64, 56, 56, "ore_chunk", "chunk_a"],
+    [2420, 64, 56, 56, "ore_chunk", "chunk_b"]
+  ],
   "exits": [
     {"id": "L", "rect": [0, 64, 16, 200], "to": "R1_01", "to_exit": "R"},
     {"id": "R", "rect": [2544, 64, 16, 200], "to": "R1_03", "to_exit": "L"}
   ],
-  "spawns": [],
+  "objects": [
+    ["tablet", 480, 64, "tablet_r1_carver_a"]
+  ],
+  "spawns": [
+    ["crawler", 1300, 64]
+  ],
   "triggers": [
     [40, 64, 300, 400, "hint", "hint_breath"]
   ],
-  "safe_points": [[120, 64], [1650, 214], [2300, 64]]
+  "safe_points": [
+    [120, 64],
+    [1650, 214],
+    [2300, 64]
+  ]
 }

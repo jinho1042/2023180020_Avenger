@@ -4,11 +4,11 @@ import config
 from objects.enemy_base import WINDUP, Attack, EnemyBase
 from systems import camera
 
-STATS = config.DUAL_DAGGER
+STATS = config.SCYTHE_MANTIS
 
 
-class EnemyDualDagger(EnemyBase):
-    # 쌍단검 병사: 빠르게 접근해 combo연속 베기 (흰색). 첫 타만 telegraph, 이후 각 타는 combo_interval로 짧게 번쩍인다
+class ScytheMantis(EnemyBase):
+    # 쌍낫 사마귀 (10.2, ← v2 쌍단검 병사): 빠르게 접근해 combo연속 베기 (흰색). 첫 타만 telegraph, 이후 각 타는 combo_interval로 짧게 번쩍인다
     # 쌍검 기사 4연속 베기의 축소판. 패링해도 연타가 끊기지 않아 전부 이어서 패링해야 한다
     def __init__(self, x, y, player, platforms):
         super().__init__(x, y, STATS, player, platforms)

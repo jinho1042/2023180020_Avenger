@@ -30,7 +30,7 @@
     ["seat", 140, 80, "safe_a"]
   ],
   "spawns": [
-    ["archer", 1100, 80]
+    ["thorn_flower", 1100, 80]
   ],
   "safe_points": [[640, 80]]
 }

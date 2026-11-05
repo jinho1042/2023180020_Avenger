@@ -6,8 +6,8 @@ import config
 import game_framework
 from objects import effect, magic_circle, projectile
 from objects.boss_base import BossBase
-from objects.enemy_adept_mage import blink_away, fit_x
-from objects.enemy_apprentice_mage import EnemyApprenticeMage
+from objects.enemies.crystal_sage import blink_away, fit_x
+from objects.enemies.crystal_sprite import CrystalSprite
 from objects.enemy_base import ACTIVE, TELEGRAPH, WINDUP, Attack
 from systems import camera
 
@@ -139,7 +139,7 @@ class BossMage(BossBase):
         for i in range(count):
             side = 1 if i % 2 == 0 else -1
             x = fit_x(self, self.x + side * STATS['summon_offset'])
-            mage = EnemyApprenticeMage(x, self.y, self.player, self.platforms)
+            mage = CrystalSprite(x, self.y, self.player, self.platforms)
             self.summons.append(mage)
             self.new_summons.append(mage)
             effect.burst(x, self.y + mage.h / 2, config.TELEPORT_PUFF, mage.color)

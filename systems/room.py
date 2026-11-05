@@ -7,14 +7,16 @@ from objects.boss_mage import BossMage
 from objects.air_vent import AirVent
 from objects.boss_twinblade import BossTwinblade
 from objects.breath_zone import BreathGate, BreathZone
+from objects import enemy_base
 from objects.breakable import Breakable
-from objects.enemy_adept_mage import EnemyAdeptMage
-from objects.enemy_apprentice_mage import EnemyApprenticeMage
-from objects.enemy_archer import EnemyArcher
-from objects.enemy_assassin import EnemyAssassin
-from objects.enemy_dual_dagger import EnemyDualDagger
-from objects.enemy_flyer import EnemyFlyer
-from objects.enemy_melee import EnemyMelee
+from objects.enemies.bat import Bat
+from objects.enemies.crawler import Crawler
+from objects.enemies.crystal_sage import CrystalSage
+from objects.enemies.crystal_sprite import CrystalSprite
+from objects.enemies.scythe_mantis import ScytheMantis
+from objects.enemies.shadow_stalker import ShadowStalker
+from objects.enemies.shell_warrior import ShellWarrior
+from objects.enemies.thorn_flower import ThornFlower
 from objects.exit_zone import ExitZone
 from objects.gate import Gate
 from objects.hazard import Hazard, Rockfall
@@ -22,11 +24,13 @@ from objects.npc import Npc
 from objects.platform import Platform
 from objects.safe_zone import SafeZone
 from objects.switch import Switch
+from objects.training_statue import TrainingStatue
 
-# spawns의 이름 → 적 클래스. bat(동굴 박쥐, 10.2)은 T42에서 bat.py로 바꾸기 전까지 플라잉 몹
-ENEMY_TYPES = {'melee': EnemyMelee, 'flyer': EnemyFlyer, 'bat': EnemyFlyer, 'archer': EnemyArcher,
-               'apprentice_mage': EnemyApprenticeMage, 'adept_mage': EnemyAdeptMage,
-               'dual_dagger': EnemyDualDagger, 'assassin': EnemyAssassin,
+# spawns의 이름 → 적 클래스 (10.2). 포자 버섯·덩굴 매복충·독 거머리·유적 골렘은 해당 작업에서
+# [v2] 보스 아레나(F4 시험용)의 보스 이름도 여기 (T45에서 bosses/로)
+ENEMY_TYPES = {'crawler': Crawler, 'bat': Bat, 'shell_warrior': ShellWarrior, 'thorn_flower': ThornFlower,
+               'crystal_sprite': CrystalSprite, 'crystal_sage': CrystalSage,
+               'scythe_mantis': ScytheMantis, 'shadow_stalker': ShadowStalker,
                'greatsword': BossGreatsword, 'mage': BossMage, 'twinblade': BossTwinblade}
 
 
@@ -81,8 +85,12 @@ class Room:
                                     + [BreathZone(*w[:4], 'water') for w in self.water])
         self.breath_gate_objects = [BreathGate(*g) for g in self.breath_gates]
         self.air_vent_objects = [AirVent(self.id, *v) for v in self.air_vents]
-        # NPC·석판 (2.5): ↑로 말 걸기. 지형이 아니라 곡괭이에도 맞지 않는다
-        self.npc_objects = [Npc(*o[:4]) for o in self.objects if o[0] in ('npc', 'tablet')]
+        # NPC·석판·룬지기 (2.5): ↑로 말 걸기. 지형이 아니라 곡괭이에도 맞지 않는다
+        self.npc_objects = [Npc(*o[:4]) for o in self.objects if o[0] in ('npc', 'tablet', 'carver')]
+        # 연습 석상 (9.5): 부서진 것은 만들지 않는다. 적 목록에 넣어 패링 판정을 쓴다 (spawn_enemies)
+        self.statues = [(o[1], o[2], o[3]) for o in self.objects
+                        if o[0] == 'statue' and f'{self.id}:{o[3]}' not in state.broken]
+        self.state = state
         self.terrain = self.platforms + breakables + list(gates.values())
         # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)
         self.gimmicks = self.hazard_objects + breakables + list(gates.values()) + switches
@@ -108,4 +116,8 @@ class Room:
         return next(e for e in self.exits if e.id == exit_id)
 
     def spawn_enemies(self, player):
-        return [ENEMY_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns]
+        # 일반 적은 안전지대 영역에 들어오지 않는다 (10.1)
+        enemy_base.set_safe_zones(z.get_bb() for z in self.safe_zone_objects)
+        enemies = [ENEMY_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns]
+        statues = [TrainingStatue(self.id, x, y, sid, player, self.terrain, self.state) for x, y, sid in self.statues]
+        return enemies + statues

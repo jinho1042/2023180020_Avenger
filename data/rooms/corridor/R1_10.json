@@ -1,0 +1,37 @@
+{
+  "id": "R1_10",
+  "region": "corridor",
+  "size": [1, 1],
+  "map_cell": [5, 5],
+  "music": "corridor",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 800, 64, "solid"],
+    [1000, 0, 280, 64, "solid"],
+    [0, 64, 40, 416, "solid"],
+    [0, 640, 40, 80, "solid"],
+    [1240, 64, 40, 656, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [200, 200, 60, 480, "solid"],
+    [40, 440, 60, 40, "solid"],
+    [1040, 304, 200, 40, "solid"]
+  ],
+  "breakables": [
+    [1040, 64, 48, 240, "crack", "crack_a"],
+    [1100, 64, 56, 56, "ore_chunk", "chunk_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 480, 16, 160], "to": "R3_01", "to_exit": "R"},
+    {"id": "D", "rect": [800, 0, 200, 16], "to": "R1_09", "to_exit": "U"}
+  ],
+  "objects": [
+    ["item", 1200, 64, "map_stone_r1"]
+  ],
+  "spawns": [
+    ["crawler", 500, 64]
+  ],
+  "safe_points": [
+    [600, 64]
+  ]
+}

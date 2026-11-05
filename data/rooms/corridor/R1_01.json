@@ -16,6 +16,10 @@
   "safe_zones": [
     [40, 64, 820, 560, "safe_a"]
   ],
+  "breakables": [
+    [90, 64, 56, 56, "ore_chunk", "chunk_a"],
+    [760, 64, 56, 56, "ore_chunk", "chunk_b"]
+  ],
   "exits": [
     {"id": "R", "rect": [1264, 64, 16, 200], "to": "R1_02", "to_exit": "L"}
   ],
@@ -26,5 +30,7 @@
   "triggers": [
     [520, 64, 240, 656, "air_shaft", "shaft_a"]
   ],
-  "safe_points": [[450, 64]]
+  "safe_points": [
+    [450, 64]
+  ]
 }

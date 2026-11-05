@@ -235,6 +235,15 @@ def hit_spark(x, y, base, count):
                             for _ in range(count)], config.DEPTH_EFFECT)
 
 
+def statue_spark(x, y):
+    # 연습 석상을 곡괭이로 쳤을 때: 사방으로 튀는 회색 스파크만 (히트스톱·피해음 없음, 5.4)
+    spark = config.STATUE_SPARK
+    speed = (config.HIT_SPARK_SPEED * (1 - config.HIT_SPARK_SPEED_JITTER), config.HIT_SPARK_SPEED)
+    game_world.add_objects([Particle(x, y, speed, config.HIT_SPARK_LIFE, config.HIT_SPARK_SIZE,
+                                     spark['color'], random.uniform(0, 2 * math.pi))
+                            for _ in range(spark['count'])], config.DEPTH_EFFECT)
+
+
 def enemy_hurt(x, y, dir_x):
     # 투사체 등 플레이어 근접 공격이 아닌 피해 (히트스톱 없음)
     hit_spark(x, y, 0 if dir_x > 0 else math.pi, config.HIT_SPARK_COUNT)

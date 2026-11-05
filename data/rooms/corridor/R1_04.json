@@ -1,0 +1,40 @@
+{
+  "id": "R1_04",
+  "region": "corridor",
+  "size": [2, 1],
+  "map_cell": [8, 6],
+  "music": "corridor",
+  "air": null,
+  "hub": true,
+  "platforms": [
+    [0, 0, 2000, 64, "solid"],
+    [2200, 0, 360, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [2520, 264, 40, 416, "solid"],
+    [0, 680, 1300, 40, "solid"],
+    [1500, 680, 1060, 40, "solid"],
+    [1250, 200, 200, 16, "oneway"],
+    [1450, 350, 200, 16, "oneway"],
+    [1250, 500, 260, 16, "oneway"]
+  ],
+  "safe_zones": [
+    [40, 64, 1100, 560, "safe_b"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R1_03", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R1_G1", "to_exit": "L"},
+    {"id": "U", "rect": [1300, 704, 200, 16], "to": "R1_05", "to_exit": "D"},
+    {"id": "D", "rect": [2000, 0, 200, 16], "to": "R1_06", "to_exit": "U"}
+  ],
+  "objects": [
+    ["seat", 300, 64, "safe_b"],
+    ["npc", 620, 64, "borum"],
+    ["statue", 1020, 64, "statue_a"],
+    ["tablet", 2400, 64, "tablet_r1_choke_a"]
+  ],
+  "spawns": [],
+  "safe_points": [
+    [1800, 64],
+    [2350, 64]
+  ]
+}

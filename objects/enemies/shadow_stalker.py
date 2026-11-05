@@ -5,14 +5,14 @@ from pico2d import *
 import config
 import game_framework
 from objects import effect
-from objects.enemy_adept_mage import fit_x
+from objects.enemies.crystal_sage import fit_x
 from objects.enemy_base import WINDUP, Attack, EnemyBase
 
-STATS = config.ASSASSIN
+STATS = config.SHADOW_STALKER
 
 
-class EnemyAssassin(EnemyBase):
-    # 그림자 암살자: 거리를 두고 배회하다가
+class ShadowStalker(EnemyBase):
+    # 그림자 사냥꾼 (10.2, ← v2 그림자 암살자): 거리를 두고 배회하다가
     # ① 순간이동 기습 (빨간색, 대시로 회피): 예고 → fade_time 동안 흐려짐 → 플레이어 등 뒤에 나타나 베기
     # ② stab_chance 확률로 걸어서 접근해 정면 찌르기 (흰색)
     def __init__(self, x, y, player, platforms):

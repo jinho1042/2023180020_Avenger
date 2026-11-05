@@ -1,0 +1,29 @@
+{
+  "id": "R2_01",
+  "region": "moss",
+  "size": [1, 1],
+  "map_cell": [0, 4],
+  "music": "moss",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [1240, 264, 40, 416, "solid"],
+    [0, 680, 1280, 40, "solid"]
+  ],
+  "safe_zones": [
+    [40, 64, 900, 560, "safe_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R1_G2", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R2_02", "to_exit": "L"}
+  ],
+  "objects": [
+    ["seat", 500, 64, "safe_a"]
+  ],
+  "spawns": [],
+  "safe_points": [
+    [200, 64]
+  ]
+}

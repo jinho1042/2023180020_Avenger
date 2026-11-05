@@ -200,6 +200,8 @@ SPIKE_W = 16               # px, 가시 한 개의 밑변
 SPIKE_STEP = 4             # px, 가시 삼각형을 쌓아 그리는 가로줄 두께
 COLOR_CRACK_WALL = (110, 100, 95)
 COLOR_CRACK_LINE = (40, 35, 35)
+CRACK_WIND = dict(count=6, dist=70, period=1.6, size=3)   # 균열벽(숨은 벽) 바람 단서: 양옆 dist px에서 균열로 빨려 드는 먼지 (7.5)
+COLOR_CRACK_WIND = (175, 165, 150)
 COLOR_ORE_CHUNK = (95, 85, 80)
 COLOR_ORE = (240, 190, 90)
 ORE_CHUNK_DOTS = 4         # 광석 덩어리 표면의 광석 점 개수
@@ -284,6 +286,8 @@ REGIONS = dict(            # 구역 이름·대표 색·기본 공기
 )
 HUB_SHORTCUT_REGIONS = ['moss', 'crystal', 'temple', 'nest']   # R1 허브행 숏컷이 필요한 구역 (R2~R5, 12.5)
 SAFE_ZONE_MAX_ROOMS = 4    # 어느 방에서든 가장 가까운 안전지대까지 최대 방 수 (게이트 방 제외)
+CARVER_FROM_HUB_MAX = 10.0 # s, R1 허브 안전지대 → 새김터 이동 시간 상한
+R1_SEGMENT_MAX = 15.0      # 임시. s, 숨의 룬 전 R1에서 숨 회복 지점 사이 최단 이동 시간 상한 (용량 25 기준)
 COLLECTIBLE_COUNTS = dict(  # 임시. 12.7 구역별 수집품 수 (상점·NPC·보스 몫 제외). validate_rooms.py 개수 검사 기준
     full=dict(rare_ore=dict(corridor=3, moss=3, crystal=3, temple=3, nest=3, tomb=1),
               engraving=dict(corridor=1, moss=5, crystal=3, temple=3, nest=2, tomb=0),
@@ -428,50 +432,54 @@ TELEGRAPH_BLINK = 0.06     # s, 예고 번쩍임 주기
 COLOR_ENEMY_WINDUP = (255, 240, 180)   # 공격 모션 중 무기 표시
 COLOR_ENEMY_SLASH = (255, 150, 60)     # 공격 판정 중 베기 표시
 COLOR_ENEMY_STAGGER = (220, 210, 90)   # 패링당해 비틀거리는 중 색
-# [v2] 적·보스의 ore = 처치 시 광석 (T38 임시. 10.2 도감 값은 T42 재테마·T45 보스에서)
-# 플라잉 몹: 플레이어 머리 위 hover_height에 떠 있다가 급강하. dive_time 동안(착지하면 즉시) 몸 전체가 공격 판정
-FLYER = dict(hp=20, ore=3, speed=150, dive_speed=600, damage=1, telegraph=0.5,
-             w=40, h=32, color=(120, 90, 170), detect_range=800, hover_height=220,
-             attack_range=60, hover_tolerance=40, ceiling_margin=40,
-             windup=0.15, dive_time=0.5, recover=0.6, attack_cooldown=1.2)
-# 근거리 병사: 베기 2연타. 2타째는 combo_telegraph만큼 짧게 예고한다
+# ===== 적 (T42, 10.2. 피해는 칸 단위, hp는 적 체력 단위, ore = 처치 시 광석) =====
+# 앞줄은 4장 값 그대로, 둘째 줄부터는 v2에서 이어받은 행동·그림 값. 색은 구역 색(REGIONS)에 맞춘다
+# 갱도 벌레: 바닥을 일정 속도로 기어 다니다 앞이 벽이거나 발판 끝이면 돌아선다. 공격 없음 (접촉만)
+CRAWLER = dict(hp=8, speed=60, damage=1, ore=2,
+               w=46, h=22, color=(150, 130, 105), detect_range=0, attack_range=0, attack_cooldown=0,
+               edge_probe=4)   # px, 발 앞 이만큼 아래에 바닥이 없으면 발판 끝
+# 동굴 박쥐 (← v2 플라잉 몹): 플레이어 머리 위 hover_height에 떠 있다가 급강하. dive_time 동안(착지하면 즉시) 몸 전체가 공격 판정
+BAT = dict(hp=10, speed=150, dive_speed=600, damage=1, telegraph=0.5, ore=3,
+           w=40, h=28, color=(105, 80, 120), detect_range=800, hover_height=220,
+           attack_range=60, hover_tolerance=40, ceiling_margin=40,
+           windup=0.15, dive_time=0.5, recover=0.6, attack_cooldown=1.2)
+# 갑각 전사 (← v2 근거리 병사): 베기 2연타. 2타째는 combo_telegraph만큼 짧게 예고한다
 # 방패 돌진(빨간 예고, 패링 불가): shield_rush_chance 확률로 베기 대신 rush_time 동안 rush_speed로 앞으로 돌진
-MELEE = dict(hp=40, ore=6, speed=180, damage=1, telegraph=0.5, shield_rush_chance=0.25,
-             w=44, h=68, color=(170, 70, 70), detect_range=700, attack_range=80,
-             windup=0.15, active=0.1, recover=0.25, combo_telegraph=0.3, combo_recover=0.6,
-             attack_cooldown=0.8, hitbox=(70, 48),
-             rush_telegraph=0.6, rush_windup=0.2, rush_time=0.4, rush_speed=650, rush_recover=0.7,
-             rush_damage=1, rush_hitbox=(24, 64))
+SHELL_WARRIOR = dict(hp=22, speed=180, damage=1, telegraph=0.5, shield_rush_chance=0.25, ore=6,
+                     w=44, h=68, color=(95, 115, 140), detect_range=700, attack_range=80,
+                     windup=0.15, active=0.1, recover=0.25, combo_telegraph=0.3, combo_recover=0.6,
+                     attack_cooldown=0.8, hitbox=(70, 48),
+                     rush_telegraph=0.6, rush_windup=0.2, rush_time=0.4, rush_speed=650, rush_recover=0.7,
+                     rush_damage=1, rush_hitbox=(24, 64))
 COLOR_SHIELD = (150, 150, 170)
-# 원거리 궁수: keep_distance ± distance_tolerance를 유지하고, shoot_range 안이면 플레이어를 조준해 화살을 쏜다
-ARCHER = dict(hp=30, ore=4, keep_distance=400, arrow_speed=500, damage=1, telegraph=0.6,
-              w=40, h=64, color=(70, 140, 90), detect_range=1280, speed=140,
-              distance_tolerance=60, shoot_range=900,
-              windup=0.2, active=0.05, recover=0.4, attack_cooldown=1.0)
-COLOR_BOW = (170, 120, 60)
-# 투사체 (화살 등). size는 정사각 hitbox 한 변, length는 화살 그림 길이
+# 가시꽃 (← v2 궁수): 제자리 고정. shoot_range 안이면 플레이어를 조준해 가시 (cooldown마다)
+THORN_FLOWER = dict(hp=15, thorn_speed=500, damage=1, telegraph=0.6, cooldown=2.0, ore=4,
+                    w=40, h=56, color=(70, 140, 90), detect_range=1280, speed=0, shoot_range=900,
+                    windup=0.2, active=0.05, recover=0.4)
+COLOR_THORN_BUD = (200, 90, 130)
+# 투사체 (가시 등). size는 정사각 hitbox 한 변, length는 그림 길이
 ARROW = dict(size=14, length=36, color=(240, 230, 200))
 COLOR_REFLECTED = (120, 255, 255)  # 반사되어 플레이어 소유가 된 투사체
 DISC_STEP = 3              # px, 원형 투사체를 가로 띠로 나눠 그리는 간격
+# 포자 버섯·덩굴 매복충 (T47), 독 거머리·유적 골렘 (T53), 정예 (T48·T53)는 해당 작업에서
 
-# [v2] 적 - 마법사 루트
-# 견습 마법사: 궁수처럼 keep_distance ± distance_tolerance 유지, shoot_range 안이면 조준해 마력탄 1발 (흰색)
-APPRENTICE_MAGE = dict(hp=25, ore=4, speed=120, keep_distance=450, bolt_speed=350,
-                       damage=1, telegraph=0.7, cast_cooldown=2.0,
-                       w=38, h=60, color=(110, 80, 170), detect_range=1280,
-                       distance_tolerance=60, shoot_range=900,
-                       windup=0.2, active=0.05, recover=0.5)
-# 숙련 마법사: 마력탄 bolt_count발 부채꼴(사이각 bolt_spread도, 흰색) 또는
-#   circle_chance 확률로 플레이어 발밑 마법진(빨간색, 패링 불가)
+# 수정 유생 (← v2 견습 마법사): keep_distance ± distance_tolerance 유지, shoot_range 안이면 조준해 수정탄 1발 (흰색)
+CRYSTAL_SPRITE = dict(hp=13, speed=120, keep_distance=450, bolt_speed=350,
+                      damage=1, telegraph=0.7, cast_cooldown=2.0, ore=4,
+                      w=38, h=60, color=(150, 110, 210), detect_range=1280,
+                      distance_tolerance=60, shoot_range=900,
+                      windup=0.2, active=0.05, recover=0.5)
+# 수정 술사 (← v2 숙련 마법사): 수정탄 bolt_count발 부채꼴(사이각 bolt_spread도, 흰색) 또는
+#   circle_chance 확률로 플레이어 발밑 결정 장판(빨간색, 패링 불가)
 #   blink_trigger_dist 안으로 들어오면 blink_dist만큼 순간 후퇴 (예고 없음, blink_cooldown)
-ADEPT_MAGE = dict(hp=45, ore=8, speed=120, keep_distance=400, bolt_speed=450, bolt_count=3,
-                  bolt_spread=15, damage=1, telegraph=0.6, cast_cooldown=2.5,
-                  circle_chance=0.35, circle_radius=90, circle_delay=0.8,
-                  blink_trigger_dist=150, blink_dist=250, blink_cooldown=4.0,
-                  w=42, h=66, color=(80, 50, 140), detect_range=1280,
-                  distance_tolerance=60, shoot_range=900,
-                  windup=0.25, active=0.05, recover=0.6,
-                  circle_telegraph=0.5, circle_windup=0.2, circle_recover=0.6, circle_damage=1)
+CRYSTAL_SAGE = dict(hp=25, speed=120, keep_distance=400, bolt_speed=450, bolt_count=3,
+                    bolt_spread=15, damage=1, telegraph=0.6, cast_cooldown=2.5,
+                    circle_chance=0.35, circle_radius=90, circle_delay=0.8,
+                    blink_trigger_dist=150, blink_dist=250, blink_cooldown=4.0, ore=8,
+                    w=42, h=66, color=(110, 70, 170), detect_range=1280,
+                    distance_tolerance=60, shoot_range=900,
+                    windup=0.25, active=0.05, recover=0.6,
+                    circle_telegraph=0.5, circle_windup=0.2, circle_recover=0.6, circle_damage=1)
 COLOR_STAFF = (150, 110, 80)
 COLOR_STAFF_ORB = (190, 140, 255)
 # 마력탄: 화살과 같은 반사 처리, 원형. 반사하면 reflect_mult배 (견습 마법사를 반사탄 한 방에 처치하는 수준)
@@ -481,27 +489,33 @@ MAGIC_BOLT = dict(size=18, length=0, color=(190, 140, 255), reflect_mult=3.0, ro
 MAGIC_CIRCLE = dict(active=0.12, pillar_h=150, ring_flat=0.3, ring_dots=24, dot=6,
                     warn_alpha=70, pillar_alpha=200, pillar_color=(255, 150, 60))
 
-# [v2] 적 - 쌍검 루트
-# 쌍단검 병사: 빠르게 접근해 combo연속 베기 (흰색). 첫 타 예고 telegraph, 이후 각 타는 combo_interval 예고
+# 쌍낫 사마귀 (← v2 쌍단검 병사): 빠르게 접근해 combo연속 베기 (흰색). 첫 타 예고 telegraph, 이후 각 타는 combo_interval 예고
 #   패링해도 연타가 끊기지 않고 다음 타로 이어간다 (연속 패링 연습). 마지막 타를 패링하면 비틀거린다
-DUAL_DAGGER = dict(hp=35, ore=7, speed=260, damage=1, telegraph=0.35,
-                   combo=3, combo_interval=0.3,       # combo_interval >= TELEGRAPH_MIN
-                   w=40, h=62, color=(60, 130, 150), detect_range=900, attack_range=70,
-                   windup=0.08, active=0.08, recover=0.12, last_recover=0.7,
-                   attack_cooldown=1.0, hitbox=(64, 44))
-# 그림자 암살자: keep_distance ± distance_tolerance를 두고 배회. 공격 쿨타임이 끝나면
+SCYTHE_MANTIS = dict(hp=20, speed=260, damage=1, telegraph=0.35,
+                     combo=3, combo_interval=0.3, ore=7,      # combo_interval >= TELEGRAPH_MIN
+                     w=40, h=62, color=(70, 90, 140), detect_range=900, attack_range=70,
+                     windup=0.08, active=0.08, recover=0.12, last_recover=0.7,
+                     attack_cooldown=1.0, hitbox=(64, 44))
+# 그림자 사냥꾼 (← v2 그림자 암살자): keep_distance ± distance_tolerance를 두고 배회. 공격 쿨타임이 끝나면
 #   ① 순간이동 기습 (빨간색): 예고 → fade_time 동안 흐려짐 → 플레이어 등 뒤 offset px에 나타나 appear_windup 후 베기
 #      (teleport_cooldown. 등 뒤가 벽·화면 밖이면 앞쪽에 나타난다)
 #   ② stab_chance 확률로(또는 기습 쿨타임 중이면) 걸어서 접근해 정면 찌르기 (흰색)
 #   흐려지는 동안 몸 알파값은 fade_alpha[0] → fade_alpha[1]
-ASSASSIN = dict(hp=30, ore=7, speed=200, damage=1, telegraph=0.5,
-                teleport_cooldown=4.0, fade_time=0.4, stab_chance=0.5,
-                w=38, h=64, color=(120, 60, 110), detect_range=1280, attack_range=80,
-                keep_distance=320, distance_tolerance=60, attack_cooldown=1.2,
-                stab_windup=0.2, stab_active=0.1, stab_recover=0.5, stab_hitbox=(80, 26),
-                appear_windup=0.3, slash_active=0.12, slash_recover=0.7, slash_hitbox=(80, 60),
-                offset=80, fade_alpha=(220, 0))
+SHADOW_STALKER = dict(hp=18, speed=200, damage=1, telegraph=0.5,
+                      teleport_cooldown=4.0, fade_time=0.4, stab_chance=0.5, ore=7,
+                      w=38, h=64, color=(60, 55, 100), detect_range=1280, attack_range=80,
+                      keep_distance=320, distance_tolerance=60, attack_cooldown=1.2,
+                      stab_windup=0.2, stab_active=0.1, stab_recover=0.5, stab_hitbox=(80, 26),
+                      appear_windup=0.3, slash_active=0.12, slash_recover=0.7, slash_hitbox=(80, 60),
+                      offset=80, fade_alpha=(220, 0))
 COLOR_DAGGER = (200, 210, 225)
+# 연습 석상 (9.5): 플레이어가 near_range 안에 있으면 interval마다 흰 내려치기 (피해 0, 패링 숨 0)
+#   hits_to_break번 패링하면 부서지며 광석 ore (영구). 곡괭이로 치면 회색 스파크만
+TRAINING_STATUE = dict(interval=3.0, telegraph=0.5, hits_to_break=3, ore=20,   # 피해 0, 패링 숨 0
+                       w=60, h=110, color=(120, 120, 125), near_range=360,
+                       windup=0.15, active=0.1, recover=0.5, hitbox=(80, 90), recoil=0.4)
+COLOR_STATUE_CRACK = (60, 60, 65)
+STATUE_SPARK = dict(count=5, color=(150, 150, 155))   # 곡괭이로 쳤을 때 회색 스파크
 
 # 보스
 POSTURE_MAX = 3            # 패링 성공 횟수로 그로기
@@ -686,7 +700,8 @@ DIALOG_CHARS_PER_SEC = 40
 DIALOG_DIR = 'data/dialog'  # <대화 id>.json (NPC id·석판 id와 같은 이름), 상점 상품 이름은 shop.json
 NPC_TALK_RADIUS = 80       # px, NPC·석판 중심과 플레이어 중심의 가로 거리가 이 안이면 ↑로 말 걸기
 NPC_W, NPC_H = 40, 72      # px
-COLOR_NPC = dict(borum=(150, 120, 80), borum_mine=(150, 120, 80))   # NPC id별 몸 색. 없으면 COLOR_NPC_DEFAULT
+COLOR_NPC = dict(borum=(150, 120, 80), borum_mine=(150, 120, 80), har=(105, 100, 95), oram=(90, 120, 160))   # NPC id별 몸 색. 없으면 COLOR_NPC_DEFAULT
+COLOR_CARVER_STONE = (115, 115, 120)      # 룬지기 오람의 돌이 된 아래 절반
 COLOR_NPC_DEFAULT = (120, 120, 100)
 COLOR_NPC_LAMP = (255, 220, 120)         # 헬멧 랜턴 (플레이어와 같은 광부 표시)
 NPC_LAMP = 8               # px

@@ -8,11 +8,11 @@ import game_world
 from objects.enemy_base import ACTIVE, CHASE, RECOVER, Attack, EnemyBase
 from systems import camera, terrain
 
-STATS = config.FLYER
+STATS = config.BAT
 
 
-class EnemyFlyer(EnemyBase):
-    # 플라잉 몹: 중력 없이 플레이어 머리 위로 이동해 급강하 돌진 (흰색 예고). 패링당하면 즉시 격추
+class Bat(EnemyBase):
+    # 동굴 박쥐 (10.2, ← v2 플라잉 몹): 중력 없이 플레이어 머리 위로 이동해 급강하 돌진 (흰색 예고). 패링당하면 즉시 격추
     def __init__(self, x, y, player, platforms):
         super().__init__(x, y, STATS, player, platforms)
         self.hover_height = STATS['hover_height']

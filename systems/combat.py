@@ -16,6 +16,9 @@ def resolve(player, enemies, gimmicks=()):
                 player.attack_hits.add(e)
                 x, y = contact_point(attack_bb, e.get_bb())
                 strong = player.on_attack_hit()   # 반동·포고·세 번째 일격 (휘두름당 1번)
+                if e.kind == 'statue':
+                    effect.statue_spark(x, y)       # 연습 석상은 회색 스파크만 (5.4)
+                    continue
                 e.take_damage(player.attack_damage(), player.attack_knockback(e))
                 effect.attack_hit(x, y, player.attack_angle(), strong, not e.is_alive())
 
@@ -31,8 +34,8 @@ def resolve(player, enemies, gimmicks=()):
                 player.on_parry_success(e)
                 e.on_parried()
                 effect.parry_success(*contact_point(enemy_bb, body_bb))
-            else:
-                # 무적이라 피해가 없었으면 판정 구간이 남아 있는 동안 다시 검사한다
+            elif e.attack_damage() > 0:
+                # 무적이라 피해가 없었으면 판정 구간이 남아 있는 동안 다시 검사한다 (피해 0 = 연습 석상은 맞아도 무시)
                 e.attack_hit = player.take_hit(e.attack_damage(), e.x)
                 if e.attack_hit:
                     effect.player_hit(player.x, player.y + config.PLAYER_H / 2)

@@ -7,15 +7,15 @@ import config
 import game_framework
 import game_world
 from objects import effect, magic_circle
-from objects.enemy_apprentice_mage import EnemyApprenticeMage
+from objects.enemies.crystal_sprite import CrystalSprite
 from objects.enemy_base import Attack
 from systems import terrain
 
-STATS = config.ADEPT_MAGE
+STATS = config.CRYSTAL_SAGE
 
 
-class EnemyAdeptMage(EnemyApprenticeMage):
-    # 숙련 마법사: ① 마력탄 bolt_count발 부채꼴 (흰색, 각각 반사 가능)
+class CrystalSage(CrystalSprite):
+    # 수정 술사 (10.2, ← v2 숙련 마법사): ① 마력탄 bolt_count발 부채꼴 (흰색, 각각 반사 가능)
     # ② circle_chance 확률로 플레이어 발밑 마법진 (빨간색, 패링 불가, 대시·이동으로 회피)
     # 플레이어가 blink_trigger_dist 안으로 들어오면 blink_dist만큼 순간 후퇴 (공격이 아니라 예고 없음)
     stats = STATS
