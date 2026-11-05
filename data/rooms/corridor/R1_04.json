@@ -30,7 +30,7 @@
     ["seat", 300, 64, "safe_b"],
     ["npc", 620, 64, "borum"],
     ["statue", 1020, 64, "statue_a"],
-    ["tablet", 2400, 64, "tablet_r1_choke_a"]
+    ["warning_tablet", 2400, 64, "tablet_r1_choke_a"]
   ],
   "spawns": [],
   "safe_points": [

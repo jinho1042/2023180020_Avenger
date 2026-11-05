@@ -24,7 +24,7 @@
   ],
   "objects": [
     ["seat", 400, 64, "safe_b"],
-    ["tablet", 1170, 64, "tablet_r2_gate_a"]
+    ["warning_tablet", 1170, 64, "tablet_r2_gate_a"]
   ],
   "spawns": [],
   "safe_points": [

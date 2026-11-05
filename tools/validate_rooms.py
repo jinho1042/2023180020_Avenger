@@ -12,6 +12,9 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 sys.path.insert(0, ROOT)
 import config  # noqa: E402
 
+# cp949 콘솔(Windows 기본)에서도 한글·'—'를 출력할 수 있게 (18장 57번)
+sys.stdout.reconfigure(encoding='utf-8')
+
 ROOM_DIR = os.path.join(ROOT, 'data', 'rooms')
 ITEMS_PATH = os.path.join(ROOT, 'data', 'items.json')
 COLLECTIBLE_STRICT = False   # T61에서 True (수집품 개수 검사 경고 → 오류)
@@ -207,7 +210,8 @@ def check_regions(rooms, items):
     scope_regions = config.SCOPE_REGIONS[config.SCOPE]
     complete = {}
     for region in scope_regions:
-        count = len(region_rooms(rooms, region))
+        # 12.2 표의 방 수에 보스 아레나는 넣지 않는다 (18장 81번)
+        count = len([r for r in region_rooms(rooms, region) if not rooms[r].get('boss')])
         complete[region] = count >= config.REGIONS[region]['rooms']
         if count == 0:
             print(f"[미작성] {region} ({config.REGIONS[region]['name']})")
@@ -274,6 +278,7 @@ def check_safe_distance(rooms, complete, scope_regions):
 
 def collectible_kind(obj, items):
     # 수집품 종류. items.json이 있으면 그 kind, 없으면 id 접두어로 짐작
+    # 경고 석판(warning_tablet)은 길 안내라 수집품이 아니다 (18장 60번)
     if obj[0] in ('miner', 'tablet'):
         return obj[0]
     if obj[0] != 'item':
