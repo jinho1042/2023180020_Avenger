@@ -1,0 +1,37 @@
+{
+  "id": "R3_02",
+  "region": "crystal",
+  "size": [2, 1],
+  "map_cell": [9, 4],
+  "music": "crystal",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 64, "solid"],
+    [0, 680, 2560, 40, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [2520, 264, 40, 416, "solid"],
+    [1800, 64, 100, 150, "solid"],
+    [1000, 64, 200, 200, "solid"],
+    [1240, 180, 140, 16, "oneway"],
+    [820, 180, 140, 16, "oneway"]
+  ],
+  "breakables": [
+    [1500, 64, 40, 56, "air_crystal", "pocket_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R3_03", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R3_01", "to_exit": "L"}
+  ],
+  "objects": [
+    ["tablet", 2300, 64, "tablet_r3_pocket"]
+  ],
+  "spawns": [
+    ["crystal_sprite", 500, 64]
+  ],
+  "safe_points": [
+    [2300, 64],
+    [1650, 64],
+    [300, 64]
+  ]
+}

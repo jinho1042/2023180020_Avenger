@@ -8,6 +8,7 @@ from systems import camera, combat, sound
 
 GROUP_PLAYER = 'player:projectile'
 GROUP_ENEMY = 'enemy:projectile'
+GROUP_SWITCH = 'switch:projectile'   # 수정 스위치 (objects/switch.py)
 
 
 class Projectile:
@@ -62,7 +63,8 @@ class Projectile:
             return
         bb = self.get_bb()
         for p in self.platforms:
-            if p.kind == 'solid' and game_world.overlap(bb, p.get_bb()):
+            # 수정 스위치는 지형이지만 투사체를 통과시킨다 (반사탄은 handle_collision에서 받는다)
+            if p.kind == 'solid' and not getattr(p, 'passes_projectiles', False) and game_world.overlap(bb, p.get_bb()):
                 self.destroy()
                 return
 
@@ -95,6 +97,9 @@ class Projectile:
             return
         if group == GROUP_PLAYER and not self.reflected:
             combat.projectile_hit(other, self)
+        elif group == GROUP_SWITCH:
+            if self.reflected and other.on_reflected_hit(self):
+                self.destroy()
         elif group == GROUP_ENEMY and self.reflected and other.is_alive():
             if other.invulnerable():
                 effect.statue_spark(self.x, self.y)
@@ -116,4 +121,5 @@ def fire(x, y, dir_x, dir_y, speed, damage, parryable, platforms, spec, owner=No
     # 반사 후 그룹을 옮기면 충돌 순회 중 목록이 바뀌므로 처음부터 양쪽에 등록하고 reflected로 거른다
     game_world.add_collision_pair(GROUP_PLAYER, None, p)
     game_world.add_collision_pair(GROUP_ENEMY, None, p)
+    game_world.add_collision_pair(GROUP_SWITCH, None, p)
     return p

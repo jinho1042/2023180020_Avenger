@@ -10,9 +10,11 @@ class Breakable:
     # kind = 'solid'는 systems/terrain.py가 보는 값이고 기믹 종류는 type. 부서지면 kind = None (지형에서 빠짐)
     # 무른 흙벽(soil)은 곡괭이로는 안 부서지고 굴착 대시로 닿으면 파고 통과한다 (6.4, player.dig_soil)
     # 단단한 흙벽(hard_soil)은 굴착 Lv3 대시로, 깨지는 바닥(floor)은 낙반 착지로만 부서진다 (12.6, T51)
-    # 광맥벽·결정 숨주머니는 해당 작업에서
-    KINDS = ('crack', 'ore_chunk', 'soil', 'hard_soil', 'floor')
+    # 결정 숨주머니(air_crystal)는 곡괭이로 깨면 숨 회복 (7.2, T50). 광맥벽(ore_vein)은 T50에서 위치만 보여 주고
+    # 곡괭이에는 반동·스파크만 (곡괭이 Lv ORE_VEIN_LEVEL부터 깨지는 것은 T64)
+    KINDS = ('crack', 'ore_chunk', 'soil', 'hard_soil', 'floor', 'air_crystal', 'ore_vein')
     DIGGABLE = ('soil', 'hard_soil', 'floor')   # 곡괭이로는 안 부서지고 룬 동작(dig)으로만
+    HITS = dict(crack=config.CRACK_WALL_HITS, air_crystal=config.AIR_CRYSTAL['hits'], ore_vein=config.ORE_VEIN_HITS)
 
     def __init__(self, room_id, x, y, w, h, type, obj_id, state):
         self.x, self.y, self.w, self.h = x, y, w, h
@@ -20,7 +22,7 @@ class Breakable:
         self.kind = 'solid'
         self.gid = f'{room_id}:{obj_id}'
         self.state = state
-        self.max_hits = config.CRACK_WALL_HITS if type == 'crack' else config.ORE_CHUNK_HITS
+        self.max_hits = self.HITS.get(type, config.ORE_CHUNK_HITS)
         # 친 횟수는 방을 나갔다 와도 유지한다 (광석 덩어리를 나갔다 오며 반복해서 캐지 못하게)
         self.hits = state.mined.get(self.gid, 0)
         self.time = 0.0   # 바람 단서 애니메이션
@@ -48,8 +50,8 @@ class Breakable:
         # 반환: 이번 휘두름이 이 대상에 '맞았는가' (combat이 반동·포고·스파크를 처리)
         if self.kind is None:
             return False
-        if self.type in self.DIGGABLE:
-            return True   # 흙벽·깨지는 바닥은 곡괭이로 부서지지 않는다 (반동·포고만)
+        if self.type in self.DIGGABLE or self.type == 'ore_vein':
+            return True   # 흙벽·깨지는 바닥·광맥벽(T64 전)은 곡괭이로 부서지지 않는다 (반동·포고만)
         self.hits += 1
         self.state.mined[self.gid] = self.hits
         cx, cy = self.x + self.w / 2, self.y + self.h / 2
@@ -73,10 +75,16 @@ class Breakable:
         self.state.mined.pop(self.gid, None)
         game_world.remove_object(self)
         effect.wall_broken(self.x + self.w / 2, self.y + self.h / 2, self.color())
+        if self.type == 'air_crystal':
+            # 갇혀 있던 공기가 터져 나온다: 숨 회복 + 숨 구간을 끊는다 (숨구멍과 같은 회복 지점, 7.2)
+            from systems import breath   # breath → world → room → breakable 순환을 피한다
+            breath.touch_air_crystal(self.gid)
+            effect.air_burst(self.x + self.w / 2, self.y + self.h / 2)
 
     def color(self):
         return {'crack': config.COLOR_CRACK_WALL, 'soil': config.COLOR_SOIL, 'hard_soil': config.COLOR_HARD_SOIL,
-                'floor': config.COLOR_FRAGILE_FLOOR}.get(self.type, config.COLOR_ORE_CHUNK)
+                'floor': config.COLOR_FRAGILE_FLOOR, 'air_crystal': config.COLOR_AIR_CRYSTAL,
+                'ore_vein': config.COLOR_ORE_VEIN}.get(self.type, config.COLOR_ORE_CHUNK)
 
     def draw(self):
         l, b, r, t = self.get_bb()
@@ -90,6 +98,10 @@ class Breakable:
             self.draw_soil(config.HARD_SOIL_DOTS, config.COLOR_HARD_SOIL_DOT)
         elif self.type == 'floor':
             self.draw_floor()
+        elif self.type == 'air_crystal':
+            self.draw_air_crystal()
+        elif self.type == 'ore_vein':
+            self.draw_ore_vein()
         else:
             self.draw_ore()
         if game_world.show_hitbox:
@@ -142,6 +154,35 @@ class Breakable:
             camera.draw_rect(x - 2, self.y + dy - step / 4, x + 2, self.top, *config.COLOR_FRAGILE_LINE, filled=True)
             x += step
             i += 1
+
+    def draw_air_crystal(self):
+        # 밝은 테두리 + 안에 갇힌 공기 방울이 천천히 위아래로 흔들린다
+        spec = config.AIR_CRYSTAL
+        edge = config.COLOR_AIR_CRYSTAL_EDGE
+        camera.draw_rect(self.x, self.y, self.right, self.top, *edge)
+        camera.draw_rect(self.x + 2, self.y + 2, self.right - 2, self.top - 2, *edge)
+        half = spec['bubble'] / 2
+        for i in range(spec['bubbles']):
+            k = (i + 1) / (spec['bubbles'] + 1)
+            phase = (self.time / spec['period'] + k) % 1
+            bob = spec['bob'] * (1 if phase < 0.5 else -1)
+            x, y = self.x + self.w * k, self.y + self.h * (1 - k) + bob
+            camera.draw_rect(x - half, y - half, x + half, y + half, *config.COLOR_BREATH, filled=True)
+
+    def draw_ore_vein(self):
+        # 대각선으로 늘어선 희귀 광석 결 (곡괭이를 강화하면 캘 수 있다는 표시)
+        spec = config.ORE_VEIN_STREAKS
+        half = spec['size'] / 2
+        step = spec['step']
+        y = self.y + step / 2
+        row = 0
+        while y < self.top:
+            x = self.x + (row * step / 3) % step + step / 4
+            while x < self.right:
+                camera.draw_rect(x - half, y - half, x + half, y + half, *config.COLOR_ORE_VEIN_STREAK, filled=True)
+                x += step
+            y += step / 2
+            row += 1
 
     def draw_ore(self):
         # 남은 횟수만큼 광석 점을 대각선으로 늘어놓는다

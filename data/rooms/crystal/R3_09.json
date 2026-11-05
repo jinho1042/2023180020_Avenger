@@ -1,0 +1,29 @@
+{
+  "id": "R3_09",
+  "region": "crystal",
+  "size": [1, 1],
+  "map_cell": [0, 6],
+  "music": "crystal",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [1240, 264, 40, 416, "solid"]
+  ],
+  "safe_zones": [
+    [40, 64, 1200, 560, "safe_c"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R3_B3", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R3_08", "to_exit": "L"}
+  ],
+  "objects": [
+    ["seat", 700, 64, "safe_c"]
+  ],
+  "spawns": [],
+  "safe_points": [
+    [400, 64]
+  ]
+}

@@ -91,6 +91,8 @@ class Room:
         gates = {g[5]: Gate(self.id, *g, state) for g in self.gates
                  if g[4] in Gate.KINDS and f'{self.id}:{g[5]}' not in state.opened}
         switches = [Switch(self.id, *s, gates.get(s[4]), state) for s in self.switches if s[2] in Switch.KINDS]
+        # 수정 스위치는 몸을 막는 지형이고 반사탄을 받는다 (play_mode가 투사체 충돌 그룹에 넣는다, T50)
+        self.crystal_switches = [s for s in switches if s.type == 'crystal']
         # 보스를 처치한 아레나는 전체가 영구 안전지대 (11.2). 앉는 자리는 없어 저장·부활 지점은 아니다
         if self.boss_defeated(state) and not self.zone_floor(ARENA_ZONE_ID):
             self.safe_zones.append(self.arena_zone())
@@ -107,7 +109,7 @@ class Room:
                         if o[0] == 'statue' and f'{self.id}:{o[3]}' not in state.broken]
         self.state = state
         self.arena_gates = [g for g in gates.values() if g.type == 'arena']
-        self.terrain = self.platforms + breakables + list(gates.values()) + thorn_vines
+        self.terrain = self.platforms + breakables + list(gates.values()) + thorn_vines + self.crystal_switches
         for trap in bolt_traps:
             trap.platforms = self.terrain   # 쇠뇌 화살은 닫힌 문·벽에도 부딪힌다
         # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)

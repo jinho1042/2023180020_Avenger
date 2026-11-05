@@ -1,0 +1,35 @@
+{
+  "id": "R3_12",
+  "region": "crystal",
+  "size": [1, 1],
+  "map_cell": [4, 7],
+  "music": "crystal",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 300, 64, "solid"],
+    [500, 0, 780, 64, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [0, 64, 40, 616, "solid"],
+    [1240, 64, 40, 616, "solid"],
+    [900, 304, 48, 376, "solid"],
+    [150, 304, 48, 376, "solid"]
+  ],
+  "breakables": [
+    [900, 64, 48, 240, "crack", "crack_a"],
+    [150, 64, 48, 240, "crack", "crack_b"],
+    [60, 64, 56, 56, "ore_chunk", "chunk_a"]
+  ],
+  "exits": [
+    {"id": "D", "rect": [300, 0, 200, 16], "to": "R3_06", "to_exit": "U"}
+  ],
+  "objects": [
+    ["item", 1100, 64, "rare_ore_r3_b"]
+  ],
+  "spawns": [
+    ["crawler", 700, 64]
+  ],
+  "safe_points": [
+    [600, 64]
+  ]
+}

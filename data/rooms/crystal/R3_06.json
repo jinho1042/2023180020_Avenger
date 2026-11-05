@@ -1,0 +1,40 @@
+{
+  "id": "R3_06",
+  "region": "crystal",
+  "size": [2, 1],
+  "map_cell": [4, 6],
+  "music": "crystal",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 64, "solid"],
+    [0, 680, 300, 40, "solid"],
+    [500, 680, 2060, 40, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [2520, 264, 40, 416, "solid"],
+    [800, 64, 300, 120, "solid"],
+    [1500, 260, 300, 16, "oneway"],
+    [280, 250, 240, 16, "oneway"],
+    [280, 450, 240, 16, "oneway"]
+  ],
+  "air_vents": [
+    [1650, 320, "vent_a"]
+  ],
+  "breakables": [
+    [120, 64, 40, 56, "air_crystal", "pocket_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R3_07", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R3_05", "to_exit": "L"},
+    {"id": "U", "rect": [300, 704, 200, 16], "to": "R3_12", "to_exit": "D"}
+  ],
+  "objects": [],
+  "spawns": [
+    ["crystal_sage", 1300, 64]
+  ],
+  "safe_points": [
+    [2400, 64],
+    [950, 184],
+    [600, 64]
+  ]
+}

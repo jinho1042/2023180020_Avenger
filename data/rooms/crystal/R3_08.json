@@ -1,0 +1,45 @@
+{
+  "id": "R3_08",
+  "region": "crystal",
+  "size": [1, 2],
+  "map_cell": [1, 6],
+  "music": "crystal",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 1400, 1280, 40, "solid"],
+    [0, 264, 40, 1136, "solid"],
+    [1240, 64, 40, 720, "solid"],
+    [1240, 984, 40, 416, "solid"],
+    [900, 744, 340, 40, "solid"],
+    [40, 744, 400, 40, "solid"],
+    [40, 964, 400, 40, "solid"],
+    [200, 264, 48, 480, "solid"],
+    [600, 250, 200, 16, "oneway"],
+    [800, 450, 200, 16, "oneway"],
+    [600, 620, 200, 16, "oneway"]
+  ],
+  "breakables": [
+    [1150, 784, 40, 56, "air_crystal", "pocket_a"]
+  ],
+  "gates": [
+    [200, 64, 48, 200, "lever_gate", "gate_a"]
+  ],
+  "switches": [
+    [420, 784, "crystal", "crystal_a", "gate_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R3_09", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 784, 16, 200], "to": "R3_07", "to_exit": "L"}
+  ],
+  "objects": [],
+  "spawns": [
+    ["crystal_sprite", 200, 784],
+    ["crawler", 700, 64]
+  ],
+  "safe_points": [
+    [1050, 784],
+    [900, 64]
+  ]
+}

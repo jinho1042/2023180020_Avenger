@@ -1,0 +1,34 @@
+{
+  "id": "R3_10",
+  "region": "crystal",
+  "size": [1, 1],
+  "map_cell": [6, 7],
+  "music": "crystal",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 500, 64, "solid"],
+    [700, 0, 580, 64, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [0, 64, 40, 616, "solid"],
+    [1240, 64, 40, 616, "solid"],
+    [900, 304, 48, 376, "solid"]
+  ],
+  "breakables": [
+    [900, 64, 48, 240, "crack", "crack_a"]
+  ],
+  "exits": [
+    {"id": "D", "rect": [500, 0, 200, 16], "to": "R3_05", "to_exit": "U"}
+  ],
+  "objects": [
+    ["item", 200, 64, "map_stone_r3"],
+    ["item", 1100, 64, "rare_ore_r3_a"]
+  ],
+  "spawns": [
+    ["crawler", 300, 64]
+  ],
+  "safe_points": [
+    [400, 64],
+    [800, 64]
+  ]
+}
