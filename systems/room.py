@@ -5,6 +5,7 @@ import config
 from objects.air_vent import AirVent
 from objects.bosses.crystal_archsage import CrystalArchsage
 from objects.bosses.moss_warden import MossWarden
+from objects.bosses.rockshell_borer import RockshellBorer
 from objects.bosses.scythe_sovereign import ScytheSovereign
 from objects.breath_zone import BreathGate, BreathZone
 from objects import enemy_base
@@ -31,7 +32,7 @@ ENEMY_TYPES = {'crawler': Crawler, 'bat': Bat, 'shell_warrior': ShellWarrior, 't
                'crystal_sprite': CrystalSprite, 'crystal_sage': CrystalSage,
                'scythe_mantis': ScytheMantis, 'shadow_stalker': ShadowStalker}
 # 보스 (11.4): 방 JSON boss 값 = 키. 보스 자리는 spawns에 같은 이름으로 둔다 ([종류, x, y])
-BOSS_TYPES = {'moss_warden': MossWarden, 'archsage': CrystalArchsage, 'scythe': ScytheSovereign}
+BOSS_TYPES = {'borer': RockshellBorer, 'moss_warden': MossWarden, 'archsage': CrystalArchsage, 'scythe': ScytheSovereign}
 ARENA_ZONE_ID = 'arena'   # 처치 후 아레나 전체를 덮는 안전지대 id (앉는 자리 없음, 11.2)
 
 
