@@ -3,10 +3,11 @@ import random
 from pico2d import *
 
 import config
+import game_world
 from objects import effect, projectile
-from objects.boss_base import BossBase
+from objects.boss_base import BossBase, boss_damage
 from objects.enemy_base import ACTIVE, RECOVER, TELEGRAPH, WINDUP, Attack
-from systems import terrain
+from systems import camera, terrain
 
 STATS = config.BOSS_TWINBLADE
 
@@ -26,7 +27,7 @@ class BossTwinblade(BossBase):
         # 패턴 이름 → 이어서 쓸 Attack 목록. 시간은 모두 speed_mult로 나눈다
         def timed(name, parryable, telegraph, recover, spec, hitbox):
             return Attack(name, parryable, telegraph / speed_mult, spec['windup'] / speed_mult,
-                          spec['active'] / speed_mult, recover / speed_mult, STATS['damage'], hitbox)
+                          spec['active'] / speed_mult, recover / speed_mult, boss_damage(STATS, parryable), hitbox)
 
         c = STATS['combo']
         combo = []
@@ -91,14 +92,14 @@ class BossTwinblade(BossBase):
     def fit_x(self, x, y):
         half_w = self.w / 2
         x = terrain.resolve_x(x, y, self.w, self.h, self.platforms)
-        return clamp(half_w, x, config.SCREEN_W - half_w)
+        return clamp(half_w, x, game_world.room_w - half_w)
 
     def fire_wave(self):
         # 플레이어 몸 높이에 맞춰 수평으로 쏜다
         x = self.x + self.face_dir * self.w / 2
         y = self.y + config.PLAYER_H / 2
         projectile.fire(x, y, self.face_dir, 0, STATS['wave']['speed'], self.attack_damage(),
-                        self.attack.parryable, self.platforms, config.TWIN_WAVE)
+                        self.attack.parryable, self.platforms, config.TWIN_WAVE, owner=self)
 
     def recoil(self):
         # 4연속 베기 도중엔 멈추지 않고 다음 타로 이어간다 (자세만 쌓인다)
@@ -127,10 +128,10 @@ class BossTwinblade(BossBase):
         if self.state == WINDUP:
             wx = self.x - self.face_dir * self.w / 2
             for dx in (0, self.face_dir * blade * 2):
-                draw_rectangle(wx + dx - blade / 2, t - blade, wx + dx + blade / 2, t + length - blade,
+                camera.draw_rect(wx + dx - blade / 2, t - blade, wx + dx + blade / 2, t + length - blade,
                                *config.COLOR_TWINBLADE, filled=True)
         else:
             cy = b + self.h / 3
             for side in (l, r):
-                draw_rectangle(side - blade / 2, cy - length / 2, side + blade / 2, cy + length / 2,
+                camera.draw_rect(side - blade / 2, cy - length / 2, side + blade / 2, cy + length / 2,
                                *config.COLOR_TWINBLADE, filled=True)

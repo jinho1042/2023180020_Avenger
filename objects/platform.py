@@ -1,6 +1,7 @@
 from pico2d import *
 
 import config
+from systems import camera
 
 
 class Platform:
@@ -30,7 +31,7 @@ class Platform:
 
     def draw(self):
         color = config.COLOR_SOLID if self.kind == 'solid' else config.COLOR_ONEWAY
-        draw_rectangle(self.left, self.bottom, self.right, self.top, *color, filled=True)
+        camera.draw_rect(self.left, self.bottom, self.right, self.top, *color, filled=True)
 
     def get_bb(self):
         return self.left, self.bottom, self.right, self.top

@@ -1,6 +1,9 @@
 import config
+from systems import camera
 
 world = [[] for _ in range(config.LAYER_COUNT)]
+# 현재 방 크기 (월드 좌표, 방 좌하단 = (0, 0)). 방을 불러올 때 play_mode가 정한다
+room_w, room_h = config.SCREEN_W, config.SCREEN_H
 collision_pairs = {}   # group -> [a 리스트, b 리스트]
 _pending_removal = []
 show_hitbox = False    # F1로 토글, 켜지면 객체가 hitbox 외곽선을 그린다
@@ -47,9 +50,17 @@ def update_layer(depth):
     _flush_removal()
 
 
+def set_room_size(w, h):
+    global room_w, room_h
+    room_w, room_h = w, h
+
+
 def render():
+    # get_bb가 있는 객체(월드 객체)는 화면 밖이면 건너뛴다. 화면 전체 연출은 get_bb가 없다
     for layer in world:
         for o in layer:
+            if hasattr(o, 'get_bb') and not camera.visible(o.get_bb()):
+                continue
             o.draw()
 
 

@@ -1,3 +1,6 @@
+from types import SimpleNamespace
+
+import pico2d
 from pico2d import *
 
 import config
@@ -6,7 +9,7 @@ import game_world
 from objects import effect, projectile
 from objects.chest import Chest
 from objects.player import Player
-from systems import camera, combat, hitstop, route, sound, upgrades
+from systems import camera, combat, hitstop, route, runes, sound, upgrades
 from systems.room import Room
 from ui import hud
 
@@ -20,6 +23,13 @@ chest = None     # [v2] 지금 방의 보물상자 (없으면 None)
 play_time = 0.0  # 결과 화면 통계 (s)
 death_timer = 0.0
 pending_exit = None  # 강화 선택이 끝나 돌아오면(resume) 이 번호의 문으로 나간다
+# 영구 월드 상태 (5.6, 13.6). T30은 룬·플래그만. 방 기록 등은 T33(systems/world.py), 저장은 T36
+world_state = None
+DEBUG_KEY = {getattr(pico2d, name): action for action, name in config.DEBUG_KEYS.items()}
+
+
+def new_world_state():
+    return SimpleNamespace(runes={}, flags=set(), debug_unlocked=False)
 
 
 def load_room(name, door_count):
@@ -29,14 +39,17 @@ def load_room(name, door_count):
     hitstop.reset()
     camera.reset()
     room = Room(name)
+    game_world.set_room_size(room.width, room.height)
+    camera.set_room(room.width, room.height)
     chest = None
     game_world.add_objects(room.platforms, config.DEPTH_MAP)
     exits = room.doors[:door_count]
     game_world.add_objects(exits, config.DEPTH_MAP)
-    player.enter_room(room.platforms, room.player_start)
+    player.enter_room(room.platforms, room.player_start, room.safe_points)
     game_world.add_object(player, config.DEPTH_PLAYER)
     # 투사체는 생성될 때 b쪽에 스스로 등록한다
     game_world.add_collision_pair(projectile.GROUP_PLAYER, player, None)
+    camera.snap(player)  # 방 전환 직후 카메라는 즉시 목표 위치 (14.2)
 
 
 def enter_hub():
@@ -52,7 +65,7 @@ def enter_hub():
             door.open()
     enemies = []
     boss = None
-    player.hp = min(player.max_hp, player.hp + player.max_hp * config.HUB_HEAL_RATIO)
+    player.hp = min(player.max_hp, player.hp + round(player.max_hp * config.HUB_HEAL_RATIO))
     sound.stop_music()
 
 
@@ -75,6 +88,21 @@ def enter_node(name, layer, index):
     sound.play_music('boss' if boss else 'battle')
 
 
+def enter_test_room():
+    # T32 카메라 테스트용 3×2 방 (DEBUG, F4). 문 없음, 적은 템플릿 spawns 그대로. T34에서 F4 방 이동 메뉴로 교체
+    global enemies, boss
+    run_state['route'] = None
+    load_room(config.CAMERA_TEST_ROOM, 0)
+    enemies = []
+    new = room.spawn_enemies(player)
+    enemies.extend(new)
+    game_world.add_objects(new, config.DEPTH_ENEMY)
+    for e in new:
+        game_world.add_collision_pair(projectile.GROUP_ENEMY, e, None)
+    boss = None
+    sound.stop_music()
+
+
 def add_enemies(new):
     # 월드에 넣고 반사 투사체에 맞도록 충돌 그룹에 등록한다 ([v2] 보스가 소환한 적도 여기로)
     # [v2] 일반 적에는 현재 루트 난이도 배율을 곱한다. 보스는 보스별 수치를 그대로 쓴다
@@ -91,19 +119,22 @@ def add_enemies(new):
 
 
 def init():
-    global player, run_state, play_time, death_timer, pending_exit
+    global player, run_state, play_time, death_timer, pending_exit, world_state
     run_state = route.new_run_state()
+    world_state = new_world_state()
     play_time = 0.0
     death_timer = 0.0
     pending_exit = None
     hud.init()
     player = Player([], (0, 0))
+    player.world_state = world_state
     enter_hub()
 
 
 def finish():
-    global player, room, enemies, boss, run_state, exits, chest
+    global player, room, enemies, boss, run_state, exits, chest, world_state
     game_world.clear()
+    world_state = None
     hud.finish()
     player = None
     room = None
@@ -123,6 +154,15 @@ def handle_events():
             game_framework.quit()
         elif e.type == SDL_KEYDOWN and e.key == SDLK_F1:
             game_world.show_hitbox = not game_world.show_hitbox
+        elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) == 'unlock_all':
+            runes.unlock_all(world_state)
+            print('[DEBUG] F3 전체 해금: 모든 룬 최대 레벨 + 반사')
+        elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) == 'warp':
+            # T32 임시: 카메라 테스트 방 ↔ 안전지대
+            if room.name == config.CAMERA_TEST_ROOM:
+                enter_hub()
+            else:
+                enter_test_room()
         else:
             player.handle_event(e)
 
@@ -141,7 +181,7 @@ def update():
     # 이번 프레임이 히트스톱 중인지 먼저 정하고 타이머를 줄인다 (이벤트는 그대로 받아 선입력에 저장됨)
     stopped = hitstop.is_active()
     hitstop.update(dt)
-    camera.update(dt)
+    camera.update(dt, player)
     if stopped:
         game_world.update_layer(config.DEPTH_EFFECT)
         return

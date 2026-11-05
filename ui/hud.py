@@ -24,20 +24,22 @@ def finish():
     icon_font = None
 
 
-def draw_hp_bar(player):
-    # 좌상단 체력 바
-    l = config.HUD_MARGIN
+def hp_cells_right(player):
+    # 체력 칸 줄의 오른쪽 끝 x (그 오른쪽부터 강화 아이콘)
+    return config.HUD_MARGIN + player.max_hp * (config.HP_CELL + config.HP_CELL_GAP) - config.HP_CELL_GAP
+
+
+def draw_hp_cells(player):
+    # 좌상단 체력 칸 (6.7): 최대 체력만큼 틀, 남은 체력만큼 채움. 1칸 남으면 경고색
+    size, edge = config.HP_CELL, config.HP_BAR_BORDER
     t = config.SCREEN_H - config.HUD_MARGIN
-    r, b = l + config.HP_BAR_W, t - config.HP_BAR_H
-    edge = config.HP_BAR_BORDER
-    draw_rectangle(l - edge, b - edge, r + edge, t + edge, *config.COLOR_HUD_FRAME, filled=True)
-    draw_rectangle(l, b, r, t, *config.COLOR_HP_BACK, filled=True)
-    ratio = player.hp / player.max_hp
-    if ratio > 0:
-        color = config.COLOR_HP_LOW if ratio <= config.HP_LOW_RATIO else config.COLOR_HP_FILL
-        draw_rectangle(l, b, l + config.HP_BAR_W * ratio, t, *color, filled=True)
-    if font:
-        font.draw(r + config.HUD_MARGIN, (b + t) / 2, f'{math.ceil(player.hp)}', config.COLOR_TEXT)
+    b = t - size
+    fill = config.COLOR_HP_LOW if player.hp == 1 else config.COLOR_HP_FILL
+    for i in range(player.max_hp):
+        l = config.HUD_MARGIN + i * (size + config.HP_CELL_GAP)
+        draw_rectangle(l - edge, b - edge, l + size + edge, t + edge, *config.COLOR_HUD_FRAME, filled=True)
+        color = fill if i < player.hp else config.COLOR_HP_BACK
+        draw_rectangle(l, b, l + size, t, *color, filled=True)
 
 
 def draw_dash_icon(player):
@@ -64,10 +66,10 @@ def draw_dash_icon(player):
 
 
 def draw_upgrade_icons(player):
-    # 체력 바 오른쪽에 획득한 강화를 카테고리 색 사각형 + 두 글자로 나열
+    # 체력 칸 오른쪽에 획득한 강화를 카테고리 색 사각형 + 두 글자로 나열
     size = config.UPGRADE_ICON
-    l = config.HUD_MARGIN + config.HP_BAR_W + config.HUD_MARGIN + config.HUD_HP_TEXT_W
-    t = config.SCREEN_H - config.HUD_MARGIN + (size - config.HP_BAR_H) / 2
+    l = hp_cells_right(player) + config.HUD_MARGIN
+    t = config.SCREEN_H - config.HUD_MARGIN + (size - config.HP_CELL) / 2
     for key in player.upgrades:
         u = upgrades.BY_KEY[key]
         draw_rectangle(l, t - size, l + size, t, *config.COLOR_HUD_FRAME, filled=True)
@@ -133,7 +135,7 @@ def draw_route_progress(run_state):
 
 
 def draw(player, boss=None, run_state=None):
-    draw_hp_bar(player)
+    draw_hp_cells(player)
     draw_dash_icon(player)
     draw_upgrade_icons(player)
     if run_state:

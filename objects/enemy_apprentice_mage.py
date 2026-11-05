@@ -5,6 +5,7 @@ from pico2d import *
 import config
 from objects import effect, projectile
 from objects.enemy_base import ACTIVE, TELEGRAPH, WINDUP, Attack, EnemyBase
+from systems import camera
 
 STATS = config.APPRENTICE_MAGE
 
@@ -52,7 +53,7 @@ class EnemyApprenticeMage(EnemyBase):
     def fire_bolt(self, angle):
         x, y = self.orb_pos()
         projectile.fire(x, y, math.cos(angle), math.sin(angle), self.stats['bolt_speed'], self.attack_damage(),
-                        self.attack.parryable, self.platforms, config.MAGIC_BOLT)
+                        self.attack.parryable, self.platforms, config.MAGIC_BOLT, owner=self)
 
     def next_phase(self):
         super().next_phase()
@@ -67,7 +68,7 @@ class EnemyApprenticeMage(EnemyBase):
         # 지팡이: 몸 앞쪽 세로 막대 + 끝의 구슬. 예고·시전 중에는 구슬이 커지며 빛난다
         ox, oy = self.orb_pos()
         thick = self.w / 8
-        draw_rectangle(ox - thick / 2, b, ox + thick / 2, oy, *config.COLOR_STAFF, filled=True)
+        camera.draw_rect(ox - thick / 2, b, ox + thick / 2, oy, *config.COLOR_STAFF, filled=True)
         if self.state in (TELEGRAPH, WINDUP):
             effect.draw_disc(ox, oy, config.MAGIC_BOLT['size'] / 2, config.COLOR_ENEMY_WINDUP)
         else:

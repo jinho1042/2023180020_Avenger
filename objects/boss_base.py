@@ -7,6 +7,11 @@ from objects import effect
 GROGGY = 'Groggy'
 
 
+def boss_damage(stats, parryable):
+    # 칸 단위 피해 (T31): 흰(패링 가능) 패턴은 damage, 빨간(패링 불가) 강공격은 heavy_damage
+    return stats['damage'] if parryable else stats['heavy_damage']
+
+
 class BossBase(EnemyBase):
     # 보스 공통: 패링당할 때마다 자세(posture)가 쌓이고 POSTURE_MAX에 도달하면 그로기
     # 패턴은 가중치 랜덤으로 고르고, 같은 패턴 3연속은 금지한다
@@ -42,7 +47,7 @@ class BossBase(EnemyBase):
 
     def add_posture(self):
         # 자세 +1. POSTURE_MAX에 도달하면 그로기에 들어가고 True. 이미 그로기 중이면 쌓지 않는다
-        # [v2] 보스의 투사체를 반사한 것도 패링 성공이므로 combat에서 이것을 부른다
+        # 반사탄이 보스에 맞았을 때도 부른다 (projectile.handle_collision)
         if self.state == GROGGY:
             return False
         self.posture += 1
@@ -69,6 +74,10 @@ class BossBase(EnemyBase):
         if self.state == GROGGY:
             damage *= config.GROGGY_DAMAGE_MULT
         super().take_damage(damage)
+
+    def deals_contact(self):
+        # 그로기 중에는 마음 놓고 때리도록 접촉 피해 없음
+        return self.state != GROGGY and super().deals_contact()
 
     def body_color(self):
         if self.state == GROGGY:

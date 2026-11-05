@@ -4,6 +4,7 @@ from pico2d import *
 
 import config
 from objects.enemy_base import ACTIVE, RECOVER, Attack, EnemyBase
+from systems import camera
 
 STATS = config.MELEE
 
@@ -42,6 +43,6 @@ class EnemyMelee(EnemyBase):
         shield_w, shield_h = STATS['rush_hitbox']
         sb = b + (self.h - shield_h) / 2
         if self.face_dir > 0:
-            draw_rectangle(r, sb, r + shield_w, sb + shield_h, *config.COLOR_SHIELD, filled=True)
+            camera.draw_rect(r, sb, r + shield_w, sb + shield_h, *config.COLOR_SHIELD, filled=True)
         else:
-            draw_rectangle(l - shield_w, sb, l, sb + shield_h, *config.COLOR_SHIELD, filled=True)
+            camera.draw_rect(l - shield_w, sb, l, sb + shield_h, *config.COLOR_SHIELD, filled=True)

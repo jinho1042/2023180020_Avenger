@@ -2,6 +2,7 @@ from pico2d import *
 
 import config
 from objects.enemy_base import WINDUP, Attack, EnemyBase
+from systems import camera
 
 STATS = config.DUAL_DAGGER
 
@@ -36,5 +37,5 @@ class EnemyDualDagger(EnemyBase):
         length = self.h / 3
         cy = b + self.h / 3
         for side in (l, r):
-            draw_rectangle(side - blade / 2, cy - length / 2, side + blade / 2, cy + length / 2,
+            camera.draw_rect(side - blade / 2, cy - length / 2, side + blade / 2, cy + length / 2,
                            *config.COLOR_DAGGER, filled=True)

@@ -30,8 +30,9 @@ def apply_reflect(p):
 
 
 def apply_max_hp(p):
-    p.max_hp += config.UPGRADE_MAX_HP_BONUS
-    p.hp += config.UPGRADE_MAX_HP_BONUS
+    bonus = min(config.UPGRADE_MAX_HP_BONUS, config.HP_MAX - p.max_hp)
+    p.max_hp += bonus
+    p.hp += bonus
 
 
 def apply_attack(p):
@@ -109,14 +110,14 @@ def on_parry_success(player, target):
     if has(player, 'parry_wave'):
         wave = config.SWORD_WAVE
         p = projectile.fire(player.x, player.y + config.PLAYER_H / 2, player.face_dir, 0,
-                            wave['speed'], wave['damage'], False, player.platforms, wave)
+                            wave['speed'], wave['damage'], False, player.platforms, wave, owner=player)
         p.reflected = True   # 처음부터 플레이어 소유
 
 
 def on_attack(player):
     # 한 번 휘두를 때의 추가 배율 (공격 시작 시 정한다)
     mult = 1.0
-    if has(player, 'finisher') and player.attack_step == 3:
+    if has(player, 'finisher') and player.swing_count % 3 == 0:   # T29: 3연타 → 단타 3번째마다
         mult *= config.UPGRADE_ATTACK3_MULT
     if has(player, 'dash_strike') and player.dash_strike_ready:
         player.dash_strike_ready = False

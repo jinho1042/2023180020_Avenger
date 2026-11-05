@@ -32,6 +32,10 @@ class Room:
             data = json.load(f)
         self.name = data['name']
         self.type = data['type']
+        # size: [가로, 세로] 화면 수 (12.5). 방 크기 = size × (SCREEN_W, SCREEN_H), 월드 좌표는 방 좌하단 = (0, 0)
+        self.size = tuple(data.get('size', (1, 1)))
+        self.width = self.size[0] * config.SCREEN_W
+        self.height = self.size[1] * config.SCREEN_H
         self.platforms = [Platform(*p) for p in data['platforms']]
         # spawn_sets(적 배치 세트 여러 개) 중 하나를 무작위로 고른다. 세트가 하나뿐이면 spawns로 써도 된다
         spawn_sets = data.get('spawn_sets') or [data.get('spawns', [])]
@@ -39,6 +43,8 @@ class Room:
         # [v2] spawn_points: 루트 적을 놓을 자리 [x, y, 'air|ground']. 적 종류는 루트 노드가 정한다
         self.spawn_points = [tuple(p) for p in data.get('spawn_points', [])]
         self.player_start = tuple(data['player_start'])
+        # safe_points: 환경 피해 뒤 돌아올 지점 [x, y] (6.8, 12.5). 없으면 플레이어가 오래 서 있던 바닥
+        self.safe_points = [tuple(p) for p in data.get('safe_points', [])]
         self.door = Door(*data['door'])
         # [v2] doors: 여러 문 위치 (안전지대는 루트 문 3개). 없으면 door 하나만 쓴다
         self.doors = [Door(*p) for p in data['doors']] if 'doors' in data else [self.door]

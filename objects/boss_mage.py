@@ -9,6 +9,7 @@ from objects.boss_base import BossBase
 from objects.enemy_adept_mage import blink_away, fit_x
 from objects.enemy_apprentice_mage import EnemyApprenticeMage
 from objects.enemy_base import ACTIVE, TELEGRAPH, WINDUP, Attack
+from systems import camera
 
 STATS = config.BOSS_MAGE
 
@@ -126,7 +127,7 @@ class BossMage(BossBase):
         return self.x + self.face_dir * self.w * 3 / 4, self.y + self.h * 3 / 4
 
     def fire(self, speed, spec):
-        # 쏘는 순간 플레이어 몸 중심을 조준한다. 반사되면 이 보스의 자세가 쌓이도록 owner를 넘긴다
+        # 쏘는 순간 플레이어 몸 중심을 조준한다
         x, y = self.orb_pos()
         angle = math.atan2(self.player.y + config.PLAYER_H / 2 - y, self.player.x - x)
         projectile.fire(x, y, math.cos(angle), math.sin(angle), speed, self.attack_damage(),
@@ -153,7 +154,7 @@ class BossMage(BossBase):
         # 긴 지팡이 + 끝의 구슬. 예고·시전 준비 중엔 구슬이 빛나고, 대형 마력구는 구체 크기까지 부풀어 오른다
         ox, oy = self.orb_pos()
         thick = self.w / 8
-        draw_rectangle(ox - thick / 2, b, ox + thick / 2, oy, *config.COLOR_STAFF, filled=True)
+        camera.draw_rect(ox - thick / 2, b, ox + thick / 2, oy, *config.COLOR_STAFF, filled=True)
         if self.state in (TELEGRAPH, WINDUP) and self.attack.name == 'orb':
             a = self.attack
             left = self.state_timer + (a.windup if self.state == TELEGRAPH else 0)

@@ -4,7 +4,7 @@ import config
 import game_framework
 import game_world
 from objects import effect
-from systems import sound
+from systems import camera, sound
 
 
 class Chest:
@@ -45,20 +45,20 @@ class Chest:
             color = config.COLOR_CHEST if self.unlocked else config.COLOR_CHEST_LOCKED
         lid_b = t - config.CHEST_LID_H
         lift = config.CHEST_LID_LIFT if self.opened else 0
-        draw_rectangle(l, b, r, lid_b, *color, filled=True)
-        draw_rectangle(l, lid_b + lift, r, t + lift, *color, filled=True)
+        camera.draw_rect(l, b, r, lid_b, *color, filled=True)
+        camera.draw_rect(l, lid_b + lift, r, t + lift, *color, filled=True)
         if not self.opened:
             # 잠금쇠: 적이 남아 있으면 어두운 색으로 잠금 표시
             band = config.CHEST_BAND / 2
             band_color = config.COLOR_CHEST_BAND if self.unlocked else config.COLOR_DOOR_LOCKED
-            draw_rectangle(self.x - band, b, self.x + band, t, *band_color, filled=True)
+            camera.draw_rect(self.x - band, b, self.x + band, t, *band_color, filled=True)
         if self.pillar_timer > 0:
             half_w = config.CHEST_PILLAR_W / 2
             alpha = config.CHEST_PILLAR_ALPHA * self.pillar_timer / config.CHEST_PILLAR_TIME
-            effect.draw_alpha_rect(self.x - half_w, t, self.x + half_w, config.SCREEN_H,
+            effect.draw_alpha_rect(self.x - half_w, t, self.x + half_w, game_world.room_h,
                                    config.COLOR_CHEST_PILLAR, alpha)
         if game_world.show_hitbox:
-            draw_rectangle(l, b, r, t, *config.COLOR_DEBUG_BODY)
+            camera.draw_rect(l, b, r, t, *config.COLOR_DEBUG_BODY)
 
     def get_bb(self):
         half_w = config.CHEST_W / 2

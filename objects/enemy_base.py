@@ -6,7 +6,7 @@ import config
 import game_framework
 import game_world
 from objects import effect
-from systems import terrain
+from systems import camera, terrain
 
 # 공통 AI 상태: Idle → Chase → Telegraph → Windup → Active → Recover → (Chase)
 # 어느 상태든 패링당하면 Stagger → (Chase)
@@ -134,8 +134,12 @@ class EnemyBase:
         self.dmg_mult = dmg_mult
 
     def attack_damage(self):
-        # 현재 공격이 플레이어에게 주는 피해 (근접 판정·투사체·마법진 모두 이 값을 쓴다)
-        return self.attack.damage * self.dmg_mult
+        # 현재 공격이 플레이어에게 주는 피해 (칸, 근접 판정·투사체·마법진 모두 이 값을 쓴다)
+        return round(self.attack.damage * self.dmg_mult)
+
+    def deals_contact(self):
+        # 몸에 닿으면 CONTACT_DAMAGE (6.8). 패링당해 비틀거리는 동안은 닿아도 피해 없음
+        return self.state not in (STAGGER, DEAD)
 
     def take_damage(self, damage, knockback=0):
         # knockback은 부호 있는 px (오른쪽이 +)
@@ -192,7 +196,7 @@ class EnemyBase:
             self.x += self.vx * dt
         self.x = terrain.resolve_x(self.x, self.y, self.w, self.h, self.platforms)
         half_w = self.w / 2
-        self.x = clamp(half_w, self.x, config.SCREEN_W - half_w)
+        self.x = clamp(half_w, self.x, game_world.room_w - half_w)
 
     def move(self, dt):
         # 지상 유닛: X 이동 → X 해결 → 중력·Y 이동 → Y 해결
@@ -241,25 +245,25 @@ class EnemyBase:
 
         attack_bb = self.get_attack_bb()
         if attack_bb:
-            draw_rectangle(*attack_bb, *config.COLOR_ENEMY_SLASH, filled=True)
+            camera.draw_rect(*attack_bb, *config.COLOR_ENEMY_SLASH, filled=True)
         if game_world.show_hitbox:
-            draw_rectangle(*self.get_bb(), *config.COLOR_DEBUG_BODY)
+            camera.draw_rect(*self.get_bb(), *config.COLOR_DEBUG_BODY)
             if attack_bb:
-                draw_rectangle(*attack_bb, *config.COLOR_DEBUG_ATTACK)
+                camera.draw_rect(*attack_bb, *config.COLOR_DEBUG_ATTACK)
 
     def draw_body(self):
         l, b, r, t = self.get_bb()
-        draw_rectangle(l, b, r, t, *self.body_color(), filled=True)
+        camera.draw_rect(l, b, r, t, *self.body_color(), filled=True)
         # 바라보는 방향 표시
         eye_x = self.x + self.face_dir * self.w / 4
         eye = self.w / 8
-        draw_rectangle(eye_x - eye / 2, t - eye * 3, eye_x + eye / 2, t - eye * 2, *config.COLOR_TEXT, filled=True)
+        camera.draw_rect(eye_x - eye / 2, t - eye * 3, eye_x + eye / 2, t - eye * 2, *config.COLOR_TEXT, filled=True)
 
         if self.state == TELEGRAPH and not self.attack.parryable:
             # 패링 불가 공격은 머리 위 '!' 표시
-            draw_rectangle(self.x - eye / 2, t + eye * 2, self.x + eye / 2, t + eye * 5,
+            camera.draw_rect(self.x - eye / 2, t + eye * 2, self.x + eye / 2, t + eye * 5,
                            *config.COLOR_UNPARRYABLE, filled=True)
-            draw_rectangle(self.x - eye / 2, t + eye / 2, self.x + eye / 2, t + eye * 1.5,
+            camera.draw_rect(self.x - eye / 2, t + eye / 2, self.x + eye / 2, t + eye * 1.5,
                            *config.COLOR_UNPARRYABLE, filled=True)
         self.draw_weapon(l, b, r, t)
 
@@ -268,7 +272,7 @@ class EnemyBase:
             # 무기를 들어 올린 모션 (몸 뒤쪽 위)
             eye = self.w / 8
             wx = self.x - self.face_dir * self.w / 2
-            draw_rectangle(wx - eye / 2, t, wx + eye / 2, t + self.h / 2, *config.COLOR_ENEMY_WINDUP, filled=True)
+            camera.draw_rect(wx - eye / 2, t, wx + eye / 2, t + self.h / 2, *config.COLOR_ENEMY_WINDUP, filled=True)
 
     def get_bb(self):
         half_w = self.w / 2

@@ -4,8 +4,9 @@ from pico2d import *
 
 import config
 import game_framework
+import game_world
 from objects.enemy_base import ACTIVE, CHASE, RECOVER, Attack, EnemyBase
-from systems import terrain
+from systems import camera, terrain
 
 STATS = config.FLYER
 
@@ -25,7 +26,7 @@ class EnemyFlyer(EnemyBase):
 
     def hover_target(self):
         ty = self.player.y + self.hover_height
-        return self.player.x, min(ty, config.SCREEN_H - self.h - STATS['ceiling_margin'])
+        return self.player.x, min(ty, game_world.room_h - self.h - STATS['ceiling_margin'])
 
     def chase(self):
         self.vx, self.vy = 0, 0
@@ -70,7 +71,7 @@ class EnemyFlyer(EnemyBase):
         self.y += self.vy * dt
         self.y, self.vy, self.on_ground = terrain.resolve_y(
             self.x, prev_y, self.y, self.vy, self.w, self.h, self.platforms)
-        self.y = clamp(0, self.y, config.SCREEN_H - self.h)
+        self.y = clamp(0, self.y, game_world.room_h - self.h)
         if self.state == ACTIVE and self.on_ground:
             # 바닥에 부딪히면 돌진을 끝내고 그 자리에서 후딜레이
             self.set_state(RECOVER, self.attack.recover)
@@ -87,8 +88,8 @@ class EnemyFlyer(EnemyBase):
         thick = self.h / 6
         mid = (b + t) / 2
         if self.attack is not None and self.state != RECOVER:
-            draw_rectangle(l - thick, mid, l, t + thick, *config.COLOR_ENEMY_WINDUP, filled=True)
-            draw_rectangle(r, mid, r + thick, t + thick, *config.COLOR_ENEMY_WINDUP, filled=True)
+            camera.draw_rect(l - thick, mid, l, t + thick, *config.COLOR_ENEMY_WINDUP, filled=True)
+            camera.draw_rect(r, mid, r + thick, t + thick, *config.COLOR_ENEMY_WINDUP, filled=True)
         else:
-            draw_rectangle(l - wing, mid, l, mid + thick, *self.color, filled=True)
-            draw_rectangle(r, mid, r + wing, mid + thick, *self.color, filled=True)
+            camera.draw_rect(l - wing, mid, l, mid + thick, *self.color, filled=True)
+            camera.draw_rect(r, mid, r + wing, mid + thick, *self.color, filled=True)

@@ -1,8 +1,9 @@
 from pico2d import *
 
 import config
-from objects.boss_base import GROGGY, BossBase
+from objects.boss_base import GROGGY, BossBase, boss_damage
 from objects.enemy_base import ACTIVE, RECOVER, WINDUP, Attack
+from systems import camera
 
 STATS = config.BOSS_GREATSWORD
 
@@ -17,7 +18,7 @@ class BossGreatsword(BossBase):
         for name, parryable in (('slam', True), ('spin', False), ('thrust', True)):
             p = STATS[name]
             self.patterns[name] = Attack(name, parryable, p['telegraph'], p['windup'], p['active'],
-                                         p['recover'], STATS['damage'], p['hitbox'])
+                                         p['recover'], boss_damage(STATS, parryable), p['hitbox'])
 
     def choose_pattern(self, dist):
         if dist <= STATS['near_range']:
@@ -64,16 +65,16 @@ class BossGreatsword(BossBase):
             # 회전 직전: 대검을 몸 뒤로 수평으로 뺀다
             sx = self.x - self.face_dir * (self.w / 2 + self.h / 2)
             cy = b + self.h / 2
-            draw_rectangle(min(sx, self.x), cy - blade / 2, max(sx, self.x), cy + blade / 2,
+            camera.draw_rect(min(sx, self.x), cy - blade / 2, max(sx, self.x), cy + blade / 2,
                            *config.COLOR_GREATSWORD, filled=True)
         elif self.state == WINDUP:
             super().draw_weapon(l, b, r, t)
         elif self.state in (ACTIVE, RECOVER, GROGGY):
             # 휘두른 뒤·그로기: 대검 끝이 바닥에 닿아 있다
             fx = r if self.face_dir > 0 else l
-            draw_rectangle(fx + self.face_dir * blade - blade / 2, b, fx + self.face_dir * blade + blade / 2,
+            camera.draw_rect(fx + self.face_dir * blade - blade / 2, b, fx + self.face_dir * blade + blade / 2,
                            b + self.h / 2, *config.COLOR_GREATSWORD, filled=True)
         else:
             fx = r if self.face_dir > 0 else l
-            draw_rectangle(fx - blade / 2, b + self.h / 3, fx + blade / 2, t + self.h / 4,
+            camera.draw_rect(fx - blade / 2, b + self.h / 3, fx + blade / 2, t + self.h / 4,
                            *config.COLOR_GREATSWORD, filled=True)

@@ -5,6 +5,7 @@ from pico2d import *
 
 import config
 import game_framework
+import game_world
 from objects import effect, magic_circle
 from objects.enemy_apprentice_mage import EnemyApprenticeMage
 from objects.enemy_base import Attack
@@ -84,4 +85,4 @@ def fit_x(enemy, x):
     # 벽 안·화면 밖이 아닌 가장 가까운 x
     half_w = enemy.w / 2
     x = terrain.resolve_x(x, enemy.y, enemy.w, enemy.h, enemy.platforms)
-    return clamp(half_w, x, config.SCREEN_W - half_w)
+    return clamp(half_w, x, game_world.room_w - half_w)

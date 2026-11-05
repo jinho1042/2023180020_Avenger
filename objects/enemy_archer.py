@@ -5,6 +5,7 @@ from pico2d import *
 import config
 from objects import projectile
 from objects.enemy_base import ACTIVE, TELEGRAPH, WINDUP, Attack, EnemyBase
+from systems import camera
 
 STATS = config.ARCHER
 
@@ -47,16 +48,16 @@ class EnemyArcher(EnemyBase):
             dy = (self.player.y + config.PLAYER_H / 2) - by
             dist = math.hypot(dx, dy) or 1
             projectile.fire(bx, by, dx / dist, dy / dist, STATS['arrow_speed'], self.attack_damage(),
-                            self.attack.parryable, self.platforms, config.ARROW)
+                            self.attack.parryable, self.platforms, config.ARROW, owner=self)
 
     def draw_weapon(self, l, b, r, t):
         # 활: 몸 앞쪽 세로 막대. 예고·시위 당김 중에는 화살을 메긴 모습
         bx, by = self.bow_pos()
         half = self.h / 4
         thick = self.w / 8
-        draw_rectangle(bx, by - half, bx + self.face_dir * thick, by + half, *config.COLOR_BOW, filled=True)
+        camera.draw_rect(bx, by - half, bx + self.face_dir * thick, by + half, *config.COLOR_BOW, filled=True)
         if self.state in (TELEGRAPH, WINDUP):
             length = config.ARROW['length']
             tail = bx - self.face_dir * length / 2
-            draw_rectangle(min(tail, bx), by - thick / 2, max(tail, bx), by + thick / 2,
+            camera.draw_rect(min(tail, bx), by - thick / 2, max(tail, bx), by + thick / 2,
                            *config.COLOR_ENEMY_WINDUP, filled=True)

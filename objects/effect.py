@@ -11,13 +11,21 @@ import game_world
 from systems import camera, hitstop, sound
 
 
-def draw_alpha_rect(l, b, r, t, color, alpha):
+def draw_screen_alpha_rect(l, b, r, t, color, alpha):
+    # 화면 좌표 반투명 사각형 (화면 전체 섬광·페이드)
     SDL_SetRenderDrawBlendMode(canvas.renderer, SDL_BLENDMODE_BLEND)
     draw_rectangle(l, b, r, t, *color, int(alpha), filled=True)
 
 
+def draw_alpha_rect(l, b, r, t, color, alpha):
+    # 월드 좌표 반투명 사각형
+    draw_screen_alpha_rect(*camera.rect(l, b, r, t), color, alpha)
+
+
 def draw_alpha_line(x1, y1, x2, y2, color, alpha, width):
-    # pico2d에는 선 그리기가 없어 SDL을 직접 부른다. 굵기는 수직 방향으로 1px씩 겹쳐 그린다
+    # 월드 좌표 선. pico2d에는 선 그리기가 없어 SDL을 직접 부른다. 굵기는 수직 방향으로 1px씩 겹쳐 그린다
+    x1, y1 = camera.to_screen(x1, y1)
+    x2, y2 = camera.to_screen(x2, y2)
     SDL_SetRenderDrawBlendMode(canvas.renderer, SDL_BLENDMODE_BLEND)
     SDL_SetRenderDrawColor(canvas.renderer, *color, int(alpha))
     length = math.hypot(x2 - x1, y2 - y1) or 1
@@ -30,13 +38,13 @@ def draw_alpha_line(x1, y1, x2, y2, color, alpha, width):
 
 
 def draw_disc(x, y, radius, color):
-    # pico2d에는 원 그리기가 없어 가로 띠를 쌓아 채운 원을 그린다
+    # 월드 좌표. pico2d에는 원 그리기가 없어 가로 띠를 쌓아 채운 원을 그린다
     step = config.DISC_STEP
     rows = max(1, int(radius * 2 / step))
     for i in range(rows):
         dy = -radius + (i + 0.5) * radius * 2 / rows
         half = math.sqrt(max(0, radius * radius - dy * dy))
-        draw_rectangle(x - half, y + dy - step / 2, x + half, y + dy + step / 2, *color, filled=True)
+        camera.draw_rect(x - half, y + dy - step / 2, x + half, y + dy + step / 2, *color, filled=True)
 
 
 def draw_ring(x, y, rx, ry, dots, size, color):
@@ -45,11 +53,11 @@ def draw_ring(x, y, rx, ry, dots, size, color):
     for i in range(dots):
         angle = 2 * math.pi * i / dots
         px, py = x + rx * math.cos(angle), y + ry * math.sin(angle)
-        draw_rectangle(px - half, py - half, px + half, py + half, *color, filled=True)
+        camera.draw_rect(px - half, py - half, px + half, py + half, *color, filled=True)
 
 
 class ScreenFlash:
-    # 화면 전체를 덮었다가 서서히 사라지는 섬광 (흔들림으로 밀려도 가장자리가 드러나지 않게 크게 그린다)
+    # 화면 전체를 덮었다가 서서히 사라지는 섬광 (화면 좌표, 흔들리지 않는다)
     def __init__(self, color, alpha, time):
         self.color, self.alpha, self.time = color, alpha, time
         self.timer = time
@@ -61,7 +69,7 @@ class ScreenFlash:
 
     def draw(self):
         if self.timer > 0:
-            draw_alpha_rect(-config.SCREEN_W, -config.SCREEN_H, config.SCREEN_W * 2, config.SCREEN_H * 2,
+            draw_screen_alpha_rect(-config.SCREEN_W, -config.SCREEN_H, config.SCREEN_W * 2, config.SCREEN_H * 2,
                             self.color, self.alpha * self.timer / self.time)
 
 
@@ -76,10 +84,33 @@ class BorderFlash(ScreenFlash):
             return
         alpha = self.alpha * self.timer / self.time
         w, h, d = config.SCREEN_W, config.SCREEN_H, self.thickness
-        draw_alpha_rect(-w, -h, w * 2, d, self.color, alpha)
-        draw_alpha_rect(-w, h - d, w * 2, h * 2, self.color, alpha)
-        draw_alpha_rect(-w, d, d, h - d, self.color, alpha)
-        draw_alpha_rect(w - d, d, w * 2, h - d, self.color, alpha)
+        draw_screen_alpha_rect(-w, -h, w * 2, d, self.color, alpha)
+        draw_screen_alpha_rect(-w, h - d, w * 2, h * 2, self.color, alpha)
+        draw_screen_alpha_rect(-w, d, d, h - d, self.color, alpha)
+        draw_screen_alpha_rect(w - d, d, w * 2, h - d, self.color, alpha)
+
+
+class ScreenFade:
+    # fade초 동안 어두워졌다가 다시 fade초 동안 밝아진다 (환경 피해 → 안전 지점 복귀)
+    def __init__(self, fade):
+        self.fade = fade
+        self.timer = fade * 2
+
+    def update(self):
+        self.timer -= game_framework.frame_time
+        if self.timer <= 0:
+            game_world.remove_object(self)
+
+    def draw(self):
+        if self.timer <= 0:
+            return
+        alpha = 255 * (1 - abs(self.timer - self.fade) / self.fade)
+        draw_screen_alpha_rect(-config.SCREEN_W, -config.SCREEN_H, config.SCREEN_W * 2, config.SCREEN_H * 2,
+                        config.COLOR_FADE, max(0, alpha))
+
+
+def screen_fade(fade):
+    game_world.add_object(ScreenFade(fade), config.DEPTH_EFFECT)
 
 
 class Particle:
@@ -108,7 +139,7 @@ class Particle:
         if self.timer <= 0:
             return
         half = self.size * self.timer / self.life / 2
-        draw_rectangle(self.x - half, self.y - half, self.x + half, self.y + half, *self.color, filled=True)
+        camera.draw_rect(self.x - half, self.y - half, self.x + half, self.y + half, *self.color, filled=True)
 
 
 class Streak:
@@ -161,6 +192,11 @@ def parry_success(x, y):
     sound.play('parry')
 
 
+def projectile_blocked(x, y, color):
+    # 반사 해금 전 패링한 투사체가 튕겨 사라지는 작은 파편
+    burst(x, y, config.PROJECTILE_SHARD, color)
+
+
 def parry_miss(x, y):
     burst(x, y, config.PARRY_MISS_PUFF, config.PARRY_MISS_PUFF['color'])
     sound.play('parry_miss')
@@ -178,9 +214,8 @@ def player_dead():
     sound.play('death')
 
 
-def hit_spark(x, y, dir_x, count):
-    # 노란 스파크가 공격 방향(dir_x: +1 오른쪽, -1 왼쪽)으로 부채꼴로 퍼진다
-    base = 0 if dir_x > 0 else math.pi
+def hit_spark(x, y, base, count):
+    # 노란 스파크가 공격 방향(base, 라디안)으로 부채꼴로 퍼진다
     spread = math.radians(config.HIT_SPARK_SPREAD)
     speed = (config.HIT_SPARK_SPEED * (1 - config.HIT_SPARK_SPEED_JITTER), config.HIT_SPARK_SPEED)
     game_world.add_objects([Particle(x, y, speed, config.HIT_SPARK_LIFE, config.HIT_SPARK_SIZE,
@@ -190,20 +225,37 @@ def hit_spark(x, y, dir_x, count):
 
 def enemy_hurt(x, y, dir_x):
     # 투사체 등 플레이어 근접 공격이 아닌 피해 (히트스톱 없음)
-    hit_spark(x, y, dir_x, config.HIT_SPARK_COUNT)
+    hit_spark(x, y, 0 if dir_x > 0 else math.pi, config.HIT_SPARK_COUNT)
     sound.play('enemy_hurt')
 
 
-def attack_hit(x, y, dir_x, step, killed):
-    # 플레이어 근접 공격 적중. 여러 적을 맞혀도 히트스톱은 max로 1회분만 걸린다 (처치 히트스톱과도 max)
-    hitstop.start(config.HITSTOP_HIT[step - 1])
+def attack_hit(x, y, angle, strong, killed):
+    # 플레이어 곡괭이 적중. angle은 공격 방향(라디안), strong은 세 번째 일격
+    # 여러 적을 맞혀도 히트스톱은 max로 1회분만 걸린다 (처치 히트스톱과도 max)
+    hitstop.start(config.HITSTOP_HIT)
     count = config.HIT_SPARK_COUNT
-    if step == 3:
-        camera.shake(config.SHAKE_HIT3['amp'], config.SHAKE_HIT3['time'])
-        count *= config.HIT_SPARK_MULT3
-    hit_spark(x, y, dir_x, count)
+    if strong:
+        shake = config.THIRD_STRIKE['shake']
+        camera.shake(shake['amp'], shake['time'])
+        count *= config.HIT_SPARK_MULT_STRONG
+    hit_spark(x, y, angle, count)
     if not killed:
         sound.play('enemy_hurt')  # 처치면 처치음이 따로 난다
+
+
+def hard_land(x, y):
+    # 강착지: 발밑에서 좌우로 큰 먼지 + 작은 흔들림
+    spec = config.HARD_LAND_DUST
+    spread = math.radians(spec['spread'])
+
+    def angle():
+        # 오른쪽(0)이나 왼쪽(pi)에서 위로 spread 이내
+        rise = random.uniform(0, spread)
+        return rise if random.random() < 0.5 else math.pi - rise
+
+    game_world.add_objects([Particle(x, y, spec['speed'], spec['life'], spec['size'], spec['color'], angle())
+                            for _ in range(spec['count'])], config.DEPTH_EFFECT)
+    camera.shake(config.HARD_LAND_SHAKE['amp'], config.HARD_LAND_SHAKE['time'])
 
 
 def enemy_killed(x, y, color):

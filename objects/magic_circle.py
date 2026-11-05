@@ -4,7 +4,7 @@ import config
 import game_framework
 import game_world
 from objects import effect
-from systems import terrain
+from systems import camera, terrain
 
 SPEC = config.MAGIC_CIRCLE
 
@@ -53,7 +53,7 @@ class MagicCircle:
         effect.draw_ring(self.x, self.y, self.radius, self.radius * SPEC['ring_flat'],
                          SPEC['ring_dots'], SPEC['dot'], config.COLOR_UNPARRYABLE)
         if game_world.show_hitbox:
-            draw_rectangle(*self.get_bb(), *config.COLOR_DEBUG_ATTACK)
+            camera.draw_rect(*self.get_bb(), *config.COLOR_DEBUG_ATTACK)
 
     def get_bb(self):
         return self.x - self.radius, self.y, self.x + self.radius, self.y + SPEC['pillar_h']

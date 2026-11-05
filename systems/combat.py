@@ -14,8 +14,9 @@ def resolve(player, enemies):
             if game_world.overlap(attack_bb, e.get_bb()):
                 player.attack_hits.add(e)
                 x, y = contact_point(attack_bb, e.get_bb())
-                e.take_damage(player.attack_damage(), player.face_dir * player.attack_knockback())
-                effect.attack_hit(x, y, player.face_dir, player.attack_step, not e.is_alive())
+                strong = player.on_attack_hit()   # 반동·포고·세 번째 일격 (휘두름당 1번)
+                e.take_damage(player.attack_damage(), player.attack_knockback(e))
+                effect.attack_hit(x, y, player.attack_angle(), strong, not e.is_alive())
 
     body_bb = player.get_bb()
     for e in enemies:
@@ -35,16 +36,23 @@ def resolve(player, enemies):
                 if e.attack_hit:
                     effect.player_hit(player.x, player.y + config.PLAYER_H / 2)
 
+    # 몸 접촉 피해 (6.8). 공격 판정 뒤에 본다 (같은 프레임에 공격에 맞았으면 무적이라 무시됨)
+    for e in enemies:
+        if e.is_alive() and e.deals_contact() and game_world.overlap(e.get_bb(), body_bb):
+            if player.take_hit(config.CONTACT_DAMAGE, e.x):
+                effect.player_hit(player.x, player.y + config.PLAYER_H / 2)
+
 
 def projectile_hit(player, p):
     # 투사체가 플레이어 몸에 닿았을 때. 무적(대시 등)이면 그대로 지나간다
     if player.is_parrying() and p.parryable:
         player.on_parry_success(p)
         effect.parry_success(*contact_point(p.get_bb(), player.get_bb()))
-        p.on_parried(player.reflect_damage_mult)
-        # [v2] 보스 투사체 반사도 패링 성공이므로 자세가 쌓인다
-        if p.owner is not None and p.owner.is_alive():
-            p.owner.add_posture()
+        # 반사 해금 전에는 튕겨 사라지고, 해금 후에는 되돌아간다 (9.3). 자세는 반사탄이 맞을 때 쌓인다
+        if player.can('reflect'):
+            p.on_parried(player, player.reflect_damage_mult)
+        else:
+            p.on_blocked()
     # 밀려나는 방향은 투사체 진행 방향을 따른다
     elif player.take_hit(p.damage, player.x - p.dir_x):
         effect.player_hit(player.x, player.y + config.PLAYER_H / 2)
