@@ -47,6 +47,12 @@ class Player:
         self.dash_cooldown = 0.0
         self.dash_dir = 1
         self.air_dash_used = False
+        # 벽 매달리기 (WallSlide, 버팀의 룬, 6.4): wall_dir = 매달린 벽 쪽 (-1 왼쪽, 1 오른쪽, 0 아님)
+        # 벽점프 (WallJump): wall_jump_lock 동안 수평 입력을 무시하고 wall_jump_dir 쪽으로 밀려난다
+        self.wall_dir = 0
+        self.wall_jump_lock = 0.0
+        self.wall_jump_dir = 0
+        self.wall_spark_timer = 0.0
         # 곡괭이 공격 (6.5): 단타. attack_active > 0인 동안 hitbox, attack_cooldown이 끝나야 다음 공격
         self.attack_dir = 'side'   # 'side' | 'up' | 'down'
         self.attack_active = 0.0
@@ -146,6 +152,8 @@ class Player:
         self.recoil_timer = 0.0
         self.attack_active = 0.0
         self.hit_timer = 0.0
+        self.wall_dir = 0
+        self.wall_jump_lock = 0.0
         self.drop_platforms = []
         self.drop_timer = 0.0
         self.platforms = platforms
@@ -191,6 +199,9 @@ class Player:
     def is_hard_landing(self):
         return self.hard_land_timer > 0
 
+    def is_wall_sliding(self):
+        return self.wall_dir != 0
+
     def is_attacking(self):
         # 공격 hitbox가 살아 있는 동안 (공격은 이동을 막지 않는다)
         return self.attack_active > 0
@@ -219,6 +230,9 @@ class Player:
         if input.buffered('jump') and self.can_drop():
             input.consume('jump')
             self.start_drop()
+        elif input.buffered('jump') and self.is_wall_sliding() and not self.on_ground:
+            input.consume('jump')
+            self.start_wall_jump()
         elif input.buffered('jump') and self.can_jump():
             input.consume('jump')
             self.start_jump()
@@ -280,6 +294,19 @@ class Player:
         self.jump_rising = True
         self.jump_elapsed = 0.0
         self.on_ground = False
+        self.coyote_timer = 0.0
+        self.fall_time = 0.0
+        sound.play('jump')
+
+    def start_wall_jump(self):
+        # 벽점프 (6.4): 벽 반대쪽으로 도약. 높이는 보통 점프와 같다 (누르는 만큼). 공중 추가 점프는 쓰지 않는다
+        self.wall_jump_dir = -self.wall_dir
+        self.face_dir = self.wall_jump_dir
+        self.wall_jump_lock = config.WALL_JUMP_LOCK
+        self.wall_dir = 0
+        self.vy = config.JUMP_SPEED
+        self.jump_rising = True
+        self.jump_elapsed = 0.0
         self.coyote_timer = 0.0
         self.fall_time = 0.0
         sound.play('jump')
@@ -600,6 +627,7 @@ class Player:
         self.attack_cooldown = max(0, self.attack_cooldown - dt)
         self.since_last_strike += dt
         self.dash_strike_timer = max(0, self.dash_strike_timer - dt)
+        self.wall_jump_lock = max(0, self.wall_jump_lock - dt)
         if self.is_hazard_respawning():
             # HazardRespawn: 입력 잠금, 움직이지 않는다. 누름은 버리지만 누름 상태는 계속 받는다
             self.update_hazard_respawn(dt)
@@ -612,6 +640,7 @@ class Player:
             return
         if self.blackout or self.cutscene:
             # Blackout · Cutscene: 입력 잠금, 중력만 받는다
+            self.wall_dir = 0
             self.vx = 0.0
             self.update_move_y(dt)
             input.update(dt)
@@ -628,6 +657,7 @@ class Player:
             self.update_move_x(dt)
             self.update_move_y(dt)
         self.update_landing(was_on_ground, dt)
+        self.update_wall(dt)
         self.update_safe_spot(dt)
         if self.y + config.PLAYER_H < 0:
             self.hazard_hit()  # 방 아래로 떨어짐 = 구덩이
@@ -660,6 +690,9 @@ class Player:
         elif self.is_hit():
             # 경직 중에는 조작 없이 맞은 반대쪽으로 밀려난다
             self.vx = self.hit_dir * config.PLAYER_HIT_KNOCKBACK
+        elif self.wall_jump_lock > 0:
+            # 벽점프 직후: 수평 입력 무시, 벽 반대쪽으로 (6.4)
+            self.vx = self.wall_jump_dir * config.WALL_JUMP_SPEED_X
         else:
             # 즉시 가감속, 공중 제어 100%. 공격 중에도 이동한다 (hitbox가 살아 있는 동안만 방향 고정)
             move = input.axis_x()
@@ -700,6 +733,10 @@ class Player:
                 self.jump_rising = False
         if remaining > 0:
             fall_dy, self.vy = fall_motion(self.vy, remaining)
+            if self.is_wall_sliding() and self.vy < config.WALL_SLIDE_SPEED:
+                # 벽에 매달린 동안은 WALL_SLIDE_SPEED보다 빨리 떨어지지 않는다
+                fall_dy = max(fall_dy, config.WALL_SLIDE_SPEED * remaining)
+                self.vy = config.WALL_SLIDE_SPEED
             dy += fall_dy
         if self.vy <= 0:
             self.jump_rising = False
@@ -731,6 +768,30 @@ class Player:
             self.coyote_timer = max(0, self.coyote_timer - dt)
             if self.vy < 0 and not self.is_dashing():
                 self.fall_time += dt
+
+    def update_wall(self, dt):
+        # 벽 매달리기 (6.4, 버팀의 룬): 공중에서 벽 쪽 방향키를 누르고 있고 몸 옆이 단단한 벽에 닿아 있으면 WallSlide
+        # 매달린 동안 대시·공중 점프 재충전, 체공 시간 리셋 (강착지 없음). 같은 벽에 다시 매달릴 수 있다
+        move = input.axis_x()
+        cling = (move != 0 and not self.on_ground and self.can('wall_cling') and not self.is_dashing()
+                 and self.wall_jump_lock <= 0 and not self.dead and not self.is_hit() and not self.is_mending()
+                 and terrain.body_blocked(self.x + move, self.y + config.PLAYER_H * 0.25, config.PLAYER_W,
+                                          config.PLAYER_H * 0.5, self.platforms))
+        self.wall_dir = move if cling else 0
+        if not cling:
+            self.wall_spark_timer = 0.0
+            return
+        self.air_dash_used = False
+        self.jumps_left = self.max_jumps - 1
+        self.fall_time = 0.0
+        if self.vy < 0:
+            # 곡괭이를 벽에 박고 미끄러지며 튀는 불꽃
+            self.wall_spark_timer -= dt
+            if self.wall_spark_timer <= 0:
+                spark = config.WALL_SLIDE_SPARK
+                self.wall_spark_timer = spark['interval']
+                effect.burst(self.x + self.wall_dir * config.PLAYER_W / 2,
+                             self.y + config.PLAYER_H * config.WALL_PICK['y'], spark, spark['color'])
 
     # ---------- 그리기 ----------
 
@@ -765,6 +826,14 @@ class Player:
             if self.sitting:
                 t = b + config.PLAYER_H * config.SIT_BODY_RATIO
             camera.draw_rect(l, b, r, t, *color, filled=True)
+            if self.is_wall_sliding():
+                # 벽에 박은 곡괭이
+                pick = config.WALL_PICK
+                px = self.x + self.wall_dir * config.PLAYER_W / 2
+                py = b + config.PLAYER_H * pick['y']
+                camera.draw_rect(min(px, px + self.wall_dir * pick['w']), py - pick['h'] / 2,
+                                 max(px, px + self.wall_dir * pick['w']), py + pick['h'] / 2,
+                                 *config.COLOR_PLAYER_SLASH, filled=True)
             if self.is_parrying():
                 # 몸 앞쪽에 방패 표시
                 sx = r if self.face_dir > 0 else l - config.PARRY_SHIELD_W

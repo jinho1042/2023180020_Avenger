@@ -1,0 +1,43 @@
+{
+  "id": "R2_B2",
+  "region": "moss",
+  "size": [1, 1],
+  "map_cell": [13, 3],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [1240, 64, 40, 616, "solid"],
+    [1060, 240, 80, 320, "solid"]
+  ],
+  "hazards": [],
+  "water": [],
+  "breath_zones": [],
+  "breath_gates": [],
+  "safe_zones": [],
+  "air_vents": [],
+  "breakables": [
+    [1072, 560, 56, 56, "ore_chunk", "chunk_b2"]
+  ],
+  "gates": [
+    [16, 64, 32, 200, "arena", "arena_door"]
+  ],
+  "switches": [],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R2_09", "to_exit": "R"}
+  ],
+  "spawns": [
+    ["moss_warden", 760, 64]
+  ],
+  "objects": [],
+  "safe_points": [
+    [130, 64]
+  ],
+  "triggers": [
+    [140, 64, 40, 400, "arena", "arena_b2"]
+  ],
+  "boss": "moss_warden"
+}
