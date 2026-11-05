@@ -30,6 +30,7 @@ class Attack:
 
 class EnemyBase:
     is_boss = False  # True면 하단 보스 HUD에 표시
+    kind = 'enemy'   # 패링 숨 판정 (8.4): 'enemy' 일반 적 | 'elite' 정예 | 'boss' 보스
 
     def __init__(self, x, y, stats, player, platforms):
         # x, y는 발 중심 좌표
@@ -46,6 +47,7 @@ class EnemyBase:
         self.on_ground = False
         self.player = player
         self.platforms = platforms
+        self.parry_breath_count = 0  # 이 적에게서 패링 숨을 얻은 횟수 (일반 적만 센다, 8.4)
 
         self.state = IDLE
         self.state_timer = 0.0

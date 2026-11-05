@@ -214,6 +214,18 @@ def player_dead():
     sound.play('death')
 
 
+def suffocated():
+    # 질식 피해 (7.3): 히트스톱·흔들림 없이 화면만 어둡게 깜빡 (기침 소리는 T19)
+    flash = config.SUFFOCATE_FLASH
+    game_world.add_object(ScreenFlash(config.COLOR_FADE, flash['alpha'], flash['time']), config.DEPTH_EFFECT)
+
+
+def safe_zone_entered():
+    # 안전지대 진입 (14.3): 화면이 살짝 밝아짐 (들숨 소리는 T19)
+    flash = config.SAFE_ENTER_FLASH
+    game_world.add_object(ScreenFlash(config.COLOR_BREATH_REFILL, flash['alpha'], flash['time']), config.DEPTH_EFFECT)
+
+
 def hit_spark(x, y, base, count):
     # 노란 스파크가 공격 방향(base, 라디안)으로 부채꼴로 퍼진다
     spread = math.radians(config.HIT_SPARK_SPREAD)

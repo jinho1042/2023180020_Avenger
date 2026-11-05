@@ -87,6 +87,70 @@ DAMAGE_CAP = 2             # 플레이어가 한 번에 받는 최대 피해 (�
 SAFE_GROUND_TIME = 2.0     # s, 방에 safe_points가 없을 때 이만큼 연속으로 서 있던 바닥을 안전 지점으로
 SAFE_POINT_RADIUS = 40     # px, safe_points의 이 거리 안에 서면 '밟은' 것
 COLOR_FADE = (0, 0, 0)
+
+# ===== 숨 (T37, 7.2 · 7.3. # 임시 = T58에서 확정, 그 전에는 바꾸지 않는다. 예외는 0장 14번) =====
+# 숨의 단위는 '초': 소모 배율 1.0에서 1초에 1씩 준다
+BREATH_CAPACITY = [25, 50, 75, 105, 140, 175]  # 임시. 인덱스 = 숨의 룬 레벨 (0 = 룬 없음)
+BREATH_DRAIN = 1.0                              # 임시. 초당 기본 소모
+BREATH_DRAIN_MULT = dict(normal=1.0, spore=2.0, water=3.0, foul=1.3, thin=1.5, void=2.5)  # 임시. void = R6 통로
+BREATH_REFILL_RATE = 40.0  # 임시. 안전지대 안에서 초당 회복
+AIR_VENT_REFILL = 12.0     # 임시. 숨구멍 1회 회복량
+AIR_VENT_COOLDOWN = 20.0   # 임시. 같은 숨구멍 재사용 대기
+CRYSTAL_POCKET_REFILL = 6.0  # 임시. R3 결정 숨주머니를 깼을 때
+BREATH_PER_PARRY = 3.0     # 임시. 각인 '받아친 숨'(parry_breath) 장착 시에만
+PARRY_BREATH_PER_ENEMY_MAX = 3   # 일반 적 한 마리에게서 패링 숨을 얻는 최대 횟수 (보스·정예는 제한 없음)
+PARRY_BREATH_ENGRAVING_LOCKED = False  # True면 '받아친 숨'을 숨의 룬 1번 홈에서 뺄 수 없음
+BREATH_PER_KILL = 0.0      # 임시. 0이면 처치로는 숨을 얻지 않음
+BREATH_GROGGY_BURST = 15.0 # 임시. 보스 그로기 때 공기 주머니
+HEAL_BREATH_COST = 15.0    # 임시. 숨 고르기 1칸 (완료 시 차감, 그때 모자라면 취소)
+HEAL_TIME = 0.9            # s
+SKILL_BREATH_COST = 8.0    # 임시. 룬 기술 1회
+SUFFOCATE_INTERVAL = 3.0   # 임시. 숨 0일 때 이 간격마다 체력 1칸 (게이트 방 안 제외)
+BREATH_GATE_BLACKOUT_FADE = 1.0  # s, 게이트 기절 페이드
+BREATH_GATE_LOCKED_TIME = 1.5    # s, 요구 레벨 미달로 게이트 방에 들어가면 이 시간 동안 숨이 0까지 떨어진 뒤 기절
+BREATH_LOW_RATIO = 0.25    # 이 비율 아래면 경고 연출
+BREATH_EXIT_GRACE = 1.0    # s, 안전지대를 나선 직후 소모 시작까지 유예
+BREATH_USE_TARGET = dict(  # 임시. 플레이테스트 목표 (7.6): 처음 하는 플레이어가 쓴 숨 ÷ 그 시점 기본 용량
+    gate=(0.6, 0.85),      # 게이트 통로 (요구 레벨로 지날 때). 이 범위면 '빠듯하지만 통과'
+    segment=0.8,           # 일반 구간 (안전지대·숨구멍 사이) 상한
+)
+BREATH_BUDGET_PATH = 'data/breath_budget.json'   # F6 측정 기록 (13.5). 한 번 누를 때마다 JSON 한 줄
+# 숨 연출 (14.1 · 14.3 · 14.5). 흰색·빨간색은 쓰지 않는다
+BREATH_BAR_PX = 2.5        # px, 숨 1당 게이지 길이 (용량이 늘면 막대도 길어진다)
+BREATH_BAR_H = 12          # px
+BREATH_BAR_GAP = 12        # px, 체력 칸 아래 간격
+BREATH_LOW_BLINK = 0.2     # s, 숨 부족 깜빡임 주기
+BREATH_FLOW_GAP = 18       # px, 배율 > 1일 때 게이지 안 흐름 무늬 간격
+BREATH_FLOW_SPEED = 30     # px/s, 흐름 무늬 속도 (× 배율)
+BREATH_FLASH_TIME = 0.3    # s, 패링 숨을 얻었을 때 게이지 반짝
+BREATH_GATE_HATCH = 8      # px, 게이트 방 안일 때 게이지 테두리 빗금 간격
+COLOR_BREATH = (120, 200, 240)        # 하늘색
+COLOR_BREATH_BACK = (30, 50, 70)
+COLOR_BREATH_LOW = (60, 100, 140)     # 숨 부족 깜빡임
+COLOR_BREATH_REFILL = (170, 230, 255) # 안전지대 안에서 차오를 때
+COLOR_BREATH_FLASH = (220, 245, 255)
+COLOR_BREATH_FLOW = (70, 140, 190)
+COLOR_BREATH_GATE = (40, 40, 60)      # 게이트 방 빗금
+BREATH_VIGNETTE_W = 90     # px, 숨 부족 시 화면 가장자리 어둠 두께 (BREATH_VIGNETTE_LAYERS겹)
+BREATH_VIGNETTE_LAYERS = 3
+BREATH_VIGNETTE_ALPHA = 200   # 0~255, 숨 0일 때 가장 바깥 겹
+SUFFOCATE_FLASH = dict(alpha=150, time=0.3)        # 질식 피해 때 화면 어둡게 깜빡
+SAFE_ENTER_FLASH = dict(alpha=40, time=0.4)        # 안전지대 진입 때 화면이 살짝 밝아짐. 색은 COLOR_BREATH_REFILL
+MEND_RING = dict(dots=16, size=5, radius=(40, 14))  # 숨 고르기 중 몸 둘레 점 고리 (반지름: 시작 → 완료)
+COLOR_MEND = (150, 220, 250)
+AIR_VENT_RADIUS = 14       # px, 숨구멍 (x, y는 중심). 닿는 판정은 이 반지름의 정사각형
+AIR_VENT_WIND = dict(count=3, rise=40, period=1.2, size=4)  # 숨구멍 위로 오르는 공기 점 (rise px를 period초에)
+COLOR_AIR_VENT = (120, 200, 240)
+COLOR_AIR_VENT_USED = (60, 90, 110)
+BREATH_ZONE_ALPHA = 50     # 0~255, 숨 배율 영역 칠
+BREATH_ZONE_DOT_GAP = 40   # px, 포자 지대 점 무늬 간격
+BREATH_ZONE_DOT = 4        # px
+COLOR_BREATH_ZONE = dict(spore=(220, 200, 80), water=(40, 160, 170), foul=(90, 100, 70),
+                         thin=(150, 140, 120), void=(50, 40, 70), normal=(120, 120, 120))
+BREATH_GATE_LINE_GAP = 120 # px, 게이트 방 빗금 간격
+BREATH_GATE_LINE_W = 6     # px
+BREATH_GATE_ALPHA = 140    # 0~255
+COLOR_BREATH_GATE_LINE = (15, 15, 25)   # 배경보다 어두운 빗금
 PLAYER_HIT_STUN = 0.25     # s, 피격 경직 (조작 불가)
 PLAYER_HIT_KNOCKBACK = 250 # px/s, 피격 경직 중 밀려나는 속도
 BLINK_INTERVAL = 0.08      # s, 피격 무적 깜빡임 주기
@@ -252,6 +316,25 @@ ENGRAVING_IDS = ['third_strike', 'quick_hands', 'long_handle', 'miners_grit', 'l
                  'parry_breath', 'steady_breath', 'thrifty_breath', 'wind_step', 'long_dash', 'dash_strike',
                  'mirror_crystal', 'counter_wave', 'sharp_counter', 'stone_skin', 'thorn_shell', 'compass',
                  'ore_magnet', 'first_breath', 'breath_echo']
+
+# ===== 각인 효과 수치 (T37, 키 = 8.4 표의 id). T37은 숨 관련 각인만 읽는다, 나머지는 T44 =====
+ENGRAVING = dict(
+    miners_grit=1.2,                       # 곡괭이 피해 배율
+    last_stand=1.75,                       # 체력 1칸일 때 피해 배율
+    deep_lung=1.15,                        # 숨 용량 배율 (7.6 게이트 판정에 포함)
+    steady_breath=0.5,                     # 숨 고르기 시간 배율
+    thrifty_breath=0.7,                    # 숨 고르기 비용 배율
+    wind_step=0.7,                         # 대시 쿨 배율
+    long_dash=1.5,                         # 대시 거리 배율
+    dash_strike=dict(window=0.5, mult=2.0),
+    mirror_crystal=2.0,                    # 반사 피해 배율
+    counter_wave=dict(damage=10, speed=700, size=(120, 40)),
+    sharp_counter=0.05,                    # 패링 판정 +s
+    stone_skin=0.4,                        # 피격 무적 +s
+    thorn_shell=dict(damage=15, radius=100),
+    first_breath=2.0,                      # 질식 간격 배율
+    breath_echo=2.0,                       # '되받은 숨': 패링 숨 배율
+)
 
 # ===== 디버그 메뉴 (T34, F4 방 이동 · F7 개별 지급) =====
 DEBUG_GIVE_FLAGS = ['reflect', 'whetstone', 'met_oram', 'intro_done']   # F7에서 켜고 끄는 플래그 (13.6)

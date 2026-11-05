@@ -4,7 +4,7 @@
   "size": [1, 1],
   "map_cell": [1, 0],
   "music": null,
-  "air": null,
+  "air": "normal",
   "hub": false,
   "platforms": [
     [0, 0, 1280, 80, "solid"],
@@ -19,6 +19,9 @@
   "exits": [
     {"id": "U", "rect": [540, 672, 200, 48], "to": "TEST_02", "to_exit": "D"},
     {"id": "R", "rect": [1264, 80, 16, 200], "to": "TEST_05", "to_exit": "L"}
+  ],
+  "water": [
+    [740, 80, 380, 150]
   ],
   "safe_zones": [
     [40, 80, 200, 300, "safe_a"]

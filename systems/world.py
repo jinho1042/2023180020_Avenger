@@ -9,7 +9,7 @@ ROOM_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'rooms')
 # 영구 상태 (5.6, 13.6). 세이브(systems/save.py)는 이것을 그대로 쓰고 읽는다
 # state.player = 13.6 player (룬·각인·갑옷 등), 나머지 필드 = 13.6 world, stats = 13.6 stats
 # mined = 덜 부순 벽·덩어리의 친 횟수 (18장 25번), rest_seat = 마지막으로 앉은 자리 '방 id:안전지대 id'
-# last_safe_zone = 마지막으로 들어간 안전지대 (7.3 기절 복귀 지점, 저장 안 함. T37에서 breath로)
+# 기절 복귀 지점(last_safe_zone)은 저장하지 않으므로 systems/breath.py가 들고 있다 (7.3)
 state = None
 room_paths = {}    # 방 id(파일 이름) → JSON 경로. data/rooms 아래 모든 폴더
 enter = None       # 방을 실제로 채우는 함수 (play_mode.enter_room). Room과 도착 정보를 받는다
@@ -28,7 +28,7 @@ def new_player_state():
 
 def new_state():
     return SimpleNamespace(
-        player=new_player_state(), rest_seat=None, last_safe_zone=None,
+        player=new_player_state(), rest_seat=None,
         flags=set(), debug_unlocked=False,
         visited=set(), map_stones=set(), broken=set(), mined={}, opened=set(), switches=set(), collected=set(),
         miners_rescued=set(), miner_rewards_taken=set(), safe_zones_found=set(),
@@ -84,9 +84,9 @@ def seat_arrival(rest_seat):
     return room_id, dict(seat=zone_id)
 
 
-def warp(room_id, spot=None):
-    # 페이드를 거쳐 방을 옮긴다. spot이 없으면 방의 기본 자리 (기절 복귀·F4)
-    begin(room_id, dict(spot=spot))
+def warp(room_id, spot=None, zone=None):
+    # 페이드를 거쳐 방을 옮긴다. zone = 안전지대 id면 그 영역 바닥 (기절 복귀), 둘 다 없으면 방의 기본 자리 (F4)
+    begin(room_id, dict(spot=spot, zone=zone))
 
 
 def begin(room_id, arrival):
@@ -147,7 +147,8 @@ def exit_spot(exit_zone, along):
 def place_player(player, room, arrival):
     # 도착 자리에 플레이어를 놓는다. play_mode.enter_room이 부른다
     if 'exit_id' not in arrival:
-        spot = arrival.get('spot') or room.seat_spot(arrival.get('seat')) or room.player_start or (room.safe_points[0] if room.safe_points else None)
+        spot = (arrival.get('spot') or room.zone_floor(arrival.get('zone')) or room.seat_spot(arrival.get('seat'))
+                or room.player_start or (room.safe_points[0] if room.safe_points else None))
         if spot is None and room.exits:
             spot = exit_spot(room.exits[0], 0)
         player.enter_room(room.terrain, spot or (room.width / 2, 0), room.safe_points)

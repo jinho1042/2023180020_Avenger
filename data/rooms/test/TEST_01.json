@@ -4,7 +4,7 @@
   "size": [1, 1],
   "map_cell": [0, 1],
   "music": null,
-  "air": null,
+  "air": "normal",
   "hub": false,
   "platforms": [
     [0, 0, 1280, 80, "solid"],

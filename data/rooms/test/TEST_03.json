@@ -4,7 +4,7 @@
   "size": [3, 2],
   "map_cell": [3, 1],
   "music": null,
-  "air": null,
+  "air": "normal",
   "hub": false,
   "platforms": [
     [0, 0, 3840, 80, "solid"],
@@ -20,6 +20,12 @@
     [2500, 1200, 240, 24, "oneway"],
     [2950, 1200, 240, 24, "oneway"],
     [2600, 80, 80, 300, "solid"]
+  ],
+  "breath_zones": [
+    [400, 80, 700, 500, "spore"]
+  ],
+  "air_vents": [
+    [2900, 1300, "vent_a"]
   ],
   "hazards": [
     [1000, 80, 200, 24, "spike"]
