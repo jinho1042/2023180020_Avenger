@@ -1,0 +1,18 @@
+{
+  "compass": {"name": "광부의 나침반", "name_en": "Miner's Compass",
+              "desc": ["각인 · 공용", "지도에 현재 위치를", "표시한다"],
+              "desc_en": ["Engraving · Any", "Shows your position", "on the map"]},
+  "ore_magnet": {"name": "광석 자석", "name_en": "Ore Magnet",
+                 "desc": ["각인 · 공용", "광석을 더 멀리서", "끌어당긴다"],
+                 "desc_en": ["Engraving · Any", "Pulls ore in", "from farther away"]},
+  "deep_lung": {"name": "깊은 폐", "name_en": "Deep Lung",
+                "desc": ["각인 · 숨", "숨 용량이 늘어난다"],
+                "desc_en": ["Engraving · Breath", "Larger breath capacity"]},
+  "long_handle": {"name": "긴 자루", "name_en": "Long Handle",
+                  "desc": ["각인 · 곡괭이", "곡괭이가 더 멀리", "닿는다"],
+                  "desc_en": ["Engraving · Pickaxe", "Longer pickaxe reach"]},
+  "rare_ore_a": {"name": "희귀 광석", "name_en": "Rare Ore",
+                 "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
+  "rare_ore_b": {"name": "희귀 광석", "name_en": "Rare Ore",
+                 "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]}
+}

@@ -70,6 +70,46 @@ def pay(ore, rare_ore=0):
     return True
 
 
+def shop_condition_met(condition):
+    # 판매 조건 (config.SHOP). 'region_<구역>' = 그 구역 방 하나라도 방문, 'miners_<n>' = 실종 광부 n명 이상 구출
+    if condition is None:
+        return True
+    state = world.state
+    kind, _, value = condition.partition('_')
+    if kind == 'region':
+        return any(world.room_region(r) == value for r in state.visited)
+    if kind == 'miners':
+        return len(state.miners_rescued) >= int(value)
+    return False
+
+
+def shop_sold(key):
+    # 한 번 산 상품은 다시 팔지 않는다. 각인은 다른 데서 얻었어도 판매 끝
+    p = world.state.player
+    return f'shop_{key}' in world.state.collected or key in p.engravings_owned
+
+
+def shop_stock():
+    # 지금 목록에 나오는 상품 키 (config.SHOP 순서). 조건을 채우기 전·이미 산 상품은 목록에 없다 (13.3)
+    return [key for key, (price, condition) in config.SHOP.items()
+            if shop_condition_met(condition) and not shop_sold(key)]
+
+
+def buy(key):
+    # 보관 광석으로 사서 바로 얻는다. 각인은 보유 목록에만 넣는다 (장착은 안전지대 각인 화면, T44)
+    # 반환: 샀으면 True. 저장은 부른 쪽 (13.6 '구매' 저장 시점)
+    price, condition = config.SHOP[key]
+    if key not in shop_stock() or not pay(price):
+        return False
+    p = world.state.player
+    if key in config.ENGRAVING_IDS:
+        p.engravings_owned.add(key)
+    else:
+        p.rare_ore += config.SHOP_RARE_ORE
+    world.state.collected.add(f'shop_{key}')
+    return True
+
+
 def update(dt):
     global bank_timer
     bank_timer = max(0, bank_timer - dt)

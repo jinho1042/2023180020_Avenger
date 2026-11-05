@@ -70,6 +70,7 @@ LAYER_COUNT = 6
 FONT_PATH = 'C:/Windows/Fonts/malgun.ttf'
 FONT_SIZE_TITLE = 72
 FONT_SIZE_TEXT = 24
+FONT_FALLBACK_PATH = 'C:/Windows/Fonts/arial.ttf'   # FONT_PATH(한글)가 없을 때. 문구는 영어 대체 (ui/font.py)
 
 # 색
 COLOR_TEXT = (255, 255, 255)
@@ -638,6 +639,35 @@ CONTROLS_TEXT = [          # 조작법 화면 (config.KEYS와 맞춘다)
     'C   대시', 'S   패링', 'A   룬 기술 / 길게: 숨 고르기', 'D   돌파',
     '↑   앉기 · 말 걸기', 'Tab   지도      I   인벤토리', 'Esc   일시정지',
 ]
+
+# 대화 · 석판 · 상점 (T39, 2.5, 13.3). 흰색·빨간색은 쓰지 않는다. NPC·석판 (x, y)는 아래쪽 중심
+DIALOG_CHARS_PER_SEC = 40
+DIALOG_DIR = 'data/dialog'  # <대화 id>.json (NPC id·석판 id와 같은 이름), 상점 상품 이름은 shop.json
+NPC_TALK_RADIUS = 80       # px, NPC·석판 중심과 플레이어 중심의 가로 거리가 이 안이면 ↑로 말 걸기
+NPC_W, NPC_H = 40, 72      # px
+COLOR_NPC = dict(borum=(150, 120, 80))   # NPC id별 몸 색. 없으면 COLOR_NPC_DEFAULT
+COLOR_NPC_DEFAULT = (120, 120, 100)
+COLOR_NPC_LAMP = (255, 220, 120)         # 헬멧 랜턴 (플레이어와 같은 광부 표시)
+NPC_LAMP = 8               # px
+TABLET_W, TABLET_H = 56, 80
+COLOR_TABLET = (100, 100, 110)
+COLOR_TABLET_RUNE = (140, 180, 220)
+COLOR_TALK_PROMPT = (255, 220, 120)
+TALK_PROMPT_SIZE = 14      # px, 머리 위 ↑ 표시
+TALK_PROMPT_GAP = 16       # px
+DIALOG_BOX = dict(w=1000, h=170, bottom=30, pad=24, line_h=36, border=4)   # 화면 하단 대화 상자
+COLOR_DIALOG_BOX = (25, 25, 35)
+COLOR_DIALOG_BORDER = (90, 90, 110)
+COLOR_DIALOG_NAME = (255, 220, 120)
+DIALOG_NEXT_BLINK = 0.5    # s, 페이지 끝 ▼ 깜빡임 주기
+SHOP_VISIBLE = 3           # 상점 상품 카드를 한 번에 보이는 수 (←→로 넘김). 카드 모양은 CARD_*
+SHOP_CARD_H = 200          # px
+SHOP_TOP_Y = 560           # px, 카드 윗변의 화면 y
+SHOP = dict(               # 보름 상점: (가격, 판매 조건). 조건 'region_<구역>' = 그 구역 방문, 'miners_<n>' = 실종 광부 n명 구출
+    compass=(120, None), ore_magnet=(150, None), deep_lung=(400, 'region_moss'),
+    long_handle=(450, 'miners_2'), rare_ore_a=(600, None), rare_ore_b=(1200, 'miners_6'),
+)
+SHOP_RARE_ORE = 1          # 각인이 아닌 상품(rare_ore_*) 하나에 든 희귀 광석 수
 
 # 결과 화면
 COLOR_RESULT_DEAD = (239, 68, 68)

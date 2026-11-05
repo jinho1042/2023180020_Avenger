@@ -18,6 +18,7 @@ from objects.enemy_melee import EnemyMelee
 from objects.exit_zone import ExitZone
 from objects.gate import Gate
 from objects.hazard import Hazard
+from objects.npc import Npc
 from objects.platform import Platform
 from objects.safe_zone import SafeZone
 from objects.switch import Switch
@@ -79,6 +80,8 @@ class Room:
                                     + [BreathZone(*w[:4], 'water') for w in self.water])
         self.breath_gate_objects = [BreathGate(*g) for g in self.breath_gates]
         self.air_vent_objects = [AirVent(self.id, *v) for v in self.air_vents]
+        # NPC·석판 (2.5): ↑로 말 걸기. 지형이 아니라 곡괭이에도 맞지 않는다
+        self.npc_objects = [Npc(*o[:4]) for o in self.objects if o[0] in ('npc', 'tablet')]
         self.terrain = self.platforms + breakables + list(gates.values())
         # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)
         self.gimmicks = self.hazard_objects + breakables + list(gates.values()) + switches
