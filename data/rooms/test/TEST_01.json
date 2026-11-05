@@ -17,6 +17,12 @@
   "exits": [
     {"id": "R", "rect": [1264, 80, 16, 200], "to": "TEST_02", "to_exit": "L"}
   ],
+  "safe_zones": [
+    [40, 80, 360, 320, "safe_a"]
+  ],
+  "objects": [
+    ["seat", 220, 80, "safe_a"]
+  ],
   "spawns": [
     ["melee", 900, 80]
   ],

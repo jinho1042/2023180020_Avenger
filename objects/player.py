@@ -84,6 +84,8 @@ class Player:
         self.safe_point = None       # safe_points 중 마지막으로 밟은 곳
         self.ground_spot = start     # 마지막으로 SAFE_GROUND_TIME 이상 서 있던 바닥
         self.ground_time = 0.0
+        # 안전지대 의자에 앉음 (13.1): 움직이지 않고, ←·→·Z로 일어난다. 앉기는 play_mode가 sit()으로
+        self.sitting = False
         # 충돌을 검사할 지형 목록
         self.platforms = platforms
         # 강화로 바뀌는 수치 (systems/upgrades.py). upgrades는 획득 순서대로 강화 키
@@ -109,6 +111,7 @@ class Player:
         self.ground_spot = start
         self.ground_time = 0.0
         self.hazard_timer = 0.0
+        self.sitting = False
         self.vx, self.vy = 0.0, 0.0
         self.on_ground = False
         self.jump_rising = False
@@ -165,7 +168,7 @@ class Player:
     def is_locked(self):
         # 새 동작을 시작할 수 없는 상태. 패링은 캔슬 불가 (6.3)
         return (self.dead or self.is_hit() or self.is_parrying() or self.is_parry_stunned()
-                or self.is_hard_landing() or self.is_hazard_respawning())
+                or self.is_hard_landing() or self.is_hazard_respawning() or self.sitting)
 
     # ---------- 동작 시작 ----------
 
@@ -287,6 +290,7 @@ class Player:
     def lose_hp(self, damage):
         # 체력을 깎고 무적을 건다. 체력 0이면 사망 (결과 화면 전환은 play_mode가 DEATH_DELAY 뒤에 한다)
         self.hp = max(0, self.hp - self.final_damage(damage))
+        self.sitting = False
         self.parry_timer = 0
         self.parry_stun_timer = 0
         self.invincible_timer = self.invincible_on_hit
@@ -339,6 +343,20 @@ class Player:
             self.jump_rising = False
             self.fall_time = 0.0
             self.ground_time = 0.0
+
+    def sit(self, seat_x):
+        # 의자 가운데에 앉는다. 체력 회복·저장은 play_mode가 한다
+        self.sitting = True
+        self.x = seat_x
+        self.vx, self.vy = 0.0, 0.0
+        self.attack_active = 0
+        input.clear_buffers()
+
+    def update_sitting(self):
+        # ←·→·Z로 일어난다. Z는 일어나기에만 쓰고 점프하지 않는다. X(각인)는 T44, 그 전에는 버린다
+        if input.consume('jump') or input.axis_x() != 0:
+            self.sitting = False
+        input.clear_buffers()
 
     def update_safe_spot(self, dt):
         # 바닥에 서 있는 동안 안전 지점을 갱신한다 (6.8)
@@ -443,6 +461,10 @@ class Player:
             self.update_hazard_respawn(dt)
             input.update(dt)
             input.clear_buffers()
+            return
+        if self.sitting:
+            self.update_sitting()
+            input.update(dt)
             return
         self.update_parry(dt)
         self.handle_actions()
@@ -576,6 +598,8 @@ class Player:
                 color = config.COLOR_PLAYER_HARD_LAND
             else:
                 color = config.COLOR_PLAYER
+            if self.sitting:
+                t = b + config.PLAYER_H * config.SIT_BODY_RATIO
             camera.draw_rect(l, b, r, t, *color, filled=True)
             if self.is_parrying():
                 # 몸 앞쪽에 방패 표시

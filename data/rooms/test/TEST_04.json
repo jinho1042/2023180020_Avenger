@@ -20,6 +20,12 @@
     {"id": "U", "rect": [540, 672, 200, 48], "to": "TEST_02", "to_exit": "D"},
     {"id": "R", "rect": [1264, 80, 16, 200], "to": "TEST_05", "to_exit": "L"}
   ],
+  "safe_zones": [
+    [40, 80, 200, 300, "safe_a"]
+  ],
+  "objects": [
+    ["seat", 140, 80, "safe_a"]
+  ],
   "spawns": [
     ["archer", 1100, 80]
   ],
