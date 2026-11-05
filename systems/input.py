@@ -11,8 +11,9 @@ import config
 KEY_TO_ACTION = {getattr(pico2d, name): action for action, name in config.KEYS.items()}
 
 # 동작별 입력 버퍼 시간. 여기 없는 동작은 버퍼를 쓰지 않는다
+# up은 앉기·말 걸기 누름 (위 공격·위 보기는 누름 상태 pressed('up')를 쓴다)
 BUFFER_TIME = dict(jump=config.JUMP_BUFFER, attack=config.INPUT_BUFFER,
-                   parry=config.INPUT_BUFFER, dash=config.INPUT_BUFFER)
+                   parry=config.INPUT_BUFFER, dash=config.INPUT_BUFFER, up=config.INPUT_BUFFER)
 
 held = set()       # 지금 누르고 있는 동작
 hold_time = {}     # 동작 → 누른 뒤 지난 시간 (누르고 있는 동안만)

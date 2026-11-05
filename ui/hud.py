@@ -9,10 +9,13 @@ from systems import upgrades
 
 font = None
 icon_font = None
+message = ''          # 하단 중앙 알림 문구 ('저장했습니다' 등). message_timer > 0인 동안 보인다
+message_timer = 0.0
 
 
 def init():
-    global font, icon_font
+    global font, icon_font, message, message_timer
+    message, message_timer = '', 0.0
     if os.path.exists(config.FONT_PATH):
         font = load_font(config.FONT_PATH, config.FONT_SIZE_TEXT)
         icon_font = load_font(config.FONT_PATH, config.FONT_SIZE_ICON)
@@ -107,9 +110,27 @@ def draw_boss_bar(boss):
         font.draw(l, t + config.BOSS_NAME_GAP, config.BOSS_NAME[boss.boss_key], config.COLOR_TEXT)
 
 
+def show_message(text):
+    global message, message_timer
+    message, message_timer = text, config.HUD_MESSAGE_TIME
+
+
+def update(dt):
+    global message_timer
+    message_timer = max(0, message_timer - dt)
+
+
+def draw_message():
+    # 글자 폭을 알 수 없어 글자 수로 대충 가운데를 맞춘다
+    if font and message_timer > 0:
+        x = config.SCREEN_W / 2 - len(message) * config.FONT_SIZE_TEXT / 2
+        font.draw(x, config.HUD_MESSAGE_Y, message, config.COLOR_TEXT)
+
+
 def draw(player, boss=None):
     draw_hp_cells(player)
     draw_dash_icon(player)
     draw_upgrade_icons(player)
     if boss:
         draw_boss_bar(boss)
+    draw_message()

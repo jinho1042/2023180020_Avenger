@@ -6,7 +6,10 @@ from systems.room import Room
 
 ROOM_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'rooms')
 
-# 영구 월드 상태 (5.6, 13.6 world). 저장은 T36. mined = 덜 부순 벽·덩어리의 친 횟수 (18장 25번). runes·engravings_*는 13.6에서 player 쪽이지만 지금은 여기에 둔다 (18장 8번)
+# 영구 상태 (5.6, 13.6). 세이브(systems/save.py)는 이것을 그대로 쓰고 읽는다
+# state.player = 13.6 player (룬·각인·갑옷 등), 나머지 필드 = 13.6 world, stats = 13.6 stats
+# mined = 덜 부순 벽·덩어리의 친 횟수 (18장 25번), rest_seat = 마지막으로 앉은 자리 '방 id:안전지대 id'
+# last_safe_zone = 마지막으로 들어간 안전지대 (7.3 기절 복귀 지점, 저장 안 함. T37에서 breath로)
 state = None
 room_paths = {}    # 방 id(파일 이름) → JSON 경로. data/rooms 아래 모든 폴더
 enter = None       # 방을 실제로 채우는 함수 (play_mode.enter_room). Room과 도착 정보를 받는다
@@ -17,17 +20,26 @@ lock = 0.0         # 도착 후 TRANSITION_LOCK 동안 출구를 무시한다 (�
 pending = None     # 'out'이 끝나면 들어갈 (방 id, 도착 정보)
 
 
+def new_player_state():
+    return SimpleNamespace(
+        hp_max=config.HP_START, armor_level=1, pickaxe_level=1, ore_banked=0, rare_ore=0,
+        runes={}, engravings_owned=set(), engravings_set={})
+
+
 def new_state():
     return SimpleNamespace(
-        runes={}, engravings_owned=set(), engravings_set={}, flags=set(), debug_unlocked=False,
+        player=new_player_state(), rest_seat=None, last_safe_zone=None,
+        flags=set(), debug_unlocked=False,
         visited=set(), map_stones=set(), broken=set(), mined={}, opened=set(), switches=set(), collected=set(),
         miners_rescued=set(), miner_rewards_taken=set(), safe_zones_found=set(),
-        bosses_met=set(), bosses_defeated=set(), elites_defeated=set(), cores=set(), hint_fail_count=0)
+        bosses_met=set(), bosses_defeated=set(), elites_defeated=set(), cores=set(), hint_fail_count=0,
+        stats=dict(deaths=0, parries=0, reflects=0, suffocations=0, blackouts=0, ore_lost=0))
 
 
-def init(enter_fn):
+def init(enter_fn, loaded_state=None):
+    # loaded_state: 이어하기면 save.load()가 만든 상태, 새 게임이면 None
     global state, room_paths, enter, phase, timer, lock, pending
-    state = new_state()
+    state = loaded_state or new_state()
     enter = enter_fn
     phase, timer, lock, pending = None, 0.0, 0.0, None
     room_paths = {}
@@ -64,6 +76,12 @@ def go_through(exit_zone, player):
     along = player.y - b if exit_zone.side in ('left', 'right') else player.x - l
     begin(exit_zone.to, dict(exit_id=exit_zone.to_exit, along=along,
                              vx=player.vx, vy=player.vy, fall_time=player.fall_time))
+
+
+def seat_arrival(rest_seat):
+    # '방 id:안전지대 id' → (방 id, 도착 정보). 이어하기·부활은 그 앉는 자리에서 시작한다 (13.6)
+    room_id, zone_id = rest_seat.split(':')
+    return room_id, dict(seat=zone_id)
 
 
 def warp(room_id, spot=None):
@@ -129,7 +147,7 @@ def exit_spot(exit_zone, along):
 def place_player(player, room, arrival):
     # 도착 자리에 플레이어를 놓는다. play_mode.enter_room이 부른다
     if 'exit_id' not in arrival:
-        spot = arrival.get('spot') or room.player_start or (room.safe_points[0] if room.safe_points else None)
+        spot = arrival.get('spot') or room.seat_spot(arrival.get('seat')) or room.player_start or (room.safe_points[0] if room.safe_points else None)
         if spot is None and room.exits:
             spot = exit_spot(room.exits[0], 0)
         player.enter_room(room.terrain, spot or (room.width / 2, 0), room.safe_points)

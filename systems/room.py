@@ -17,6 +17,7 @@ from objects.exit_zone import ExitZone
 from objects.gate import Gate
 from objects.hazard import Hazard
 from objects.platform import Platform
+from objects.safe_zone import SafeZone
 from objects.switch import Switch
 
 # spawns의 이름 → 적 클래스
@@ -70,9 +71,22 @@ class Room:
         gates = {g[5]: Gate(self.id, *g, state) for g in self.gates
                  if g[4] in Gate.KINDS and f'{self.id}:{g[5]}' not in state.opened}
         switches = [Switch(self.id, *s, gates.get(s[4]), state) for s in self.switches if s[2] in Switch.KINDS]
+        self.safe_zone_objects = [SafeZone(self.id, *z, self.seat_of(z[4]), state) for z in self.safe_zones]
         self.terrain = self.platforms + breakables + list(gates.values())
         # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)
         self.gimmicks = self.hazard_objects + breakables + list(gates.values()) + switches
+
+    def seat_of(self, zone_id):
+        # objects의 ["seat", x, y, 안전지대 id] → (x, y). 없으면 None
+        return next(((o[1], o[2]) for o in self.objects if o[0] == 'seat' and o[3] == zone_id), None)
+
+    def seat_spot(self, zone_id):
+        # 이어하기·부활 자리: 앉는 자리, 없으면 안전지대 바닥 가운데. zone_id가 None이거나 없는 id면 None
+        zone = next((z for z in self.safe_zones if z[4] == zone_id), None)
+        if zone is None:
+            return None
+        x, y, w, h = zone[:4]
+        return self.seat_of(zone_id) or (x + w / 2, y)
 
     def exit(self, exit_id):
         return next(e for e in self.exits if e.id == exit_id)

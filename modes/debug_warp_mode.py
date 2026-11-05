@@ -59,13 +59,13 @@ def scroll_to_selected():
 
 
 def change_rune(rune, step):
-    state = world.state
-    state.runes[rune] = (state.runes.get(rune, 0) + step) % (config.RUNE_MAX_LEVEL[rune] + 1)
+    runes = world.state.player.runes
+    runes[rune] = (runes.get(rune, 0) + step) % (config.RUNE_MAX_LEVEL[rune] + 1)
 
 
 def toggle_engraving(eid):
     # 지급 = 보유 목록에 추가. 「받아친 숨」은 실제 획득처럼 숨의 룬 1번 홈에 장착된 채로 준다 (8.4)
-    state = world.state
+    state = world.state.player
     breath_slots = state.engravings_set.setdefault('breath', [])
     if eid in state.engravings_owned:
         state.engravings_owned.discard(eid)
@@ -86,7 +86,7 @@ def give(step):
         world.state.flags ^= {eid}
     else:
         toggle_engraving(eid)
-    world.state.debug_unlocked = True   # 이후 저장은 save_debug.json으로 (T36)
+    world.state.debug_unlocked = True   # 이후 저장은 save_debug.json으로 (13.6)
     print(f'[DEBUG] F7 지급: {label(entries[selected])}')
     sound.play('select')
 
@@ -129,8 +129,8 @@ def label(entry):
     entry_kind, eid = entry
     state = world.state
     if entry_kind == 'rune':
-        return f'룬  {eid}  Lv{state.runes.get(eid, 0)} / {config.RUNE_MAX_LEVEL[eid]}'
-    on = eid in (state.flags if entry_kind == 'flag' else state.engravings_owned)
+        return f'룬  {eid}  Lv{state.player.runes.get(eid, 0)} / {config.RUNE_MAX_LEVEL[eid]}'
+    on = eid in (state.flags if entry_kind == 'flag' else state.player.engravings_owned)
     return f"{'플래그' if entry_kind == 'flag' else '각인'}  {eid}  {'O' if on else '-'}"
 
 
@@ -139,8 +139,8 @@ def is_on(entry):
         return entry == play_mode.room.id
     entry_kind, eid = entry
     if entry_kind == 'rune':
-        return world.state.runes.get(eid, 0) > 0
-    return eid in (world.state.flags if entry_kind == 'flag' else world.state.engravings_owned)
+        return world.state.player.runes.get(eid, 0) > 0
+    return eid in (world.state.flags if entry_kind == 'flag' else world.state.player.engravings_owned)
 
 
 def draw():

@@ -6,15 +6,16 @@ import game_framework
 import game_world
 from objects import effect, projectile
 from objects.player import Player
-from systems import camera, combat, hitstop, runes, sound, world
+from systems import camera, combat, hitstop, input, runes, save, sound, world
 from ui import hud
 
 player = None
 room = None
 enemies = []
 boss = None      # 현재 방의 보스 (없으면 None), 보스 HUD용
-play_time = 0.0  # 결과 화면 통계 (s)
+play_time = 0.0  # 세이브 play_time·결과 화면 통계 (s)
 death_timer = 0.0
+load_path = None  # 이어하기면 불러올 세이브 경로, 새 게임이면 None. title_mode가 change_mode 직전에 start()로 정한다
 DEBUG_KEY = {getattr(pico2d, name): action for action, name in config.DEBUG_KEYS.items()}
 
 
@@ -28,6 +29,7 @@ def enter_room(new_room, arrival):
     room = new_room
     game_world.set_room_size(room.width, room.height)
     camera.set_room(room.width, room.height)
+    game_world.add_objects(room.safe_zone_objects, config.DEPTH_BG)
     game_world.add_objects(room.platforms, config.DEPTH_MAP)
     game_world.add_objects(room.exits, config.DEPTH_MAP)
     game_world.add_objects(room.gimmicks, config.DEPTH_MAP)
@@ -54,15 +56,31 @@ def add_enemies(new):
         game_world.add_collision_pair(projectile.GROUP_ENEMY, e, None)
 
 
+def start(path=None):
+    global load_path
+    load_path = path
+
+
 def init():
     global player, play_time, death_timer
     play_time = 0.0
     death_timer = 0.0
     hud.init()
     player = Player([], (0, 0))
-    world.init(enter_room)
-    player.world_state = world.state
-    world.load(config.START_ROOM)
+    loaded = None
+    if load_path:
+        loaded, play_time = save.load(load_path)
+    world.init(enter_room, loaded)
+    state = world.state
+    player.world_state = state
+    player.max_hp = player.hp = state.player.hp_max
+    player.pickaxe_lv = state.player.pickaxe_level
+    player.parry_count = state.stats['parries']
+    # 이어하기는 항상 마지막으로 앉은 자리에서 (13.6). 앉은 적이 없으면 새 게임 첫 방 (18장)
+    if state.rest_seat and state.rest_seat.split(':')[0] in world.room_paths:
+        world.load(*world.seat_arrival(state.rest_seat))
+    else:
+        world.load(config.START_ROOM)
 
 
 def finish():
@@ -81,8 +99,11 @@ def handle_events():
         if e.type == SDL_QUIT:
             game_framework.quit()
         elif e.type == SDL_KEYDOWN and e.key == SDLK_ESCAPE:
-            # T36에서 pause_mode로 교체
-            game_framework.quit()
+            # 일시정지. 방 전환 중·사망 연출 중에는 열지 않는다 (페이드 중 저장 금지, 13.6)
+            if world.phase is None and not player.dead:
+                from modes import pause_mode
+                game_framework.push_mode(pause_mode)
+                return
         elif e.type == SDL_KEYDOWN and e.key == SDLK_F1:
             game_world.show_hitbox = not game_world.show_hitbox
         elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) == 'unlock_all':
@@ -103,6 +124,7 @@ def update():
     global enemies, play_time, death_timer
     dt = game_framework.frame_time
     world.update(dt)
+    hud.update(dt)
     if world.frozen():
         return  # 방 전환으로 어두워지는 동안 월드 정지 (누름 상태는 handle_events가 계속 받는다)
     if player.dead:
@@ -129,6 +151,7 @@ def update():
     game_framework.frame_time = dt
     enemies = [e for e in enemies if e.is_alive()]
     check_hazards()
+    check_safe_zones()
     check_exits()
 
 
@@ -140,6 +163,42 @@ def check_hazards():
         if game_world.collide(player, hazard):
             player.hazard_hit()
             return
+
+
+def check_safe_zones():
+    # 영역에 들어오면 발견·기절 복귀 지점 갱신 (13.1). 앉는 자리에서 ↑를 누르면 앉는다
+    state = world.state
+    for zone in room.safe_zone_objects:
+        zone.prompt = False
+        if player.dead or not game_world.collide(player, zone):
+            continue
+        state.safe_zones_found.add(zone.gid)
+        state.last_safe_zone = zone.gid
+        if zone.can_sit(player):
+            zone.prompt = True
+            if input.consume('up'):
+                sit(zone)
+
+
+def sit(zone):
+    # 앉기: 체력 전부 회복 · 부활 지점 갱신 · 자동 저장 (13.1). 적은 따로 재생성하지 않는다
+    player.sit(zone.seat[0])
+    player.hp = player.max_hp
+    world.state.rest_seat = zone.gid
+    zone.prompt = False
+    sound.play('select')
+    save_game()
+
+
+def save_game():
+    # 플레이어 객체에만 있는 값을 상태에 옮긴 뒤 저장한다. 경로는 debug_unlocked로 정해진다 (13.6)
+    state = world.state
+    state.player.hp_max = player.max_hp
+    state.player.pickaxe_level = player.pickaxe_lv
+    state.stats['parries'] = player.parry_count
+    path = save.write(state, play_time)
+    print(f'[저장] {path}')
+    hud.show_message('저장했습니다 (디버그)' if state.debug_unlocked else '저장했습니다')
 
 
 def check_exits():

@@ -148,6 +148,18 @@ COLOR_LEVER_BASE = (80, 70, 60)
 COLOR_LEVER = (200, 170, 90)
 COLOR_LEVER_ON = (130, 220, 120)
 
+# 안전지대 (T36, 13.1). 흰색·빨간색은 쓰지 않는다. 의자 (x, y)는 아래쪽 중심
+COLOR_SAFE_ZONE = (70, 150, 90)       # 초록빛 이끼
+SAFE_ZONE_ALPHA = 45       # 0~255, 영역 칠
+SAFE_ZONE_MOSS_H = 10      # px, 영역 바닥의 이끼 띠
+SEAT_W, SEAT_H = 72, 28    # px
+SEAT_BACK_H = 36           # px, 등받이 돌 높이 (몸 판정에는 넣지 않음)
+COLOR_SEAT = (95, 110, 95)
+COLOR_SEAT_RUNE = (140, 230, 160)     # 의자에 새긴 룬 문양 (앉으면 밝아짐)
+COLOR_SEAT_RUNE_OFF = (80, 130, 95)
+SIT_PROMPT_GAP = 16        # px, 앉을 수 있을 때 머리 위 ↑ 표시까지
+SIT_BODY_RATIO = 0.7       # 앉아 있는 동안 몸을 이 비율 높이로 그린다 (판정은 그대로)
+
 # 방 · 문
 DOOR_W, DOOR_H = 60, 100   # px
 DOOR_FRAME = 6             # px, 문틀 두께
@@ -442,6 +454,11 @@ TWIN_WAVE = dict(size=36, length=48, color=(200, 160, 255), reflect_mult=3.0)
 TELEPORT_PUFF = dict(count=10, speed=(100, 300), life=0.3, size=6)  # 색은 보스 몸 색
 COLOR_TWINBLADE = (210, 210, 235)
 
+# 세이브 (T36, 13.6)
+SAVE_PATH = 'save.json'
+SAVE_DEBUG_PATH = 'save_debug.json'   # F3·F7을 쓴 뒤의 저장
+SAVE_VERSION = 5
+
 # 진행
 UPGRADE_CHOICES = 3
 DEATH_DELAY = 1.5          # s, 사망 후 결과 화면으로 넘어가기 전 대기
@@ -507,6 +524,20 @@ COLOR_BOSS_HP = (200, 50, 50)
 COLOR_POSTURE_BACK = (50, 50, 60)
 COLOR_POSTURE_FILL = (255, 220, 120)
 BOSS_NAME = dict(greatsword='대검 기사', mage='대마법사', twinblade='쌍검 기사')
+
+# 알림 문구 (HUD 하단 중앙. '저장했습니다' 등)
+HUD_MESSAGE_TIME = 1.5     # s
+HUD_MESSAGE_Y = 120        # px, 화면 아래에서
+
+# 타이틀 · 일시정지 메뉴 (T36, 13.7)
+MENU_ROW_H = 44            # px
+MENU_TOP_Y = 330           # px, 첫 항목의 화면 y
+COLOR_MENU_SELECTED = (255, 220, 120)
+CONTROLS_TEXT = [          # 조작법 화면 (config.KEYS와 맞춘다)
+    '←  →   이동', 'Z   점프 (누르는 만큼 높이)', 'X   곡괭이 (↑·↓와 함께 위·아래 공격)',
+    'C   대시', 'S   패링', 'A   룬 기술 / 길게: 숨 고르기', 'D   돌파',
+    '↑   앉기 · 말 걸기', 'Tab   지도      I   인벤토리', 'Esc   일시정지',
+]
 
 # 결과 화면
 COLOR_RESULT_DEAD = (239, 68, 68)

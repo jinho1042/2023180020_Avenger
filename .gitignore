@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+save.json
+save_debug.json
+*.json.tmp
