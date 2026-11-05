@@ -9,9 +9,11 @@ class AirVent:
     # 숨구멍 (7.2): 벽 틈에서 바람이 새는 곳. 몸이 닿으면 AIR_VENT_REFILL, AIR_VENT_COOLDOWN 뒤 재사용
     # 방 JSON air_vents [x, y, id], (x, y)는 중심. 닿기 처리는 play_mode.check_air_vents
     # 쿨다운은 저장하지 않는다 (방에 다시 들어오면 새로 생긴다)
-    def __init__(self, room_id, x, y, vent_id):
+    # 이끼 동굴(moss) 숨구멍은 이끼가 공기를 내는 곳이라 둘레에 이끼 덩이를 그린다 (2.3, 12.2)
+    def __init__(self, room_id, x, y, vent_id, region=None):
         self.x, self.y = x, y
         self.gid = f'{room_id}:{vent_id}'
+        self.moss = region == 'moss'
         self.cooldown = 0.0
         self.time = 0.0       # 공기 점 애니메이션
 
@@ -30,6 +32,12 @@ class AirVent:
         if not camera.visible(self.get_bb()):
             return
         color = config.COLOR_AIR_VENT if self.ready() else config.COLOR_AIR_VENT_USED
+        if self.moss:
+            # 숨구멍 둘레의 이끼 덩이 (쓴 뒤에도 그대로)
+            r = config.AIR_VENT_RADIUS
+            for dx, dy in config.AIR_VENT_MOSS_TUFTS:
+                effect.draw_disc(self.x + dx * r, self.y + dy * r, r * config.AIR_VENT_MOSS_SIZE,
+                                 config.COLOR_AIR_VENT_MOSS)
         effect.draw_disc(self.x, self.y, config.AIR_VENT_RADIUS, color)
         if self.ready():
             # 위로 오르는 작은 공기 점 (14.5)
