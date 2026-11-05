@@ -1,0 +1,35 @@
+{
+  "id": "R1_09",
+  "region": "corridor",
+  "size": [1, 1],
+  "map_cell": [5, 4],
+  "music": "corridor",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [1240, 264, 40, 416, "solid"],
+    [0, 680, 800, 40, "solid"],
+    [1000, 680, 280, 40, "solid"],
+    [560, 204, 220, 16, "oneway"],
+    [880, 364, 220, 16, "oneway"],
+    [760, 524, 300, 16, "oneway"]
+  ],
+  "safe_zones": [
+    [40, 64, 700, 560, "safe_c"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R1_B1", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R1_08", "to_exit": "L"},
+    {"id": "U", "rect": [800, 704, 200, 16], "to": "R1_10", "to_exit": "D"}
+  ],
+  "objects": [
+    ["seat", 400, 64, "safe_c"],
+    ["tablet", 600, 64, "tablet_r1_carver_b"]
+  ],
+  "spawns": [],
+  "safe_points": [
+    [900, 64]
+  ]
+}

@@ -14,6 +14,14 @@ from systems import camera, terrain
 IDLE, CHASE, TELEGRAPH, WINDUP, ACTIVE, RECOVER, STAGGER, FLINCH, DEAD = (
     'Idle', 'Chase', 'Telegraph', 'Windup', 'Active', 'Recover', 'Stagger', 'Flinch', 'Dead')
 
+# 지금 방의 안전지대 영역 (l, b, r, t). 일반 적은 이 안으로 들어오지 않는다 (10.1). play_mode.enter_room이 정한다
+safe_zones = []
+
+
+def set_safe_zones(bbs):
+    global safe_zones
+    safe_zones = list(bbs)
+
 
 class Attack:
     # 공격 하나를 데이터로 정의한다. hitbox는 (가로, 세로)이고 몸 앞쪽에 붙는다
@@ -62,6 +70,7 @@ class EnemyBase:
         self.knock_vx = 0.0
         self.shake_timer = 0.0  # 맞은 뒤 몸을 좌우로 떨며 그리는 시간
         self.dmg_mult = 1.0     # [v2] 루트 난이도 피해 배율 (apply_difficulty)
+        self.zone_blocked = False  # 이번 프레임에 안전지대 경계에 막혔는가
 
     def choose_attacks(self):
         # 서브클래스가 이번에 쓸 Attack 목록을 돌려준다
@@ -189,8 +198,16 @@ class EnemyBase:
             if self.state_timer <= 0:
                 self.next_phase()
 
+    def in_safe_zone(self, x):
+        # 몸을 x에 두면 안전지대 영역과 겹치는가 (보스는 보지 않는다)
+        if self.is_boss:
+            return False
+        l, b, r, t = x - self.w / 2, self.y, x + self.w / 2, self.y + self.h
+        return any(l < zr and r > zl and b < zt and t > zb for zl, zb, zr, zt in safe_zones)
+
     def move_x(self, dt):
         # 넉백은 AI 이동보다 우선한다
+        prev_x = self.x
         if self.knock_timer > 0:
             # 마지막 프레임은 남은 시간만큼만 밀어서 넉백 거리를 맞춘다
             step = min(dt, self.knock_timer)
@@ -201,6 +218,11 @@ class EnemyBase:
         self.x = terrain.resolve_x(self.x, self.y, self.w, self.h, self.platforms)
         half_w = self.w / 2
         self.x = clamp(half_w, self.x, game_world.room_w - half_w)
+        # 안전지대 경계에서 멈춘다 (넉백으로도 밀려 들어가지 않음). zone_blocked는 기어 다니는 적이 돌아설 때 본다
+        self.zone_blocked = self.in_safe_zone(self.x) and not self.in_safe_zone(prev_x)
+        if self.zone_blocked:
+            self.x = prev_x
+            self.knock_timer = 0
 
     def move(self, dt):
         # 지상 유닛: X 이동 → X 해결 → 중력·Y 이동 → Y 해결

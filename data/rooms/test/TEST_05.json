@@ -32,7 +32,7 @@
   "air_vents": [],
   "switches": [],
   "spawns": [
-    ["melee", 700, 80]
+    ["shell_warrior", 700, 80]
   ],
   "objects": [],
   "safe_points": [

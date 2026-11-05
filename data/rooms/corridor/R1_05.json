@@ -1,0 +1,28 @@
+{
+  "id": "R1_05",
+  "region": "corridor",
+  "size": [1, 1],
+  "map_cell": [8, 7],
+  "music": "corridor",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 300, 64, "solid"],
+    [500, 0, 780, 64, "solid"],
+    [0, 64, 40, 656, "solid"],
+    [1240, 64, 40, 656, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [760, 64, 220, 70, "solid"]
+  ],
+  "exits": [
+    {"id": "D", "rect": [300, 0, 200, 16], "to": "R1_04", "to_exit": "U"}
+  ],
+  "objects": [
+    ["npc", 1080, 64, "har"]
+  ],
+  "spawns": [],
+  "safe_points": [
+    [200, 64],
+    [650, 64]
+  ]
+}

@@ -6,11 +6,11 @@ import config
 from objects.enemy_base import ACTIVE, RECOVER, Attack, EnemyBase
 from systems import camera
 
-STATS = config.MELEE
+STATS = config.SHELL_WARRIOR
 
 
-class EnemyMelee(EnemyBase):
-    # 근거리 병사: 접근해서 베기 2연타 (흰색 예고). 확률적으로 방패 돌진 (빨간색 예고, 패링 불가)
+class ShellWarrior(EnemyBase):
+    # 갑각 전사 (10.2, ← v2 근거리 병사): 접근해서 베기 2연타 (흰색 예고). 확률적으로 방패 돌진 (빨간색 예고, 패링 불가)
     def __init__(self, x, y, player, platforms):
         super().__init__(x, y, STATS, player, platforms)
         self.slash1 = Attack('slash1', True, STATS['telegraph'], STATS['windup'], STATS['active'],

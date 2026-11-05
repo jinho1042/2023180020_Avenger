@@ -1,0 +1,10 @@
+{
+  "name": "경고 석판",
+  "name_en": "Warning Tablet",
+  "pages": [
+    ["절반을 왔다. 돌아갈 숨이 없다면 멈추지 마라.", "숨을 길게 잇는 룬 없이는", "아무도 이 길을 건너지 못했다."]
+  ],
+  "pages_en": [
+    ["Halfway. If you lack the breath to turn back, do not stop.", "Without a rune to draw out one's breath,", "no one has ever crossed this way."]
+  ]
+}

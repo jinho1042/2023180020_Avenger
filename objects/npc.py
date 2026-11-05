@@ -6,9 +6,10 @@ from systems import camera
 class Npc:
     # NPC·석판 (2.5): objects의 ["npc", x, y, NPC id], ["tablet", x, y, 석판 id]. (x, y) = 아래쪽 중심
     # 가까이 서서 ↑를 누르면 대화 (play_mode.check_npcs → dialog_mode). 대사는 data/dialog/<id>.json
+    # ["carver", x, y, id] = 새김터의 룬지기 오람 (T42는 자리만, 말 걸기는 T43)
     # T39는 보름(상점)과 석판. 하르(T62)·룬지기(T43)·실종 광부(T61)는 해당 작업에서
     def __init__(self, kind, x, y, npc_id):
-        self.kind = kind          # 'npc' | 'tablet'
+        self.kind = kind          # 'npc' | 'tablet' | 'carver'
         self.x, self.y = x, y
         self.id = npc_id
         self.w, self.h = (config.TABLET_W, config.TABLET_H) if kind == 'tablet' else (config.NPC_W, config.NPC_H)
@@ -18,6 +19,8 @@ class Npc:
         pass
 
     def can_talk(self, player):
+        if self.kind == 'carver':
+            return False   # 룬지기 대화는 T43
         if not player.on_ground or player.is_locked():
             return False
         return abs(player.x - self.x) <= config.NPC_TALK_RADIUS and abs(player.y - self.y) <= self.h
@@ -25,6 +28,8 @@ class Npc:
     def draw(self):
         if self.kind == 'tablet':
             self.draw_tablet()
+        elif self.kind == 'carver':
+            self.draw_carver()
         else:
             self.draw_npc()
         if self.prompt:
@@ -38,6 +43,13 @@ class Npc:
         camera.draw_rect(l, b, r, t, *config.COLOR_NPC.get(self.id, config.COLOR_NPC_DEFAULT), filled=True)
         lamp = config.NPC_LAMP / 2
         camera.draw_rect(self.x - lamp, t, self.x + lamp, t + config.NPC_LAMP, *config.COLOR_NPC_LAMP, filled=True)
+
+    def draw_carver(self):
+        # 몸 절반이 돌이 된 룬지기 (2.5): 아래 절반은 돌 색, 위는 몸 색
+        l, b, r, t = self.get_bb()
+        mid = (b + t) / 2
+        camera.draw_rect(l, b, r, mid, *config.COLOR_CARVER_STONE, filled=True)
+        camera.draw_rect(l, mid, r, t, *config.COLOR_NPC.get(self.id, config.COLOR_NPC_DEFAULT), filled=True)
 
     def draw_tablet(self):
         # 돌판 + 가운데 룬 문양 줄

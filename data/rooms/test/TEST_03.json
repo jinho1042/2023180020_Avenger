@@ -45,10 +45,10 @@
     {"id": "L", "rect": [0, 80, 16, 200], "to": "TEST_02", "to_exit": "R"}
   ],
   "spawns": [
-    ["melee", 1500, 80],
-    ["melee", 3200, 80],
-    ["archer", 3300, 1040],
-    ["flyer", 2800, 1250]
+    ["shell_warrior", 1500, 80],
+    ["shell_warrior", 3200, 80],
+    ["thorn_flower", 3300, 1040],
+    ["bat", 2800, 1250]
   ],
   "safe_points": [[120, 80], [2200, 1040]]
 }

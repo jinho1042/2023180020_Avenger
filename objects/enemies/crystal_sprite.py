@@ -7,12 +7,12 @@ from objects import effect, projectile
 from objects.enemy_base import ACTIVE, TELEGRAPH, WINDUP, Attack, EnemyBase
 from systems import camera
 
-STATS = config.APPRENTICE_MAGE
+STATS = config.CRYSTAL_SPRITE
 
 
-class EnemyApprenticeMage(EnemyBase):
-    # 견습 마법사: keep_distance를 유지하며 (가까우면 걸어서 후퇴) 플레이어를 조준해 느린 마력탄 1발 (흰색, 반사 가능)
-    # 숙련 마법사가 이 클래스를 이어받아 공격만 바꾼다
+class CrystalSprite(EnemyBase):
+    # 수정 유생 (10.2, ← v2 견습 마법사): keep_distance를 유지하며 (가까우면 걸어서 후퇴) 플레이어를 조준해 느린 마력탄 1발 (흰색, 반사 가능)
+    # 수정 술사가 이 클래스를 이어받아 공격만 바꾼다
     stats = STATS
 
     def __init__(self, x, y, player, platforms):

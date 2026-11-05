@@ -52,7 +52,7 @@ def enter_room(new_room, arrival):
     enemies = []
     add_enemies(room.spawn_enemies(player))
     boss = next((e for e in enemies if e.is_boss), None)
-    if enemies:
+    if any(e.kind != 'statue' for e in enemies):   # 연습 석상만 있는 방은 전투 음악 없음
         sound.play_music('boss' if boss else 'battle')
     else:
         sound.stop_music()

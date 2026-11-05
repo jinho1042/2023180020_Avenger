@@ -1,4 +1,5 @@
 import config
+import game_framework
 import game_world
 from objects import effect, pickup
 from systems import camera
@@ -19,6 +20,7 @@ class Breakable:
         self.max_hits = config.CRACK_WALL_HITS if type == 'crack' else config.ORE_CHUNK_HITS
         # 친 횟수는 방을 나갔다 와도 유지한다 (광석 덩어리를 나갔다 오며 반복해서 캐지 못하게)
         self.hits = state.mined.get(self.gid, 0)
+        self.time = 0.0   # 바람 단서 애니메이션
 
     @property
     def left(self):
@@ -37,7 +39,7 @@ class Breakable:
         return self.y + self.h
 
     def update(self):
-        pass
+        self.time += game_framework.frame_time
 
     def on_pickaxe_hit(self, player):
         # 반환: 이번 휘두름이 이 대상에 '맞았는가' (combat이 반동·포고·스파크를 처리)
@@ -66,6 +68,7 @@ class Breakable:
         camera.draw_rect(l, b, r, t, *self.color(), filled=True)
         if self.type == 'crack':
             self.draw_crack()
+            self.draw_wind()
         else:
             self.draw_ore()
         if game_world.show_hitbox:
@@ -80,6 +83,20 @@ class Breakable:
             offset = self.w / 6 * (1 if i % 2 else -1)
             sb = self.y + i * seg_h
             camera.draw_rect(cx + offset - 2, sb, cx + offset + 2, sb + seg_h, *config.COLOR_CRACK_LINE, filled=True)
+
+    def draw_wind(self):
+        # 바람 단서 (7.5): 벽 양옆의 먼지가 균열로 빨려 들어간다 (뒤에 공기가 있다는 표시)
+        if not camera.visible(self.get_bb()):
+            return
+        wind = config.CRACK_WIND
+        half = wind['size'] / 2
+        cx = self.x + self.w / 2
+        for i in range(wind['count']):
+            phase = (self.time / wind['period'] + i / wind['count']) % 1
+            side = 1 if i % 2 else -1
+            x = cx + side * (self.w / 2 + wind['dist'] * (1 - phase))
+            y = self.y + self.h * (i + 1) / (wind['count'] + 1)
+            camera.draw_rect(x - half, y - half, x + half, y + half, *config.COLOR_CRACK_WIND, filled=True)
 
     def draw_ore(self):
         # 남은 횟수만큼 광석 점을 대각선으로 늘어놓는다
