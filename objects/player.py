@@ -445,6 +445,11 @@ class Player:
         self.cutscene = False
         input.clear_buffers()
 
+    def raise_max_hp(self, max_hp):
+        # 갑옷 강화 (13.3): 늘어난 칸만큼 지금 체력도 채운다
+        self.hp += max_hp - self.max_hp
+        self.max_hp = max_hp
+
     def revive(self):
         # 사망 부활 (13.2): 체력 전부. 자리·속도는 방에 들어올 때 enter_room이 정한다
         self.dead = False

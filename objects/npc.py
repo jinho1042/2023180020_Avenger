@@ -7,7 +7,7 @@ class Npc:
     # NPC·석판 (2.5): objects의 ["npc", x, y, NPC id], ["tablet", x, y, 석판 id]. (x, y) = 아래쪽 중심
     # 가까이 서서 ↑를 누르면 대화 (play_mode.check_npcs → dialog_mode). 대사는 data/dialog/<id>.json
     # ["carver", x, y, id] = 새김터의 룬지기 오람. 말을 걸면 대화 대신 carver_mode.talk() (T43)
-    # T39는 보름(상점)과 석판. 하르(T62)·실종 광부(T61)는 해당 작업에서
+    # T39는 보름(상점)과 석판. 하르(T62)는 대사 har.json의 forge로 대장간 목록 (dialog_mode). 실종 광부는 T61
     def __init__(self, kind, x, y, npc_id):
         self.kind = kind          # 'npc' | 'tablet' | 'carver'
         self.x, self.y = x, y

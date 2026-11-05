@@ -749,6 +749,10 @@ SHOP = dict(               # 보름 상점: (가격, 판매 조건). 조건 'reg
     long_handle=(450, 'miners_2'), rare_ore_a=(600, None), rare_ore_b=(1200, 'miners_6'),
 )
 SHOP_RARE_ORE = 1          # 각인이 아닌 상품(rare_ore_*) 하나에 든 희귀 광석 수
+# 대장간 하르 (T62, 13.3). (보관 광석, 희귀 광석). 인덱스 0 = Lv1→2. 목록은 상점과 같은 카드 화면 (data/dialog/har.json의 forge)
+FORGE_PICKAXE_COST = [(250, 1), (800, 1), (2000, 1), (4000, 1)]  # 임시. Lv2~5 (강화는 T64)
+FORGE_PICKAXE_UNLOCK_FLAG = 'whetstone'  # B3 처치 보상 '수정 숫돌'. 없으면 곡괭이 강화 목록 숨김
+FORGE_ARMOR_COST = [(300, 1), (900, 1), (1800, 2), (3000, 2)]    # 임시. 체력 6~9칸 (Lv n = HP_START + n - 1칸)
 
 # 지도 (T40, 13.4). Tab을 누르고 있는 동안. 지금 있는 구역만 그린다. 방 1화면 = MAP_CELL_W × MAP_CELL_H px
 MAP_CELL_W, MAP_CELL_H = 96, 54
