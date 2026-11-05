@@ -6,7 +6,7 @@ from pico2d import *
 import config
 
 from objects import effect
-from systems import breath, upgrades
+from systems import breath, economy, upgrades
 
 font = None
 icon_font = None
@@ -93,12 +93,43 @@ def draw_breath_flow(l, b, r, t):
     draw_rectangle(right, b, right + config.BREATH_BAR_H, t, *mark, filled=True)
 
 
+def text_width(text):
+    # 글자 폭을 알 수 없어 한글은 글자 크기, 나머지는 HUD_FONT_NARROW배로 어림한다
+    size = config.FONT_SIZE_TEXT
+    return sum(size if ord(c) >= 0x1100 else size * config.HUD_FONT_NARROW for c in text)
+
+
+def ore_line_y():
+    # 숨 게이지 아래 광석 줄의 글자 가운데 y. 숨 게이지가 숨겨진 광산에서도 자리는 같다
+    return (config.SCREEN_H - config.HUD_MARGIN - config.HP_CELL - config.BREATH_BAR_GAP - config.BREATH_BAR_H
+            - config.HP_BAR_BORDER - config.ORE_HUD_GAP - config.FONT_SIZE_TEXT / 2)
+
+
+def draw_ore():
+    # 숨 게이지 아래 '보관 840 (+소지 120)' (14.1). 보관하는 순간 소지 숫자가 보관 숫자 쪽으로 미끄러지며
+    # 보관 숫자가 올라간다 (13.2)
+    if not font:
+        return
+    x, y = config.HUD_MARGIN, ore_line_y()
+    progress = economy.bank_progress()
+    banked = economy.banked()
+    if progress is not None:
+        banked -= round(economy.bank_amount * (1 - progress))
+    text = f'보관 {banked}'
+    font.draw(x, y, text, config.COLOR_ORE)
+    x += text_width(text)
+    if economy.carried > 0:
+        font.draw(x, y, f' (+소지 {economy.carried})', config.COLOR_ORE_CARRIED)
+    if progress is not None and progress < 1:
+        slide = config.ORE_BANK_SLIDE * (1 - progress)
+        font.draw(x + slide, y, f' +{economy.bank_amount}', config.COLOR_ORE_CARRIED)
+
+
 def draw_breath_debug():
-    # DEBUG: 숨 게이지 아래 구간 타이머 (13.5) - 마지막 숨 회복 지점을 떠난 뒤 시간·쓴 숨·현재 배율
+    # DEBUG: 광석 줄 아래 구간 타이머 (13.5) - 마지막 숨 회복 지점을 떠난 뒤 시간·쓴 숨·현재 배율
     if not (config.DEBUG and font and breath.has_gauge):
         return
-    y = (config.SCREEN_H - config.HUD_MARGIN - config.HP_CELL - config.BREATH_BAR_GAP * 2
-         - config.BREATH_BAR_H - config.FONT_SIZE_TEXT / 2)
+    y = ore_line_y() - config.FONT_SIZE_TEXT - config.ORE_HUD_GAP
     seg = breath.current_segment()
     text = f'숨 {breath.value:.1f}/{breath.capacity():.0f}  배율 {breath.mult:g}'
     if seg:
@@ -210,6 +241,7 @@ def draw_message():
 def draw(player, boss=None):
     draw_hp_cells(player)
     draw_breath_bar()
+    draw_ore()
     draw_breath_debug()
     draw_dash_icon(player)
     draw_upgrade_icons(player)

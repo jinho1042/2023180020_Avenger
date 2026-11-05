@@ -1,6 +1,6 @@
 import config
 import game_world
-from objects import effect
+from objects import effect, pickup
 from systems import camera
 
 
@@ -47,8 +47,8 @@ class Breakable:
         self.state.mined[self.gid] = self.hits
         cx, cy = self.x + self.w / 2, self.y + self.h / 2
         if self.type == 'ore_chunk':
-            # 칠 때마다 광석. 튀어나와 흡수되는 광석은 T38
-            player.ore += config.ORE_PER_CHUNK_HIT
+            # 칠 때마다 광석이 튀어나온다
+            pickup.spill(cx, cy, config.ORE_PER_CHUNK_HIT, player)
             effect.ore_mined(cx, cy)
         if self.hits >= self.max_hits:
             self.kind = None

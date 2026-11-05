@@ -84,9 +84,10 @@ def seat_arrival(rest_seat):
     return room_id, dict(seat=zone_id)
 
 
-def warp(room_id, spot=None, zone=None):
-    # 페이드를 거쳐 방을 옮긴다. zone = 안전지대 id면 그 영역 바닥 (기절 복귀), 둘 다 없으면 방의 기본 자리 (F4)
-    begin(room_id, dict(spot=spot, zone=zone))
+def warp(room_id, spot=None, zone=None, seat=None):
+    # 페이드를 거쳐 방을 옮긴다. zone = 안전지대 id면 그 영역 바닥 (기절 복귀), seat = 그 앉는 자리 (사망 부활)
+    # 모두 없으면 방의 기본 자리 (F4)
+    begin(room_id, dict(spot=spot, zone=zone, seat=seat))
 
 
 def begin(room_id, arrival):
