@@ -2,10 +2,10 @@ import json
 import random
 
 import config
-from objects.boss_greatsword import BossGreatsword
-from objects.boss_mage import BossMage
 from objects.air_vent import AirVent
-from objects.boss_twinblade import BossTwinblade
+from objects.bosses.crystal_archsage import CrystalArchsage
+from objects.bosses.moss_warden import MossWarden
+from objects.bosses.scythe_sovereign import ScytheSovereign
 from objects.breath_zone import BreathGate, BreathZone
 from objects import enemy_base
 from objects.breakable import Breakable
@@ -27,11 +27,12 @@ from objects.switch import Switch
 from objects.training_statue import TrainingStatue
 
 # spawns의 이름 → 적 클래스 (10.2). 포자 버섯·덩굴 매복충·독 거머리·유적 골렘은 해당 작업에서
-# [v2] 보스 아레나(F4 시험용)의 보스 이름도 여기 (T45에서 bosses/로)
 ENEMY_TYPES = {'crawler': Crawler, 'bat': Bat, 'shell_warrior': ShellWarrior, 'thorn_flower': ThornFlower,
                'crystal_sprite': CrystalSprite, 'crystal_sage': CrystalSage,
-               'scythe_mantis': ScytheMantis, 'shadow_stalker': ShadowStalker,
-               'greatsword': BossGreatsword, 'mage': BossMage, 'twinblade': BossTwinblade}
+               'scythe_mantis': ScytheMantis, 'shadow_stalker': ShadowStalker}
+# 보스 (11.4): 방 JSON boss 값 = 키. 보스 자리는 spawns에 같은 이름으로 둔다 ([종류, x, y])
+BOSS_TYPES = {'moss_warden': MossWarden, 'archsage': CrystalArchsage, 'scythe': ScytheSovereign}
+ARENA_ZONE_ID = 'arena'   # 처치 후 아레나 전체를 덮는 안전지대 id (앉는 자리 없음, 11.2)
 
 
 class Room:
@@ -79,6 +80,9 @@ class Room:
         gates = {g[5]: Gate(self.id, *g, state) for g in self.gates
                  if g[4] in Gate.KINDS and f'{self.id}:{g[5]}' not in state.opened}
         switches = [Switch(self.id, *s, gates.get(s[4]), state) for s in self.switches if s[2] in Switch.KINDS]
+        # 보스를 처치한 아레나는 전체가 영구 안전지대 (11.2). 앉는 자리는 없어 저장·부활 지점은 아니다
+        if self.boss_defeated(state) and not self.zone_floor(ARENA_ZONE_ID):
+            self.safe_zones.append(self.arena_zone())
         self.safe_zone_objects = [SafeZone(self.id, *z, self.seat_of(z[4]), state) for z in self.safe_zones]
         # 숨 (7.2): 배율 영역 + water(자동으로 water 배율), 숨 게이트, 숨구멍
         self.breath_zone_objects = ([BreathZone(*z) for z in self.breath_zones]
@@ -91,9 +95,24 @@ class Room:
         self.statues = [(o[1], o[2], o[3]) for o in self.objects
                         if o[0] == 'statue' and f'{self.id}:{o[3]}' not in state.broken]
         self.state = state
+        self.arena_gates = [g for g in gates.values() if g.type == 'arena']
         self.terrain = self.platforms + breakables + list(gates.values())
         # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)
         self.gimmicks = self.hazard_objects + breakables + list(gates.values()) + switches
+
+    def boss_defeated(self, state):
+        return bool(self.boss) and self.boss in state.bosses_defeated
+
+    def arena_zone(self):
+        return 0, 0, self.width, self.height, ARENA_ZONE_ID
+
+    def release_air(self, state):
+        # 보스를 처치한 순간: 아레나가 공기가 있는 곳이 된다. 새 안전지대 객체를 돌려준다 (play_mode가 월드에 넣음)
+        self.safe_zones.append(self.arena_zone())
+        zone = SafeZone(self.id, *self.arena_zone(), None, state)
+        self.safe_zone_objects.append(zone)
+        enemy_base.set_safe_zones(z.get_bb() for z in self.safe_zone_objects)
+        return zone
 
     def seat_of(self, zone_id):
         # objects의 ["seat", x, y, 안전지대 id] → (x, y). 없으면 None
@@ -118,6 +137,9 @@ class Room:
     def spawn_enemies(self, player):
         # 일반 적은 안전지대 영역에 들어오지 않는다 (10.1)
         enemy_base.set_safe_zones(z.get_bb() for z in self.safe_zone_objects)
-        enemies = [ENEMY_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns]
+        enemies = [ENEMY_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns if kind in ENEMY_TYPES]
+        if not self.boss_defeated(self.state):
+            enemies += [BOSS_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns
+                        if kind in BOSS_TYPES]
         statues = [TrainingStatue(self.id, x, y, sid, player, self.terrain, self.state) for x, y, sid in self.statues]
         return enemies + statues

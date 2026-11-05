@@ -96,10 +96,14 @@ class Projectile:
         if group == GROUP_PLAYER and not self.reflected:
             combat.projectile_hit(other, self)
         elif group == GROUP_ENEMY and self.reflected and other.is_alive():
+            if other.invulnerable():
+                effect.statue_spark(self.x, self.y)
+                self.destroy()
+                return
             other.take_damage(self.damage)
             # 반사탄이 보스에 맞으면 자세가 쌓인다 (9.3. 정예는 T48)
             if other.is_boss and other.is_alive():
-                other.add_posture()
+                other.add_posture(config.POSTURE_REFLECT)
             if other.is_alive():
                 effect.enemy_hurt(self.x, self.y, self.dir_x)
             self.destroy()

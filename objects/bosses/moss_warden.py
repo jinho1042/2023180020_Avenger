@@ -1,16 +1,17 @@
 from pico2d import *
 
 import config
-from objects.boss_base import GROGGY, BossBase, boss_damage
+from objects.bosses.boss_base import GROGGY, BossBase, boss_damage
 from objects.enemy_base import ACTIVE, RECOVER, WINDUP, Attack
 from systems import camera
 
 STATS = config.BOSS_GREATSWORD
 
 
-class BossGreatsword(BossBase):
-    # 중간 보스 대검 기사: 내려찍기(흰색) · 회전 베기(빨간색, 광역) · 돌진 찌르기(흰색)
-    boss_key = 'greatsword'
+class MossWarden(BossBase):
+    # B2 이끼 수문장 (← v2 대검 기사). 아직 v2 패턴 그대로: 내려찍기(흰색) · 회전 베기(빨간색, 광역) · 돌진 찌르기(흰색)
+    # 2페이즈 패턴·B2 수치(BOSS_MOSS_WARDEN)는 T49
+    boss_key = 'moss_warden'
 
     def __init__(self, x, y, player, platforms):
         super().__init__(x, y, STATS, player, platforms)

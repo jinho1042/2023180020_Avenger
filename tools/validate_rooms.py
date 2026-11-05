@@ -182,7 +182,17 @@ def check_bosses(rooms):
     for room_id, data in rooms.items():
         if not data.get('boss'):
             continue
-        before = [n for n in neighbors(room_id, rooms) if not rooms[n].get('boss')]
+        # 11.2: 보스 종류, 등장 트리거(arena), 출구를 막는 아레나 문, spawns의 보스 자리
+        boss = data['boss']
+        if boss not in config.BOSS_NAME:
+            error(room_id, f'알 수 없는 보스 종류 {boss}')
+        if not any(t[4] == 'arena' for t in data.get('triggers', [])):
+            error(room_id, '보스방에 아레나 트리거(triggers의 "arena")가 없음')
+        if not any(g[4] == 'arena' for g in data.get('gates', [])):
+            error(room_id, '보스방에 아레나 문(gates의 "arena")이 없음')
+        if not any(s[0] == boss for s in data.get('spawns', [])):
+            error(room_id, f'spawns에 보스 자리({boss})가 없음')
+        before =[n for n in neighbors(room_id, rooms) if not rooms[n].get('boss')]
         if not before:
             warn(room_id, '보스방 앞 방이 아직 없음')
         elif not any(rooms[n].get('safe_zones') for n in before):

@@ -1,0 +1,44 @@
+{
+  "id": "TEST_B3",
+  "region": "test",
+  "size": [1, 1],
+  "map_cell": [0, 4],
+  "music": null,
+  "air": "normal",
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 80, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [200, 260, 200, 20, "oneway"],
+    [880, 260, 200, 20, "oneway"],
+    [0, 80, 40, 600, "solid"],
+    [1240, 280, 40, 400, "solid"]
+  ],
+  "hazards": [],
+  "water": [],
+  "breath_zones": [],
+  "breath_gates": [],
+  "safe_zones": [],
+  "breakables": [],
+  "gates": [
+    [1232, 80, 32, 200, "arena", "arena_door"]
+  ],
+  "exits": [
+    {"id": "R", "rect": [1264, 80, 16, 200], "to": "TEST_06", "to_exit": "L"}
+  ],
+  "triggers": [
+    [1000, 80, 40, 400, "arena", "arena_a"]
+  ],
+  "air_vents": [
+    [300, 320, "vent_a"]
+  ],
+  "switches": [],
+  "spawns": [
+    ["archsage", 320, 80]
+  ],
+  "objects": [],
+  "safe_points": [
+    [1120, 80]
+  ],
+  "boss": "archsage"
+}

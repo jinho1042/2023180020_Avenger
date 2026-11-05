@@ -16,10 +16,12 @@ def resolve(player, enemies, gimmicks=()):
                 player.attack_hits.add(e)
                 x, y = contact_point(attack_bb, e.get_bb())
                 strong = player.on_attack_hit(e)   # 반동·포고·세 번째 일격 (휘두름당 1번)
-                if e.kind == 'statue':
-                    effect.statue_spark(x, y)       # 연습 석상은 회색 스파크만 (5.4)
+                if e.kind == 'statue' or e.invulnerable():
+                    effect.statue_spark(x, y)       # 연습 석상·무적 보스는 회색 스파크만 (5.4)
                     continue
                 e.take_damage(player.attack_damage(), player.attack_knockback(e))
+                if e.is_boss:
+                    e.add_posture(config.POSTURE_PER_HIT)   # 곡괭이 적중 자세 (9.4)
                 effect.attack_hit(x, y, player.attack_angle(), strong, not e.is_alive())
 
     body_bb = player.get_bb()

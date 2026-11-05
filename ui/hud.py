@@ -7,6 +7,7 @@ import config
 
 from objects import effect
 from systems import breath, economy
+from ui import font as fonts
 
 font = None
 message = ''          # 하단 중앙 알림 문구 ('저장했습니다' 등). message_timer > 0인 동안 보인다
@@ -173,30 +174,57 @@ def draw_dash_icon(player):
         draw_rectangle(cx - inner, cy - inner, cx + inner, cy + inner, *config.COLOR_DASH_READY, filled=True)
 
 
+def boss_name(key):
+    return fonts.text(config.BOSS_NAME[key], config.BOSS_NAME_EN[key])
+
+
 def draw_boss_bar(boss):
-    # 하단 중앙: 이름 · 체력 바 · 그 아래 자세 게이지 (패링 성공마다 한 칸)
+    # 하단 중앙 (14.1): 이름(작게) + 자세 게이지. 체력 바는 BOSS_HP_BAR일 때만 (원칙 12: 몸으로 알린다)
+    if not boss.show_hud():
+        return
     edge = config.HP_BAR_BORDER
     l = (config.SCREEN_W - config.BOSS_BAR_W) / 2
     r = l + config.BOSS_BAR_W
     pb = config.HUD_MARGIN
     pt = pb + config.BOSS_POSTURE_H
-    b = pt + config.BOSS_POSTURE_GAP + edge * 2
-    t = b + config.BOSS_BAR_H
-    draw_rectangle(l - edge, b - edge, r + edge, t + edge, *config.COLOR_HUD_FRAME, filled=True)
-    draw_rectangle(l, b, r, t, *config.COLOR_HP_BACK, filled=True)
-    ratio = max(0, boss.hp) / boss.max_hp
+    draw_rectangle(l - edge, pb - edge, r + edge, pt + edge, *config.COLOR_HUD_FRAME, filled=True)
+    draw_rectangle(l, pb, r, pt, *config.COLOR_POSTURE_BACK, filled=True)
+    ratio = boss.posture / config.POSTURE_MAX
     if ratio > 0:
-        draw_rectangle(l, b, l + config.BOSS_BAR_W * ratio, t, *config.COLOR_BOSS_HP, filled=True)
+        draw_rectangle(l, pb, l + config.BOSS_BAR_W * ratio, pt, *config.COLOR_POSTURE_FILL, filled=True)
+    t = pt
+    if config.BOSS_HP_BAR:
+        b = pt + config.BOSS_POSTURE_GAP + edge * 2
+        t = b + config.BOSS_BAR_H
+        draw_rectangle(l - edge, b - edge, r + edge, t + edge, *config.COLOR_HUD_FRAME, filled=True)
+        draw_rectangle(l, b, r, t, *config.COLOR_HP_BACK, filled=True)
+        hp = max(0, boss.hp) / boss.max_hp
+        if hp > 0:
+            draw_rectangle(l, b, l + config.BOSS_BAR_W * hp, t, *config.COLOR_BOSS_HP, filled=True)
+    f = fonts.get(config.FONT_SIZE_SMALL)
+    if f:
+        f.draw(l, t + config.BOSS_NAME_GAP, boss_name(boss.boss_key), config.COLOR_TEXT)
 
-    gap = config.BOSS_POSTURE_GAP
-    cell = (config.BOSS_BAR_W - gap * (config.POSTURE_MAX - 1)) / config.POSTURE_MAX
-    for i in range(config.POSTURE_MAX):
-        cl = l + i * (cell + gap)
-        draw_rectangle(cl - edge, pb - edge, cl + cell + edge, pt + edge, *config.COLOR_HUD_FRAME, filled=True)
-        color = config.COLOR_POSTURE_FILL if i < boss.posture else config.COLOR_POSTURE_BACK
-        draw_rectangle(cl, pb, cl + cell, pt, *color, filled=True)
-    if font:
-        font.draw(l, t + config.BOSS_NAME_GAP, config.BOSS_NAME[boss.boss_key], config.COLOR_TEXT)
+
+def draw_boss_card(boss):
+    # 첫 만남 타이틀 카드 (11.2): 이름(큰 글자) + 가로줄 + 칭호. 글자는 알파가 없어 색을 어둡게 해 페이드한다
+    alpha = boss.card_alpha()
+    if alpha <= 0:
+        return
+    card = config.BOSS_CARD
+    cx = config.SCREEN_W / 2
+    half = card['line_w'] / 2
+    effect.draw_screen_alpha_rect(cx - half, card['y'], cx + half, card['y'] + card['line_h'],
+                                  card['color_line'], 255 * alpha)
+    title = fonts.text(config.BOSS_TITLE[boss.boss_key], '')
+    for text, size, color, y in ((boss_name(boss.boss_key), card['name_size'], card['color_name'],
+                                  card['y'] + card['title_gap']),
+                                 (title, card['title_size'], card['color_title'], card['y'] - card['title_gap'] / 2)):
+        f = fonts.get(size)
+        if not f or not text:
+            continue
+        width = sum(size if ord(c) >= 0x1100 else size * config.HUD_FONT_NARROW for c in text)
+        f.draw(cx - width / 2, y, text, tuple(int(c * alpha) for c in color))
 
 
 def show_message(text, time=config.HUD_MESSAGE_TIME):

@@ -565,20 +565,44 @@ TRAINING_STATUE = dict(interval=3.0, telegraph=0.5, hits_to_break=3, ore=20,   #
 COLOR_STATUE_CRACK = (60, 60, 65)
 STATUE_SPARK = dict(count=5, color=(150, 150, 155))   # 곡괭이로 쳤을 때 회색 스파크
 
-# 보스
-POSTURE_MAX = 3            # 패링 성공 횟수로 그로기
+# ===== 자세 · 보스 공통 (9.4, 11.2) =====
+POSTURE_MAX = 100
+POSTURE_PARRY = 34         # 근접 공격 패링
+POSTURE_PER_HIT = 4        # 곡괭이 적중
+POSTURE_PER_SKILL = 8      # 룬 기술 적중 (T51)
+POSTURE_REFLECT = 34       # 반사탄 적중
 GROGGY_TIME = 3.0          # s
 GROGGY_SLOWMO = 0.3        # s
 SLOWMO_SCALE = 0.3         # 슬로모션 중 월드에 전달하는 frame_time 배율
 GROGGY_DAMAGE_MULT = 1.5   # 그로기 중 받는 피해 배율
+GROGGY_RISE_INVULN = 0.3   # s, 그로기에서 일어난 직후 무적 (11.2)
+BOSS_HP_BAR = False        # 체력바 대신 몸으로 알린다 (원칙 12)
+BOSS_INTRO_CARD_TIME = 2.0 # s, 첫 만남 등장 연출 + 타이틀 카드 (입력 잠금, 숨 정지)
+BOSS_INTRO_SHORT = 0.6     # s, 재도전 짧은 등장
+PHASE_TRANSITION_TIME = 1.5  # s, 무적 + 포효
+BOSS_IDLE_GAP = (0.3, 0.8)   # s, 패턴 사이 대기 (이 범위에서 무작위)
+BOSS_MAX_REPEAT = 2        # 같은 패턴 연속 최대 횟수
+BOSS_DEATH_SLOWMO = 0.8    # s
+BOSS_DEATH_FALL = 1.5      # s, 처치 슬로모션·섬광 뒤 쓰러지기까지 (11.2 '1.5초 뒤 쓰러짐')
+BOSS_RUNBACK_MAX = 15.0    # s, 앉는 자리 → 보스방 아레나 트리거
+BOSS_RUNBACK_AIRLESS_MAX = 3.0   # s, 그중 안전지대 영역 밖(숨을 쓰는) 이동 시간 상한
+BOSS_DAMAGE_STAGE_HP = (0.66, 0.33)   # 체력 비율이 이 아래로 내려가면 damage_stage 1, 2 (원칙 12)
+BOSS_STAGE_DARKEN = 0.82   # damage_stage 한 단계마다 몸 색에 곱한다
+BOSS_CRACK = dict(width=4, step=6, color=(30, 25, 25))   # 외형 단계 균열 선 (도형)
+GROGGY_SQUASH = 0.55       # 그로기 중 쓰러진 몸 높이 비율 (그림만, 판정은 그대로)
+BOSS_WEAK_POINT = dict(radius=14, color=(255, 240, 160), blink=0.15)   # 그로기 약점 (깜빡임 간격 s)
+BOSS_AIR_BURST = dict(count=18, speed=(150, 420), life=0.6, size=8)    # 그로기·처치 공기 분출 (색 COLOR_BREATH)
+BOSS_INTRO_ROAR = dict(shake=10, shake_time=0.5)   # 등장 포효
+BOSS_DEATH_FLASH = dict(color=(255, 255, 255), alpha=200, time=0.4)
+COLOR_ARENA_GATE = (90, 85, 80)        # 아레나 돌문
 BOSS_PARRY_RECOIL = 0.5    # s, 보스는 패링당해도 길게 비틀거리지 않고 이만큼만 멈칫한다
 COLOR_BOSS_GROGGY = (230, 200, 60)
 # 대검 기사: 느리고 묵직. 넉백을 받지 않는다
-# 패턴 선택: 거리 near_range 이하면 near 가중치, thrust_range 이하면 far 가중치로 랜덤 (같은 패턴 3연속 금지)
+# 패턴 선택: 거리 near_range 이하면 near 가중치, thrust_range 이하면 far 가중치 (11.2 패턴 선택 규칙)
 # 가중치가 모두 0이면 걸어서 접근한다
 BOSS_GREATSWORD = dict(hp=400, ore=300, damage=1, heavy_damage=2,   # 빨간(패링 불가) 패턴 = heavy_damage
                        w=80, h=120, color=(110, 110, 140), speed=110, detect_range=1280,
-                       attack_cooldown=0.9, near_range=200, thrust_range=750,
+                       near_range=200, thrust_range=750,
                        near=dict(slam=3, spin=2, thrust=0), far=dict(slam=0, spin=0, thrust=1),
                        # 내려찍기 (흰색): 정직한 단발
                        slam=dict(telegraph=0.7, windup=0.3, active=0.12, recover=0.8, hitbox=(140, 130)),
@@ -589,14 +613,14 @@ BOSS_GREATSWORD = dict(hp=400, ore=300, damage=1, heavy_damage=2,   # 빨간(패
                                    speed=900))
 COLOR_GREATSWORD = (200, 200, 220)
 # 쌍검 기사: 빠르고 날렵. 넉백을 받지 않는다
-# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치로 랜덤 (같은 패턴 3연속 금지)
-# 2페이즈(체력 phase2_hp_ratio 이하): 모든 동작 시간 ÷ phase2_speed_mult (예고는 TELEGRAPH_MIN 이상 유지),
+# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치 (11.2 패턴 선택 규칙)
+# 2페이즈(체력 phase_hp 이하): 모든 동작 시간 ÷ phase2_speed_mult (예고는 TELEGRAPH_MIN 이상 유지),
 #   이동 속도 × phase2_speed_mult, phase2_near/far 가중치(빨간 예고 비율 증가),
 #   feint_chance 확률로 페이크(예고만 하고 공격하지 않은 채 feint_recover 동안 멈춤)
 BOSS_TWINBLADE = dict(hp=600, ore=500, damage=1, heavy_damage=2,   # 빨간(패링 불가) 패턴 = heavy_damage
-                      phase2_hp_ratio=0.5, phase2_speed_mult=1.2,
+                      phase_hp=[0.5], phase2_speed_mult=1.2,
                       w=56, h=100, color=(70, 90, 140), color_phase2=(140, 60, 120),
-                      speed=220, detect_range=1280, attack_cooldown=0.7, near_range=160,
+                      speed=220, detect_range=1280, near_range=160,
                       near=dict(combo=3, teleport=1, wave=1), far=dict(combo=0, teleport=2, wave=3),
                       phase2_near=dict(combo=3, teleport=2, wave=1), phase2_far=dict(combo=0, teleport=3, wave=2),
                       feint_chance=0.25, feint_recover=0.5,
@@ -610,7 +634,7 @@ BOSS_TWINBLADE = dict(hp=600, ore=500, damage=1, heavy_damage=2,   # 빨간(패�
                       # 검기 발사 (흰색): 바라보는 방향으로 수평 발사
                       wave=dict(telegraph=0.6, windup=0.2, active=0.05, recover=0.6, speed=550))
 # [v2] 대마법사 (1페이즈): keep_distance ± distance_tolerance를 유지하며 투사체로 압박. 넉백을 받지 않는다
-# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치로 랜덤 (같은 패턴 3연속 금지)
+# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치 (11.2 패턴 선택 규칙)
 # 순간이동: 플레이어가 blink_trigger_dist 안이면 반대쪽으로 blink_dist (공격 아님, 예고 없음, blink_cooldown)
 # 견습 소환: 동시에 최대 summon_max, 쿨타임 summon_cooldown. 보스 좌우 summon_offset px에 나타난다
 BOSS_MAGE = dict(hp=500, ore=350, damage=1,
@@ -620,7 +644,7 @@ BOSS_MAGE = dict(hp=500, ore=350, damage=1,
                  blink_trigger_dist=200, blink_dist=400,
                  summon_max=2, summon_cooldown=15.0,
                  w=60, h=110, color=(120, 70, 190), speed=110, detect_range=1280,
-                 keep_distance=500, distance_tolerance=80, attack_cooldown=1.0, near_range=350,
+                 keep_distance=500, distance_tolerance=80, near_range=350,
                  blink_cooldown=3.0, orb_damage=2, circle_damage=1, summon_offset=120,
                  near=dict(volley=2, orb=1, barrage=3, summon=1),
                  far=dict(volley=3, orb=2, barrage=2, summon=1),
@@ -696,15 +720,28 @@ COLOR_DASH_READY = (180, 220, 255)
 COLOR_DASH_COOL = (70, 80, 100)
 COLOR_DASH_FILL = (120, 160, 220)
 
-# 보스 HUD (하단 중앙): 체력 바 + 그 아래 자세 게이지 (POSTURE_MAX칸)
+# 보스 HUD (하단 중앙, 14.1): 이름(작게) + 자세 게이지. BOSS_HP_BAR이면 그 위에 체력 바
 BOSS_BAR_W, BOSS_BAR_H = 640, 18
 BOSS_POSTURE_H = 10        # px
-BOSS_POSTURE_GAP = 6       # px, 체력 바와 자세 게이지 사이 · 자세 칸 사이
-BOSS_NAME_GAP = 16         # px, 체력 바 위 이름 글자 중심까지
+BOSS_POSTURE_GAP = 6       # px, 체력 바와 자세 게이지 사이
+BOSS_NAME_GAP = 16         # px, 게이지(또는 체력 바) 위 이름 글자 중심까지
 COLOR_BOSS_HP = (200, 50, 50)
 COLOR_POSTURE_BACK = (50, 50, 60)
 COLOR_POSTURE_FILL = (255, 220, 120)
-BOSS_NAME = dict(greatsword='대검 기사', mage='대마법사', twinblade='쌍검 기사')
+# 보스 이름·칭호 (11.4). 키 = 방 JSON boss · bosses_met · bosses_defeated 값
+# [v2] moss_warden·archsage·scythe는 아직 v2 대검 기사·대마법사·쌍검 기사 행동 (T49·T52·T56에서 교체)
+BOSS_NAME = dict(borer='바위껍질 굴착충', moss_warden='이끼 수문장', archsage='수정 대술사',
+                 colossus='신전 골렘 거상', scythe='쌍낫 군주', king='타락한 왕 에르딘',
+                 first_miner='먼저 떨어진 광부')
+BOSS_TITLE = dict(borer='공기를 쫓은 것', moss_warden='수문을 버티는 석상', archsage='결정이 된 학자',
+                  colossus='가라앉은 수호상', scythe='어둠 속의 사냥꾼', king='마지막 숨을 삼킨 자',
+                  first_miner='백 년 전의 추락자')
+BOSS_NAME_EN = dict(borer='Rockshell Borer', moss_warden='Moss Warden', archsage='Crystal Archsage',
+                    colossus='Temple Colossus', scythe='Scythe Sovereign', king='Fallen King Erdin',
+                    first_miner='The First Miner')
+# 타이틀 카드 (첫 만남): 화면 아래쪽 1/3에 이름(큰 글자) + 칭호. fade = 나타나고 사라지는 시간
+BOSS_CARD = dict(y=230, title_gap=56, fade=0.4, name_size=48, title_size=24, line_w=420, line_h=3,
+                 color_name=(240, 235, 220), color_title=(190, 180, 160), color_line=(150, 130, 100))
 
 # 알림 문구 (HUD 하단 중앙. '저장했습니다' 등)
 HUD_MESSAGE_TIME = 1.5     # s

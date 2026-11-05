@@ -1,0 +1,43 @@
+{
+  "id": "TEST_06",
+  "region": "test",
+  "size": [1, 1],
+  "map_cell": [1, 4],
+  "music": null,
+  "air": "normal",
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 80, "solid"],
+    [0, 280, 40, 400, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [1240, 280, 40, 100, "solid"],
+    [1240, 604, 40, 76, "solid"],
+    [760, 240, 200, 24, "oneway"],
+    [1000, 380, 280, 24, "solid"]
+  ],
+  "hazards": [],
+  "water": [],
+  "breath_zones": [],
+  "breath_gates": [],
+  "safe_zones": [
+    [300, 80, 400, 400, "safe_a"]
+  ],
+  "breakables": [],
+  "gates": [],
+  "exits": [
+    {"id": "L", "rect": [0, 80, 16, 200], "to": "TEST_B3", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 80, 16, 200], "to": "TEST_B2", "to_exit": "L"},
+    {"id": "R2", "rect": [1264, 404, 16, 200], "to": "TEST_B5", "to_exit": "L"}
+  ],
+  "triggers": [],
+  "air_vents": [],
+  "switches": [],
+  "spawns": [],
+  "objects": [
+    ["seat", 500, 80, "safe_a"]
+  ],
+  "safe_points": [
+    [500, 80]
+  ],
+  "boss": null
+}
