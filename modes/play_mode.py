@@ -19,6 +19,7 @@ respawning = False  # 사망 → 부활 방으로 전환 중. 방에 들어오�
 ore_lost = 0        # 이번 사망으로 잃은 소지 광석 (부활 후 알림)
 load_path = None  # 이어하기면 불러올 세이브 경로, 새 게임이면 None. title_mode가 change_mode 직전에 start()로 정한다
 DEBUG_KEY = {getattr(pico2d, name): action for action, name in config.DEBUG_KEYS.items()}
+MAP_KEY = getattr(pico2d, config.KEYS['map'])
 
 
 def enter_room(new_room, arrival):
@@ -114,6 +115,12 @@ def handle_events():
             if world.phase is None and not player.dead:
                 from modes import pause_mode
                 game_framework.push_mode(pause_mode)
+                return
+        elif e.type == SDL_KEYDOWN and e.key == MAP_KEY:
+            # 지도는 Tab을 누르고 있는 동안 (13.4). 방 전환·사망·기절 중에는 열지 않는다
+            if world.phase is None and not player.dead and not player.blackout:
+                from modes import map_mode
+                game_framework.push_mode(map_mode)
                 return
         elif e.type == SDL_KEYDOWN and e.key == SDLK_F1:
             game_world.show_hitbox = not game_world.show_hitbox
