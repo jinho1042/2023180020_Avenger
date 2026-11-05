@@ -1,10 +1,14 @@
 {
-  "name": "test_big",
-  "type": "카메라 테스트 (T32)",
+  "id": "TEST_03",
+  "region": "test",
   "size": [3, 2],
+  "map_cell": [3, 1],
+  "music": null,
+  "air": null,
+  "hub": false,
   "platforms": [
     [0, 0, 3840, 80, "solid"],
-    [0, 80, 40, 1360, "solid"],
+    [0, 280, 40, 1160, "solid"],
     [3800, 80, 40, 1360, "solid"],
     [40, 1400, 3760, 40, "solid"],
     [400, 240, 240, 24, "oneway"],
@@ -17,13 +21,14 @@
     [2950, 1200, 240, 24, "oneway"],
     [2600, 80, 80, 300, "solid"]
   ],
+  "exits": [
+    {"id": "L", "rect": [0, 80, 16, 200], "to": "TEST_02", "to_exit": "R"}
+  ],
   "spawns": [
     ["melee", 1500, 80],
     ["melee", 3200, 80],
     ["archer", 3300, 1040],
     ["flyer", 2800, 1250]
   ],
-  "player_start": [120, 80],
-  "safe_points": [[120, 80], [2200, 1040]],
-  "door": [3700, 80]
+  "safe_points": [[120, 80], [2200, 1040]]
 }

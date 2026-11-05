@@ -4,6 +4,16 @@ PX_PER_UNIT = 43           # 1유닛 ≈ 43px (주석의 'u')
 MAX_FRAME_TIME = 0.05      # s, 첫 프레임 등 큰 frame_time 제한
 DEBUG = True               # F1 hitbox, F3 전체 해금, F4 방 이동, F5 숨 무한, F6 숨 구간 기록, F7 개별 지급. 최종 빌드에서 False
 
+# ===== 범위 (T34, 15.1) =====
+SCOPE = 'full'             # 'minimum' | 'target' | 'full'
+SEAL_CORES_REQUIRED = 3 if SCOPE == 'full' else 2
+R6_GATE_RUNE = 'shadow' if SCOPE == 'full' else 'breakthrough'   # R6 통로를 여는 룬 (목표판은 장막 대신 돌파 구덩이)
+SCOPE_REGIONS = dict(      # 범위별로 만드는 구역 (15.1). validate_rooms.py가 구역 검사에 쓴다
+    minimum=['mine', 'corridor', 'moss'],
+    target=['mine', 'corridor', 'moss', 'crystal', 'temple', 'tomb'],
+    full=['mine', 'corridor', 'moss', 'crystal', 'temple', 'nest', 'tomb'],
+)
+
 # ===== 키 (T29) =====
 # pico2d 상수 이름 문자열. systems/input.py에서 getattr(pico2d, name)으로 변환
 KEYS = dict(
@@ -33,6 +43,7 @@ DASH_DIST = 215            # px
 DASH_TIME = 0.25
 DASH_COOLDOWN = 0.6
 DASH_INVINCIBLE = False    # 일반 대시는 무적 아님
+EXIT_UP_BOOST = 900        # px/s, 위쪽 출구로 들어왔을 때 밀어올림
 
 # ===== 곡괭이 공격 (T29) =====
 ATTACK_COOLDOWN = 0.41
@@ -106,58 +117,18 @@ PARRY_SHIELD_W = 10        # px, 패링 방패 표시 두께
 # 디버그
 COLOR_DEBUG_BODY = (0, 255, 0)
 COLOR_DEBUG_ATTACK = (255, 0, 0)
+COLOR_DEBUG_EXIT = (255, 255, 0)  # 방 출구
 
 # 지형
 COLOR_SOLID = (90, 90, 100)
 COLOR_ONEWAY = (150, 130, 90)
 
 # 방 · 문
-# 일반 전투방 템플릿 (data/rooms/ 아래 JSON 이름). [v2] 루트마다 여기서 중복 없이 뽑는다
-ROOM_TEMPLATES = ['flat_01', 'platform_01', 'platform_02', 'canyon_01', 'canyon_02', 'mixed_01']
 DOOR_W, DOOR_H = 60, 100   # px
 DOOR_FRAME = 6             # px, 문틀 두께
 COLOR_DOOR_FRAME = (60, 50, 40)
 COLOR_DOOR_LOCKED = (110, 60, 50)
 COLOR_DOOR_OPEN = (240, 220, 140)
-
-# [v2] 안전지대(허브) · 루트
-HUB_ROOM = 'hub'           # data/rooms/hub.json
-HUB_HEAL_RATIO = 1.0       # 안전지대 복귀 시 최대 체력 대비 회복 비율
-ROUTE_ORDER = ['greatsword', 'mage', 'twinblade']    # 안전지대 문 배치 순서 (왼→오)
-ROUTE_STARS = dict(greatsword=1, mage=2, twinblade=3)  # 난이도 별 개수
-ROUTE_COLOR = dict(        # 문·배경 톤 구분용
-    greatsword=(140, 140, 150),
-    mage=(130, 90, 200),
-    twinblade=(40, 50, 90),
-)
-ROUTE_NAME = dict(greatsword='대검', mage='마법사', twinblade='쌍검')  # HUD 진행도 표시용
-ROUTE_LAYERS = 3           # 보스방 전 전투방 층 수
-ROUTE_BRANCH = 2           # 2·3층의 방 개수 (= 방 클리어 후 고를 수 있는 문 수)
-ROUTE_ENEMIES = dict(
-    greatsword=['melee', 'archer', 'flyer'],
-    mage=['apprentice_mage', 'adept_mage'],
-    twinblade=['dual_dagger', 'assassin'],
-)
-ROUTE_DIFFICULTY = dict(   # 일반 적 체력·피해 배율(보스 제외). T31: 피해가 칸 단위라 dmg_mult는 1.0, 방당 적 수 (1층은 최소값, 3층은 최대값 쪽)
-    greatsword=dict(hp_mult=1.0, dmg_mult=1.0, enemy_count=(2, 3)),
-    mage=dict(hp_mult=1.15, dmg_mult=1.0, enemy_count=(3, 4)),
-    twinblade=dict(hp_mult=1.3, dmg_mult=1.0, enemy_count=(3, 5)),
-)
-# 루트 보스방 템플릿
-ROUTE_BOSS_ROOM = dict(greatsword='arena_greatsword', mage='boss_mage', twinblade='arena_twinblade')
-CHESTS_PER_ROUTE = (1, 2)  # 루트당 보물상자 개수 범위 (첫 상자는 항상 1층)
-BOSS_REWARD_UPGRADE = True # 보스 처치 후 문에 들어가면 강화 3택 1
-AIR_ENEMIES = ['flyer']    # spawn_points 중 'air' 자리에 우선 배치할 적
-ROUTE_BG_TINT = 0.2        # 0~1, 배경색을 현재 루트 색 쪽으로 섞는 비율
-COLOR_DOOR_CLEARED = (70, 70, 75)  # 보스를 처치한 루트의 문 (잠김)
-# 루트 문 위 표지판: 루트 색 판 위에 별(폰트가 없으면 작은 사각형)을 그린다
-DOOR_SIGN_W, DOOR_SIGN_H = 96, 30  # px
-DOOR_SIGN_GAP = 12         # px, 문틀 위쪽과 표지판 사이
-DOOR_SIGN_BORDER = 3       # px
-DOOR_STAR_SIZE = 8         # px, 폰트 없을 때 별 대신 그리는 사각형 한 변
-DOOR_STAR_GAP = 6          # px
-FONT_SIZE_STAR = 20
-COLOR_DOOR_STAR = (255, 220, 120)
 
 # [v2] 보물상자 (x, y는 상자 아래쪽 중심, 템플릿의 chest_spot)
 CHEST_W, CHEST_H = 52, 38  # px
@@ -172,9 +143,6 @@ CHEST_PILLAR_TIME = 0.3    # s, 빛 기둥을 보여준 뒤 강화 화면
 CHEST_PILLAR_W = 40        # px
 CHEST_PILLAR_ALPHA = 200   # 0~255
 COLOR_CHEST_PILLAR = (255, 240, 170)
-CHEST_ICON_W, CHEST_ICON_H = 24, 16  # px, 상자 있는 방으로 가는 문 위 아이콘
-CHEST_ICON_GAP = 10        # px, 문틀 위쪽과 아이콘 사이
-UPGRADE_EMPTY_HEAL = 1     # 남은 강화가 없으면 강화 화면 대신 이만큼 회복
 
 # 패링
 PARRY_WINDOW = 0.15        # s
@@ -189,6 +157,41 @@ REFLECT_DAMAGE = 15        # 반사 투사체가 적·보스에 주는 피해 (�
 REFLECT_UNLOCK_FLAG = 'reflect'   # 이 플래그가 있어야 반사. 정예 갑각 대장 처치 시 추가
 PROJECTILE_SHARD = dict(count=8, speed=(80, 260), life=0.2, size=4)  # 반사 해금 전 패링한 투사체가 튕겨 사라지는 파편. 색은 투사체 색
 
+# ===== 월드 · 진행 (T33, 5.6 · 12.5) =====
+START_ROOM = 'TEST_01'     # 새 게임 첫 방. T41에서 'R0_01'
+TRANSITION_FADE = 0.25     # s, 방 전환 어두워짐·밝아짐 각각
+TRANSITION_LOCK = 0.2      # s, 도착 후 출구를 무시하는 시간
+EXIT_SPAWN_INSET = 48      # px, 도착 출구 안쪽으로 이만큼 들어온 자리
+REGIONS = dict(            # 구역 이름·대표 색·기본 공기
+    # rooms = 12.2 표의 방 수. 다 차기 전에는 구역에 걸린 검사가 경고만 낸다 (12.5 미작성 처리)
+    mine=dict(name='광산', color=(120, 85, 55), air=None, rooms=4),       # None = 숨 게이지 없음
+    corridor=dict(name='잊힌 회랑', color=(90, 100, 125), air='normal', rooms=12),
+    moss=dict(name='이끼 동굴', color=(60, 120, 70), air='normal', rooms=12),
+    crystal=dict(name='수정 광맥', color=(130, 90, 200), air='normal', rooms=12),
+    temple=dict(name='침수 신전', color=(40, 120, 130), air='normal', rooms=10),
+    nest=dict(name='그림자 둥지', color=(40, 50, 90), air='foul', rooms=10),
+    tomb=dict(name='왕의 묘실', color=(170, 130, 60), air='thin', rooms=8 if SCOPE == 'full' else 7),
+    test=dict(name='테스트', color=(110, 110, 120), air=None, rooms=0),   # data/rooms/test (개발용, 구역 검사 제외)
+)
+HUB_SHORTCUT_REGIONS = ['moss', 'crystal', 'temple', 'nest']   # R1 허브행 숏컷이 필요한 구역 (R2~R5, 12.5)
+SAFE_ZONE_MAX_ROOMS = 4    # 어느 방에서든 가장 가까운 안전지대까지 최대 방 수 (게이트 방 제외)
+COLLECTIBLE_COUNTS = dict(  # 임시. 12.7 구역별 수집품 수 (상점·NPC·보스 몫 제외). validate_rooms.py 개수 검사 기준
+    full=dict(rare_ore=dict(corridor=3, moss=3, crystal=3, temple=3, nest=3, tomb=1),
+              engraving=dict(corridor=1, moss=5, crystal=3, temple=3, nest=2, tomb=0),
+              miner=dict(corridor=1, moss=2, crystal=2, temple=1, nest=1, tomb=1),
+              map_stone=dict(corridor=1, moss=1, crystal=1, temple=1, nest=1, tomb=1),
+              tablet=dict(corridor=3, moss=3, crystal=3, temple=2, nest=2, tomb=2)),
+    target=dict(rare_ore=dict(corridor=3, moss=3, crystal=4, temple=5, tomb=1),
+                engraving=dict(corridor=1, moss=5, crystal=3, temple=5, tomb=0),
+                miner=dict(corridor=1, moss=2, crystal=2, temple=2, tomb=1),
+                map_stone=dict(corridor=1, moss=1, crystal=1, temple=1, tomb=1),
+                tablet=dict(corridor=3, moss=3, crystal=3, temple=2, tomb=2)),
+    minimum=dict(rare_ore=dict(corridor=4, moss=4), engraving=dict(corridor=1, moss=5),
+                 miner=dict(corridor=1, moss=2), map_stone=dict(corridor=1, moss=1),
+                 tablet=dict(corridor=3, moss=3)),
+)
+REGION_BG_TINT = 0.2       # 0~1, 배경색을 구역 색 쪽으로 섞는 비율
+
 # ===== 카메라 (T32, 14.2) =====
 CAMERA_LERP = 8.0
 CAMERA_LOOKAHEAD_X = 120
@@ -196,7 +199,6 @@ CAMERA_LOOK_VERTICAL = 180
 CAMERA_LOOK_HOLD = 0.5
 CAMERA_FALL_LOOKAHEAD = 120
 CAMERA_CULL_MARGIN = 100   # px, 화면 밖 이만큼까지는 그린다 (5.3)
-CAMERA_TEST_ROOM = 'test_big'   # T32 3×2 테스트 방. DEBUG에서 F4로 오간다 (T34에서 F4 방 이동 메뉴로 교체)
 
 # ===== 룬 (T30. 레벨별 효과는 8장) =====
 RUNE_MAX_LEVEL = dict(breath=5, burrow=3, brace=3, crystal=3, breakthrough=3, shadow=3)
@@ -207,6 +209,22 @@ ABILITY_RUNE = dict(      # 능력 → (룬, 필요 레벨). player.can(능력)�
     breakthrough=('breakthrough', 1), breakthrough_pierce=('breakthrough', 2), air_breakthrough=('breakthrough', 3),
     shadow_dash=('shadow', 1),
 )
+
+# 각인 id (8.4 표 순서). T44에서 data/items.json으로 옮긴다. 지금은 F7 지급 메뉴만 쓴다
+ENGRAVING_IDS = ['third_strike', 'quick_hands', 'long_handle', 'miners_grit', 'last_stand', 'deep_lung',
+                 'parry_breath', 'steady_breath', 'thrifty_breath', 'wind_step', 'long_dash', 'dash_strike',
+                 'mirror_crystal', 'counter_wave', 'sharp_counter', 'stone_skin', 'thorn_shell', 'compass',
+                 'ore_magnet', 'first_breath', 'breath_echo']
+
+# ===== 디버그 메뉴 (T34, F4 방 이동 · F7 개별 지급) =====
+DEBUG_GIVE_FLAGS = ['reflect', 'whetstone', 'met_oram', 'intro_done']   # F7에서 켜고 끄는 플래그 (13.6)
+DEBUG_MENU_W = 560         # px
+DEBUG_MENU_ROWS = 16       # 한 화면에 보이는 줄 수 (넘치면 스크롤)
+DEBUG_MENU_ROW_H = 30      # px
+DEBUG_MENU_PAD = 20        # px
+COLOR_DEBUG_MENU = (30, 30, 40)
+COLOR_DEBUG_MENU_SELECTED = (255, 220, 120)
+COLOR_DEBUG_MENU_ON = (130, 220, 120)
 
 # 연출 (흔들림 세기는 px, 시간은 s)
 SHAKE_PARRY, SHAKE_PARRY_TIME = 8, 0.15
@@ -452,12 +470,6 @@ UPGRADE_ICON = 36          # px, 강화 아이콘 한 변
 UPGRADE_ICON_GAP = 6       # px
 UPGRADE_ICON_PAD = 4       # px, 아이콘 안 글자 여백
 FONT_SIZE_ICON = 14
-# [v2] 루트 진행도 (대시 쿨타임 아래, 오른쪽 정렬): 층마다 작은 사각형 + 그 아래 글자
-HUD_ROUTE_GAP = 14         # px, 대시 아이콘·사각형·글자 사이
-HUD_ROUTE_MARK = 14        # px, 사각형 한 변
-HUD_ROUTE_MARK_GAP = 6     # px
-HUD_ROUTE_TEXT_W = 150     # px, 글자 자리 (오른쪽 끝에서 이만큼 왼쪽부터 쓴다)
-COLOR_ROUTE_MARK_EMPTY = (60, 60, 70)
 
 # 보스 HUD (하단 중앙): 체력 바 + 그 아래 자세 게이지 (POSTURE_MAX칸)
 BOSS_BAR_W, BOSS_BAR_H = 640, 18
