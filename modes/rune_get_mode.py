@@ -111,6 +111,9 @@ def draw_glyph(progress):
     if rune == 'reflect':
         draw_shield_shard(cx, cy, half, bar, color)
         return
+    if rune == config.FORGE_PICKAXE_UNLOCK_FLAG:
+        draw_whetstone(cx, cy, half, bar)
+        return
     effect.draw_ring(cx, cy, half, half, 16, bar * 1.5, color)
     camera.draw_rect(cx - bar / 2, cy - half * 0.7, cx + bar / 2, cy + half * 0.7, *color, filled=True)
     camera.draw_rect(cx - half * 0.5, cy + half * 0.2 - bar / 2, cx + half * 0.5, cy + half * 0.2 + bar / 2, *color, filled=True)
@@ -127,17 +130,28 @@ def draw_shield_shard(cx, cy, half, bar, color):
     camera.draw_rect(cx - bar / 4, cy - half * 0.6, cx + bar / 4, cy + half * 0.9, *config.COLOR_CARD, filled=True)
 
 
+def draw_whetstone(cx, cy, half, bar):
+    # 수정 숫돌 (11.4 B3): 납작하고 긴 돌 + 비스듬한 결정 결
+    camera.draw_rect(cx - half, cy - half * 0.35, cx + half, cy + half * 0.35, *config.COLOR_ARCHSAGE_ARMOR, filled=True)
+    steps = 4
+    for i in range(steps):
+        x = cx - half * 0.6 + half * 1.2 * i / (steps - 1)
+        camera.draw_rect(x - bar / 2, cy - half * 0.25 + i * bar / 2, x + bar / 2, cy + half * 0.25 + i * bar / 2,
+                         *config.COLOR_RUNE_GLYPH, filled=True)
+
+
 def rune_text(key, default=''):
     info = texts.get(rune, {})
     return font.text(info.get(key, default), info.get(f'{key}_en', info.get(key, default)))
 
 
 def card_lines():
-    # 그 레벨 설명 (숨의 룬은 {cap} = 그 레벨 기본 숨 용량)
+    # 그 레벨 설명 (숨의 룬은 {cap} = 그 레벨 기본 숨 용량, 수정 숫돌은 {cores}/{need} = 봉인 핵 수)
     levels = rune_text('levels', [])
     lines = levels[level - 1] if 0 < level <= len(levels) else []
     cap = config.BREATH_CAPACITY[level] if rune == 'breath' else 0
-    return [line.format(cap=cap) for line in lines]
+    cores = len(world.state.cores)
+    return [line.format(cap=cap, cores=cores, need=config.SEAL_CORES_REQUIRED) for line in lines]
 
 
 def draw_card():

@@ -195,6 +195,11 @@ COLOR_PLAYER_DEAD = (70, 70, 80)
 COLOR_PLAYER_PARRY = (120, 255, 255)  # 패링 판정 중 몸 앞 방패 표시
 COLOR_PLAYER_STUN = (110, 110, 150)   # 헛입력 경직 중 색
 COLOR_PLAYER_ROCKFALL = (150, 120, 90)  # 낙반 시전·낙하 중 색 (T51)
+COLOR_PLAYER_CAST_ARROW = (170, 150, 230)   # 결정 화살 시전 중 색 (T52)
+# 결정 디딤 (T52, 6.4): 공중 점프 때 발밑에 잠깐 생겼다 부서지는 결정 발판 (그림만, 판정 없음)
+CRYSTAL_STEP = dict(w=56, h=10, life=0.18, shatter=dict(count=8, speed=(80, 240), life=0.3, size=6))
+COLOR_CRYSTAL_STEP = (190, 170, 250)
+COLOR_CRYSTAL_ARROW = (200, 185, 255)   # 결정 화살 (SKILLS.crystal_arrow)
 PARRY_SHIELD_W = 10        # px, 패링 방패 표시 두께
 
 # 디버그
@@ -391,7 +396,7 @@ RUNE_MAX_LEVEL = dict(breath=5, burrow=3, brace=3, crystal=3, breakthrough=3, sh
 ABILITY_RUNE = dict(      # 능력 → (룬, 필요 레벨). player.can(능력)이 본다 (6.2, 8.2 표)
     dash=('burrow', 1), rockfall=('burrow', 2), hard_soil=('burrow', 3),
     wall_cling=('brace', 1), thorn_cling=('brace', 2), brace_breath=('brace', 3),
-    crystal_step=('crystal', 1), crystal_arrow=('crystal', 2),
+    crystal_step=('crystal', 1), crystal_arrow=('crystal', 2), crystal_step2=('crystal', 3),
     breakthrough=('breakthrough', 1), breakthrough_pierce=('breakthrough', 2), air_breakthrough=('breakthrough', 3),
     shadow_dash=('shadow', 1),
 )
@@ -740,7 +745,8 @@ COLOR_BORER_CRACK = (90, 70, 55)       # 잠행 균열
 BOSS_FIGHT_TARGET = dict(  # 임시. 보스전 예상 시간(초). 아레나 숨구멍 수를 정할 때 참고 (7.6 목표 3)
     borer=50, moss_warden=80, archsage=90, colossus=100, scythe=110, king=180, first_miner=90,
 )
-BOSS_RUNE = dict(borer='burrow', moss_warden='brace')   # 처치 보상 룬 (11.4 보상). 다른 보스는 해당 보스 작업(T52~)에서 넣는다
+BOSS_RUNE = dict(borer='burrow', moss_warden='brace', archsage='crystal')   # 처치 보상 룬 (11.4 보상). 다른 보스는 해당 보스 작업(T54~)에서 넣는다
+BOSS_CORE = dict(archsage='crystal')   # 처치 보상 봉인 핵 id (world_state.cores, 11.4 보상). B4·B5는 T54·T56
 # B2 이끼 수문장 (T49, ← v2 대검 기사). 첫 줄은 4장 값 그대로, 둘째 줄부터 행동·그림 값. 넉백을 받지 않는다
 # 패턴 선택: 거리 < near_range → near 표(내려찍기·회전), 아니면 far 표(돌진·도약) (11.4 선택 규칙). 회전 쿨 spin_cooldown
 # 2페이즈(체력 phase_hp 아래): 이끼 갑옷이 벗겨짐(color_phase2, 균열) + 내려찍기+충격파·도약 내려찍기 추가 (phase2_near·far)
@@ -794,33 +800,41 @@ BOSS_TWINBLADE = dict(hp=600, ore=500, damage=1, heavy_damage=2,   # 빨간(패�
                                     offset=90),
                       # 검기 발사 (흰색): 바라보는 방향으로 수평 발사
                       wave=dict(telegraph=0.6, windup=0.2, active=0.05, recover=0.6, speed=550))
-# [v2] 대마법사 (1페이즈): keep_distance ± distance_tolerance를 유지하며 투사체로 압박. 넉백을 받지 않는다
-# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치 (11.2 패턴 선택 규칙)
-# 순간이동: 플레이어가 blink_trigger_dist 안이면 반대쪽으로 blink_dist (공격 아님, 예고 없음, blink_cooldown)
-# 견습 소환: 동시에 최대 summon_max, 쿨타임 summon_cooldown. 보스 좌우 summon_offset px에 나타난다
-BOSS_MAGE = dict(hp=500, ore=350, damage=1,
-                 volley_count=5, volley_interval=0.3, bolt_speed=450,
-                 orb_speed=250, orb_reflect_mult=3.0,
-                 circle_count=3, circle_radius=100, circle_delay=0.8, circle_interval=0.4,
-                 blink_trigger_dist=200, blink_dist=400,
-                 summon_max=2, summon_cooldown=15.0,
-                 w=60, h=110, color=(120, 70, 190), speed=110, detect_range=1280,
-                 keep_distance=500, distance_tolerance=80, near_range=350,
-                 blink_cooldown=3.0, orb_damage=2, circle_damage=1, summon_offset=120,
-                 near=dict(volley=2, orb=1, barrage=3, summon=1),
-                 far=dict(volley=3, orb=2, barrage=2, summon=1),
-                 # 마력탄 연사 (흰색): Active 동안 volley_interval마다 1발씩, 쏠 때마다 플레이어 조준
-                 volley=dict(telegraph=0.6, windup=0.2, recover=0.6),
-                 # 대형 마력구 (흰색): 느린 큰 구체 1발
-                 orb=dict(telegraph=0.8, windup=0.35, active=0.05, recover=0.8),
-                 # 마법진 폭격 (빨간색): Active 동안 circle_interval마다 플레이어 위치에 마법진
-                 barrage=dict(telegraph=0.7, windup=0.2, recover=0.8),
-                 # 견습 소환 (흰색 번쩍임, 막을 공격 없음)
-                 summon=dict(telegraph=0.6, windup=0.3, active=0.05, recover=0.8))
-# 대마법사 마력탄은 반사해도 1배, 대형 마력구는 반사하면 orb_reflect_mult배 (반사 강화 배율과 곱해진다)
+# B3 수정 대술사 (T52, ← v2 대마법사). 첫 5줄은 4장 값 그대로, 그다음부터 행동·그림 값. 넉백을 받지 않는다
+# 땅에 있을 때는 keep_distance ± distance_tolerance를 유지하며 걷고, 공중 발판(방의 oneway 발판) 위에서는 걷지 않는다
+# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치 (11.2). 유생 소환은 쿨 summon_cooldown, 동시에 최대 summon_max
+# 순간이동 (공격 아님, 예고 없음): 패턴 사이에 플레이어가 가로 blink_trigger_dist 안이면 (blink_cooldown마다)
+#   플레이어에게서 가로 blink_dist 이상 떨어진 공중 발판 위로 (없으면 가장 먼 발판, 발판이 없는 방이면 blink_dist만큼 뒤로)
+#   사라지는 자리·나타나는 자리에 결정 파편 (shards). 2페이즈는 나타나자마자 수정탄 연사
+# 2페이즈(체력 phase_hp 아래): 결정 갑옷이 깨짐(color_phase2, 갑옷 조각이 튐) + 연사 volley_count[1]발
+BOSS_ARCHSAGE = dict(hp=420, damage=1, phase_hp=[0.5],
+                     volley_count=[5, 7], volley_interval=0.3, bolt_speed=450,
+                     orb_speed=250, orb_damage=2, orb_reflect_mult=3.0,   # 반사 시 REFLECT_DAMAGE × 3
+                     circle_count=3, circle_radius=100, circle_delay=0.8, circle_interval=0.4,
+                     blink_trigger_dist=200, blink_dist=400,
+                     summon_max=2, summon_cooldown=15.0, ore=350,
+                     w=60, h=110, color=(120, 70, 190), color_phase2=(165, 130, 215), speed=110, detect_range=1280,
+                     keep_distance=500, distance_tolerance=80, near_range=350,
+                     blink_cooldown=3.0, circle_damage=1, summon_offset=120,
+                     near=dict(volley=2, orb=1, barrage=3, summon=1),
+                     far=dict(volley=3, orb=2, barrage=2, summon=1),
+                     # 수정탄 연사 (흰): 지팡이를 앞으로. Active 동안 volley_interval마다 1발씩, 쏠 때마다 플레이어 조준
+                     volley=dict(telegraph=0.6, windup=0.2, recover=0.8),
+                     # 대형 마력구 (흰, orb_damage): 두 손으로 구체를 키움 → 느린 큰 구체 1발
+                     orb=dict(telegraph=0.8, windup=0.35, active=0.05, recover=1.0),
+                     # 결정 폭격 (빨강): 지팡이를 땅에 꽂음 → Active 동안 circle_interval마다 플레이어 발밑에 마법진
+                     barrage=dict(telegraph=0.6, windup=0.2, recover=0.8),
+                     # 유생 소환 (흰 번쩍임, 막을 공격 없음): 지팡이를 들어올림 → 수정 유생 (처치해도 광석 summon_ore)
+                     summon=dict(telegraph=0.8, windup=0.3, active=0.05, recover=0.6), summon_ore=0,
+                     # 그림 (도형): 1페이즈 결정 갑옷 조각, 순간이동·페이즈 전환 파편
+                     armor_plates=3, armor_size=16,
+                     shards=dict(count=14, speed=(120, 360), life=0.45, size=7),
+                     armor_break=dict(count=26, speed=(150, 450), life=0.7, size=9))
+COLOR_ARCHSAGE_ARMOR = (190, 160, 245)   # 1페이즈 결정 갑옷 · 순간이동 파편
+# 대술사 수정탄은 반사해도 1배, 대형 마력구는 반사하면 orb_reflect_mult배 (「거울 결정」 배율과 곱해진다)
 BOSS_BOLT = dict(size=20, length=0, color=(200, 150, 255), round=True)
 MAGE_ORB = dict(size=56, length=0, color=(170, 100, 255), round=True,
-                reflect_mult=BOSS_MAGE['orb_reflect_mult'])
+                reflect_mult=BOSS_ARCHSAGE['orb_reflect_mult'])
 COLOR_BOSS_STAFF_ORB = (220, 180, 255)
 # 쌍검 기사 검기. 반사하면 reflect_mult배 피해 (반사 강화 배율과 곱해진다)
 TWIN_WAVE = dict(size=36, length=48, color=(200, 160, 255), reflect_mult=3.0)
@@ -890,7 +904,7 @@ COLOR_BOSS_HP = (200, 50, 50)
 COLOR_POSTURE_BACK = (50, 50, 60)
 COLOR_POSTURE_FILL = (255, 220, 120)
 # 보스 이름·칭호 (11.4). 키 = 방 JSON boss · bosses_met · bosses_defeated 값
-# [v2] archsage·scythe는 아직 v2 대마법사·쌍검 기사 행동 (T52·T56에서 교체)
+# [v2] scythe는 아직 v2 쌍검 기사 행동 (T56에서 교체)
 BOSS_NAME = dict(borer='바위껍질 굴착충', moss_warden='이끼 수문장', archsage='수정 대술사',
                  colossus='신전 골렘 거상', scythe='쌍낫 군주', king='타락한 왕 에르딘',
                  first_miner='먼저 떨어진 광부')
@@ -950,6 +964,7 @@ SHOP_RARE_ORE = 1          # 각인이 아닌 상품(rare_ore_*) 하나에 든 �
 # 대장간 하르 (T62, 13.3). (보관 광석, 희귀 광석). 인덱스 0 = Lv1→2. 목록은 상점과 같은 카드 화면 (data/dialog/har.json의 forge)
 FORGE_PICKAXE_COST = [(250, 1), (800, 1), (2000, 1), (4000, 1)]  # 임시. Lv2~5 (강화는 T64)
 FORGE_PICKAXE_UNLOCK_FLAG = 'whetstone'  # B3 처치 보상 '수정 숫돌'. 없으면 곡괭이 강화 목록 숨김
+BOSS_ITEM_FLAG = dict(archsage=FORGE_PICKAXE_UNLOCK_FLAG)   # 처치 보상 아이템 플래그 → 룬 카드 뒤에 그 아이템 카드 (rune_get_mode, 11.4 B3)
 FORGE_ARMOR_COST = [(300, 1), (900, 1), (1800, 2), (3000, 2)]    # 임시. 체력 6~9칸 (Lv n = HP_START + n - 1칸)
 
 # 지도 (T40, 13.4). Tab을 누르고 있는 동안. 지금 있는 구역만 그린다. 방 1화면 = MAP_CELL_W × MAP_CELL_H px
