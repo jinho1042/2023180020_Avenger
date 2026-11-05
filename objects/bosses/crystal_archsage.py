@@ -1,48 +1,53 @@
 import math
 
-from pico2d import *
-
 import config
 import game_framework
 from objects import effect, magic_circle, projectile
-from objects.bosses.boss_base import BossBase
+from objects.bosses.boss_base import GROGGY, BossBase
 from objects.enemies.crystal_sage import blink_away, fit_x
 from objects.enemies.crystal_sprite import CrystalSprite
 from objects.enemy_base import ACTIVE, TELEGRAPH, WINDUP, Attack
-from systems import camera
+from systems import camera, sound
 
-STATS = config.BOSS_MAGE
+STATS = config.BOSS_ARCHSAGE
 
 
 class CrystalArchsage(BossBase):
-    # B3 수정 대술사 (← v2 대마법사, 1페이즈). 거리를 벌리고 투사체로 압박한다. 반사가 가장 큰 딜 수단
-    # 2페이즈·B3 수치(BOSS_ARCHSAGE)는 T52
-    # 마력탄 연사(흰색) · 대형 마력구(흰색, 반사하면 큰 피해) · 마법진 폭격(빨간색) · 견습 소환(흰색 번쩍임)
-    # 플레이어가 blink_trigger_dist 안이면 반대쪽으로 순간이동 (공격 아님, 예고 없음)
-    # 근접 공격이 없으므로 자세는 반사탄(+POSTURE_REFLECT)과 곡괭이 적중으로 쌓인다
+    # B3 수정 대술사 — 결정이 된 학자 (11.4, ← v2 대마법사). 거리를 벌리고 투사체로 압박한다. 반사가 가장 큰 딜 수단
+    # 1~: 수정탄 연사(흰) · 대형 마력구(흰, 반사하면 × orb_reflect_mult) · 결정 폭격(빨강 마법진) · 유생 소환(흰 번쩍임)
+    #     순간이동(공격 아님): 플레이어가 가까우면 반대쪽 공중 발판 위로. 사라지는·나타나는 자리에 결정 파편
+    # 2페이즈(50%): 결정 갑옷이 깨짐, 연사 5 → 7발, 순간이동 직후 바로 연사
+    # 근접 공격이 없으므로 자세는 반사탄(+POSTURE_REFLECT)과 곡괭이·룬 기술 적중으로 쌓인다
     boss_key = 'archsage'
 
     def __init__(self, x, y, player, platforms):
         super().__init__(x, y, STATS, player, platforms)
-        v, o, c, s = STATS['volley'], STATS['orb'], STATS['barrage'], STATS['summon']
-        # 연사·폭격은 Active 동안 interval마다 한 번씩 시전한다
-        self.patterns = dict(
-            volley=Attack('volley', True, v['telegraph'], v['windup'],
-                          STATS['volley_count'] * STATS['volley_interval'], v['recover'], STATS['damage'], None),
-            orb=Attack('orb', True, o['telegraph'], o['windup'], o['active'], o['recover'],
-                       STATS['orb_damage'], None),
-            barrage=Attack('barrage', False, c['telegraph'], c['windup'],
-                           STATS['circle_count'] * STATS['circle_interval'], c['recover'],
-                           STATS['circle_damage'], None),
-            summon=Attack('summon', True, s['telegraph'], s['windup'], s['active'], s['recover'], 0, None))
-        self.casts_left = 0    # 이번 Active에 남은 시전 횟수 (연사·폭격)
-        self.cast_timer = 0.0  # 다음 시전까지 남은 시간
+        self.perches = [p for p in platforms if p.kind == 'oneway']   # 순간이동 착지점 (아레나 공중 발판)
+        self.perched = False    # 공중 발판 위에 있으면 걷지 않는다
+        self.casts_left = 0     # 이번 Active에 남은 시전 횟수 (연사·폭격)
+        self.cast_timer = 0.0   # 다음 시전까지 남은 시간
         self.cast_interval = 0.0
         self.blink_cooldown = 0.0
+        self.build_patterns()
+
+    def build_patterns(self):
+        v, o, c, s = STATS['volley'], STATS['orb'], STATS['barrage'], STATS['summon']
+        volley_time = self.volley_count() * STATS['volley_interval']
+        self.patterns = dict(
+            volley=Attack('volley', True, v['telegraph'], v['windup'], volley_time, v['recover'], STATS['damage'], None),
+            orb=Attack('orb', True, o['telegraph'], o['windup'], o['active'], o['recover'], STATS['orb_damage'], None),
+            barrage=Attack('barrage', False, c['telegraph'], c['windup'],
+                           STATS['circle_count'] * STATS['circle_interval'], c['recover'], STATS['circle_damage'], None),
+            summon=Attack('summon', True, s['telegraph'], s['windup'], s['active'], s['recover'], 0, None))
+
+    def volley_count(self):
+        return STATS['volley_count'][min(self.phase, len(STATS['volley_count'])) - 1]
 
     def update(self):
         self.blink_cooldown = max(0, self.blink_cooldown - game_framework.frame_time)
         super().update()
+
+    # ---------- 패턴 선택 · 이동 ----------
 
     def chase(self):
         self.vx = 0
@@ -50,19 +55,21 @@ class CrystalArchsage(BossBase):
             return
         dist = abs(self.player.x - self.x)
         if self.blink_cooldown <= 0 and dist <= STATS['blink_trigger_dist']:
-            blink_away(self, STATS['blink_dist'])
-            self.blink_cooldown = STATS['blink_cooldown']
+            self.teleport()
+            if self.phase >= 2:
+                # 2페이즈: 나타나자마자 수정탄 연사
+                self.start_pattern('volley')
+                return
             dist = abs(self.player.x - self.x)
         self.face_player()
         if self.attack_cooldown <= 0:
             name = self.pick_pattern(self.pattern_weights(dist))
             if name:
-                cooldown = STATS['summon_cooldown'] if name == 'summon' else 0
-                self.remember_pattern(name, cooldown)
-                self.attack_queue = [self.patterns[name]]
-                self.start_next_attack()
+                self.start_pattern(name)
                 return
-        # 견습 마법사처럼 keep_distance를 유지한다 (가까우면 바라본 채 뒷걸음질)
+        if self.perched:
+            return
+        # 땅에서는 keep_distance를 유지한다 (가까우면 바라본 채 뒷걸음질)
         if dist < STATS['keep_distance'] - STATS['distance_tolerance']:
             self.vx = -self.face_dir * self.speed
         elif dist > STATS['keep_distance'] + STATS['distance_tolerance']:
@@ -74,13 +81,40 @@ class CrystalArchsage(BossBase):
             weights['summon'] = 0
         return weights
 
+    def start_pattern(self, name):
+        self.remember_pattern(name, STATS['summon_cooldown'] if name == 'summon' else 0)
+        self.attack_queue = [self.patterns[name]]
+        self.start_next_attack()
+
+    def teleport(self):
+        # 플레이어에게서 가로 blink_dist 이상 떨어진 공중 발판 위로 (여럿이면 가장 먼 곳, 없으면 가장 먼 발판)
+        # 공중 발판이 없는 방(테스트 방 등)이면 v2처럼 뒤로 blink_dist
+        self.blink_cooldown = STATS['blink_cooldown']
+        if not self.perches:
+            blink_away(self, STATS['blink_dist'])
+            return
+        spot = max(self.perches, key=lambda p: abs((p.left + p.right) / 2 - self.player.x))
+        self.shatter(self.x, self.y + self.h / 2)
+        self.x = fit_x(self, (spot.left + spot.right) / 2)
+        self.y = spot.top
+        self.vx = self.vy = 0
+        self.perched = True
+        self.face_player()
+        self.shatter(self.x, self.y + self.h / 2)
+        sound.play('dash')
+
+    def shatter(self, x, y):
+        effect.burst(x, y, STATS['shards'], config.COLOR_ARCHSAGE_ARMOR)
+
+    # ---------- 시전 ----------
+
     def next_phase(self):
         super().next_phase()
-        if self.state != ACTIVE:
+        if self.state != ACTIVE or self.attack is None:
             return
         name = self.attack.name
         if name == 'volley':
-            self.start_casts(STATS['volley_count'], STATS['volley_interval'])
+            self.start_casts(self.volley_count(), STATS['volley_interval'])
         elif name == 'barrage':
             self.start_casts(STATS['circle_count'], STATS['circle_interval'])
         elif name == 'orb':
@@ -124,28 +158,78 @@ class CrystalArchsage(BossBase):
                         self.attack.parryable, self.platforms, spec, owner=self)
 
     def summon(self):
-        # 비어 있는 자리만큼 보스 양옆에 견습 마법사를 불러낸다
+        # 비어 있는 자리만큼 보스 양옆에 수정 유생을 불러낸다 (일반 적이라 패링 숨 제한이 있다, 8.4)
         count = STATS['summon_max'] - len(self.alive_summons())
         for i in range(count):
             side = 1 if i % 2 == 0 else -1
             x = fit_x(self, self.x + side * STATS['summon_offset'])
-            mage = CrystalSprite(x, self.y, self.player, self.platforms)
-            self.summons.append(mage)
-            self.new_summons.append(mage)
-            effect.burst(x, self.y + mage.h / 2, config.TELEPORT_PUFF, mage.color)
+            sprite = CrystalSprite(x, self.y, self.player, self.platforms)
+            sprite.ore = STATS['summon_ore']   # 소환물로 광석을 벌 수 없게
+            self.summons.append(sprite)
+            self.new_summons.append(sprite)
+            effect.burst(x, self.y + sprite.h / 2, config.TELEPORT_PUFF, sprite.color)
+
+    # ---------- 페이즈 ----------
+
+    def on_phase(self, phase):
+        # 2페이즈: 결정 갑옷이 깨져 조각이 튀고 몸 색이 바뀐다. 연사 발수는 volley_count가 페이즈로 정한다
+        self.color = STATS['color_phase2']
+        effect.burst(self.x, self.y + self.h / 2, STATS['armor_break'], config.COLOR_ARCHSAGE_ARMOR)
+        self.build_patterns()
+
+    # ---------- 그리기 (도형) ----------
+
+    def pattern_pose(self, *names):
+        return self.attack is not None and self.attack.name in names and self.state in (TELEGRAPH, WINDUP)
+
+    def draw_body(self):
+        if self.state == GROGGY:
+            super().draw_body()
+            return
+        super().draw_body()
+        if self.phase == 1:
+            self.draw_armor()
+
+    def draw_armor(self):
+        # 1페이즈 결정 갑옷: 어깨 위로 솟은 결정 조각 (2페이즈 전환 때 깨진다)
+        l, b, r, t = self.get_bb()
+        n, size = STATS['armor_plates'], STATS['armor_size']
+        for i in range(n):
+            x = l + (r - l) * (i + 0.5) / n
+            h = size * (1.5 if i == n // 2 else 1)
+            camera.draw_rect(x - size / 3, t - size / 2, x + size / 3, t + h, *config.COLOR_ARCHSAGE_ARMOR, filled=True)
 
     def draw_weapon(self, l, b, r, t):
-        # 긴 지팡이 + 끝의 구슬. 예고·시전 준비 중엔 구슬이 빛나고, 대형 마력구는 구체 크기까지 부풀어 오른다
-        ox, oy = self.orb_pos()
+        # 지팡이 + 끝의 구슬. 패턴마다 자세가 다르다 (원칙 1)
+        #   연사: 지팡이를 앞으로 겨눔 · 마력구: 두 손 앞에서 구체가 커짐 · 폭격: 지팡이를 땅에 꽂음(빨강) · 소환: 머리 위로 들어올림
         thick = self.w / 8
+        f = self.face_dir
+        if self.pattern_pose('barrage') or (self.attack is not None and self.attack.name == 'barrage'
+                                            and self.state == ACTIVE):
+            sx = self.x + f * self.w * 0.7
+            camera.draw_rect(sx - thick / 2, b - thick, sx + thick / 2, t, *config.COLOR_STAFF, filled=True)
+            effect.draw_disc(sx, b, thick * 1.5, config.COLOR_UNPARRYABLE)
+            return
+        if self.pattern_pose('summon'):
+            sx = self.x + f * self.w / 4
+            camera.draw_rect(sx - thick / 2, t - self.h / 4, sx + thick / 2, t + self.h / 2, *config.COLOR_STAFF, filled=True)
+            effect.draw_disc(sx, t + self.h / 2, thick * 1.5, config.COLOR_ENEMY_WINDUP)
+            return
+        if self.pattern_pose('volley') or (self.attack is not None and self.attack.name == 'volley'
+                                           and self.state == ACTIVE):
+            ox, oy = self.orb_pos()
+            ex = self.x + f * self.w / 2
+            camera.draw_rect(min(ex, ox), oy - thick / 2, max(ex, ox), oy + thick / 2, *config.COLOR_STAFF, filled=True)
+            effect.draw_disc(ox, oy, config.BOSS_BOLT['size'] / 2, config.COLOR_ENEMY_WINDUP
+                             if self.state != ACTIVE else config.COLOR_BOSS_STAFF_ORB)
+            return
+        ox, oy = self.orb_pos()
         camera.draw_rect(ox - thick / 2, b, ox + thick / 2, oy, *config.COLOR_STAFF, filled=True)
-        if self.state in (TELEGRAPH, WINDUP) and self.attack.name == 'orb':
+        if self.pattern_pose('orb'):
             a = self.attack
             left = self.state_timer + (a.windup if self.state == TELEGRAPH else 0)
             k = min(1, max(0, 1 - left / (a.telegraph + a.windup)))
             radius = thick + (config.MAGE_ORB['size'] / 2 - thick) * k
             effect.draw_disc(ox, oy, radius, config.MAGE_ORB['color'])
-        elif self.state in (TELEGRAPH, WINDUP):
-            effect.draw_disc(ox, oy, config.BOSS_BOLT['size'] / 2, config.COLOR_ENEMY_WINDUP)
         else:
             effect.draw_disc(ox, oy, thick, config.COLOR_BOSS_STAFF_ORB)

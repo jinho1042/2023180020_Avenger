@@ -366,3 +366,29 @@ def door_opened(x, y):
 def thorn_burst(x, y):
     # 각인 「가시 갑각」: 맞은 자리에서 가시가 사방으로 뻗는다
     streaks(x, y, config.THORN_STREAK)
+
+
+class CrystalStep:
+    # 결정 디딤 (6.4): 발밑에 잠깐 생겼다 부서지는 결정 발판. 그림만 (판정 없음), 부서질 때 결정 조각이 튄다
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.timer = config.CRYSTAL_STEP['life']
+
+    def update(self):
+        self.timer -= game_framework.frame_time
+        if self.timer <= 0:
+            game_world.remove_object(self)
+            burst(self.x, self.y, config.CRYSTAL_STEP['shatter'], config.COLOR_CRYSTAL_STEP)
+
+    def draw(self):
+        s = config.CRYSTAL_STEP
+        half, h = s['w'] / 2, s['h']
+        # 납작한 결정 판 + 가운데 아래로 뾰족한 조각
+        camera.draw_rect(self.x - half, self.y - h, self.x + half, self.y, *config.COLOR_CRYSTAL_STEP, filled=True)
+        camera.draw_rect(self.x - half / 3, self.y - h * 2, self.x + half / 3, self.y - h, *config.COLOR_CRYSTAL_STEP,
+                         filled=True)
+
+
+def crystal_step(x, y):
+    game_world.add_object(CrystalStep(x, y), config.DEPTH_EFFECT)
+    sound.play('jump')

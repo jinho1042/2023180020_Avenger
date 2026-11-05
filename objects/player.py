@@ -5,7 +5,7 @@ from pico2d import *
 import config
 import game_framework
 import game_world
-from objects import effect
+from objects import effect, projectile
 from systems import breath, camera, engravings, input, runes, sound, terrain
 
 # 동작 시작 순서: 패링 → 대시 → 룬 기술 → 점프 → 공격 (같은 프레임에 버퍼에 있으면 이 순서로 처리)
@@ -35,7 +35,7 @@ class Player:
         self.jump_rising = False
         self.jump_elapsed = 0.0
         self.coyote_timer = 0.0
-        self.jumps_left = 0  # 공중 추가 점프 남은 횟수 (결정 디딤은 T52. 그 전에는 max_jumps = 1)
+        self.jumps_left = 0  # 공중 추가 점프(결정 디딤) 남은 횟수. 땅·벽·포고에서 max_jumps - 1로 채운다
         # ↓+Z 내려가기: drop_timer 동안 drop_platforms(밟고 있던 one-way 발판)에 서지 않는다
         self.drop_platforms = []
         self.drop_timer = 0.0
@@ -109,11 +109,12 @@ class Player:
         # 룬·플래그를 담은 월드 상태 (play_mode가 넣어 준다). can()·rune_lv()가 유일한 확인 창구
         self.world_state = None
         self.swing_mult = 1.0  # 이번 한 번 휘두름의 추가 배율 (engravings.on_attack_start가 정함)
-        self.max_jumps = 1
         self.dash_strike_timer = 0.0   # 「질풍 일격」: 대시가 끝난 뒤 남은 시간 (> 0이면 첫 공격 강화)
         # 룬 기술 (A 짧게, 8.2): cast_timer > 0인 동안 Cast (공중에 멈춤, 피격 시 취소)
         # 낙반(↓+A, 굴착 Lv2): Cast가 끝나면 숨을 내고 rockfall = True로 무적 낙하. 착지하면 shockwave를 한 번 남긴다
+        # 결정 화살(그냥 A, 결정 Lv2): Cast가 끝나면 숨을 내고 바라보는 방향으로 화살 (T52)
         self.cast_timer = 0.0
+        self.cast_skill = None       # 'rockfall' | 'arrow'
         self.rockfall = False
         self.rockfall_hits = set()   # 이번 낙하에 몸으로 이미 맞힌 적 (한 번 낙하에 한 번만 피해)
         self.shockwave = None        # 착지 충격파 판정 (l, b, r, t). combat이 한 번 꺼내 쓴다
@@ -139,6 +140,13 @@ class Player:
         if self.can('hard_soil'):
             dist *= config.RUNE_LV_EFFECT['burrow_lv3_dash_mult']
         return dist
+
+    @property
+    def max_jumps(self):
+        # 땅 점프 1 + 결정 디딤 (결정 Lv1~2 1회, Lv3 crystal_lv3_steps회, 6.4)
+        if self.can('crystal_step2'):
+            return 1 + config.RUNE_LV_EFFECT['crystal_lv3_steps']
+        return 2 if self.can('crystal_step') else 1
 
     @property
     def dash_cooldown_time(self):
@@ -247,10 +255,11 @@ class Player:
         if self.is_dashing():
             return  # 대시는 점프·공격으로 캔슬되지 않는다
         if input.buffered('rune_tap'):
-            # A 짧게: ↓+A = 낙반. 해금 전·숨 부족이면 아무 반응 없이 버린다 (6.1. 그냥 A = 결정 화살은 T52)
+            # A 짧게: ↓+A = 낙반, 그냥 A = 결정 화살. 해금 전·숨 부족이면 아무 반응 없이 버린다 (6.1)
             input.consume('rune_tap')
-            if self.can_rockfall():
-                self.start_cast()
+            skill = 'rockfall' if input.pressed('down') else 'arrow'
+            if self.can_skill(skill):
+                self.start_cast(skill)
                 return
         if input.buffered('jump') and self.can_drop():
             input.consume('jump')
@@ -297,12 +306,13 @@ class Player:
         self.attack_active = 0  # 공격 캔슬
         sound.play('dash')
 
-    def can_rockfall(self):
-        return (self.can('rockfall') and input.pressed('down')
-                and (breath.infinite or breath.value >= config.SKILL_BREATH_COST))
+    def can_skill(self, skill):
+        ability = 'rockfall' if skill == 'rockfall' else 'crystal_arrow'
+        return self.can(ability) and (breath.infinite or breath.value >= config.SKILL_BREATH_COST)
 
-    def start_cast(self):
+    def start_cast(self, skill):
         # Cast (8.2): SKILL_CAST_TIME 동안 그 자리에 멈춘다. 공격·매달리기는 끊는다
+        self.cast_skill = skill
         self.cast_timer = config.SKILL_CAST_TIME
         self.attack_active = 0
         self.jump_rising = False
@@ -318,6 +328,14 @@ class Player:
         self.vy = -config.SKILLS['rockfall']['fall_speed']
         self.on_ground = False
         self.fall_time = 0.0
+
+    def fire_arrow(self):
+        # 결정 화살 (8.2): Cast가 끝난 순간 숨을 낸다. 그새 숨이 모자라졌으면 취소 (숨 그대로)
+        if not breath.spend(config.SKILL_BREATH_COST):
+            return
+        spec = config.SKILLS['crystal_arrow']
+        x = self.x + self.face_dir * (config.PLAYER_W + spec['size'][0]) / 2
+        projectile.fire_arrow(x, self.y + config.PLAYER_H / 2, self.face_dir, self, self.platforms)
 
     def end_skill(self):
         # 피격·환경 피해·기절·방 이동 시 룬 기술을 끊는다 (Cast 중 취소면 숨 차감 없음)
@@ -338,11 +356,25 @@ class Player:
         self.vy = 0.0
 
     def can_jump(self):
-        return self.on_ground or self.coyote_timer > 0 or self.jumps_left > 0
+        # 공중에서는 결정 디딤이 남아 있어야 한다. 착지까지 JUMP_BUFFER 이내면 디딤을 쓰지 않고
+        # 버퍼에 남겨 착지 순간 보통 점프로 처리한다 (6.4)
+        if self.on_ground or self.coyote_timer > 0:
+            return True
+        return self.jumps_left > 0 and not self.landing_soon()
+
+    def landing_soon(self):
+        # 지금 속도로 JUMP_BUFFER초 떨어지는 동안 발밑 지형 윗면에 닿는가
+        if self.vy > 0 or self.jump_rising:
+            return False
+        dy, _ = fall_motion(self.vy, config.JUMP_BUFFER)   # 아래로 움직이므로 음수
+        ignore = self.drop_platforms if self.drop_timer > 0 else ()
+        return any(p.kind is not None and p not in ignore and terrain.overlaps_x(self.x, config.PLAYER_W, p)
+                   and self.y >= p.top >= self.y + dy for p in self.platforms)
 
     def start_jump(self):
         if not (self.on_ground or self.coyote_timer > 0):
-            self.jumps_left -= 1  # 공중 추가 점프
+            self.jumps_left -= 1  # 결정 디딤: 발밑에 결정 발판이 생겼다 부서지며 다시 도약
+            effect.crystal_step(self.x, self.y)
         self.vy = config.JUMP_SPEED
         self.jump_rising = True
         self.jump_elapsed = 0.0
@@ -751,7 +783,10 @@ class Player:
         self.vx, self.vy = 0.0, 0.0
         self.cast_timer = max(0.0, self.cast_timer - dt)
         if self.cast_timer <= 0:
-            self.start_rockfall()
+            if self.cast_skill == 'arrow':
+                self.fire_arrow()
+            else:
+                self.start_rockfall()
 
     def update_rockfall(self, dt):
         # 낙반 낙하 (8.2): 수직으로 fall_speed, 무적. 깨지는 바닥은 착지 순간 부수고 계속 떨어진다 (12.6)
@@ -922,7 +957,8 @@ class Player:
             if self.dead:
                 color = config.COLOR_PLAYER_DEAD
             elif self.is_skill_active():
-                color = config.COLOR_PLAYER_ROCKFALL
+                color = (config.COLOR_PLAYER_CAST_ARROW if self.is_casting() and self.cast_skill == 'arrow'
+                         else config.COLOR_PLAYER_ROCKFALL)
             elif self.is_dashing():
                 color = config.COLOR_PLAYER_DASH
             elif self.is_parry_stunned():

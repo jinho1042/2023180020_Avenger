@@ -1,0 +1,42 @@
+{
+  "id": "R3_B3",
+  "region": "crystal",
+  "size": [1, 1],
+  "map_cell": [-1, 6],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [0, 64, 40, 616, "solid"],
+    [1240, 264, 40, 416, "solid"],
+    [100, 230, 220, 20, "oneway"],
+    [960, 230, 220, 20, "oneway"]
+  ],
+  "hazards": [],
+  "water": [],
+  "breath_zones": [],
+  "breath_gates": [],
+  "safe_zones": [],
+  "air_vents": [],
+  "breakables": [],
+  "gates": [
+    [1232, 64, 32, 200, "arena", "arena_door"]
+  ],
+  "switches": [],
+  "exits": [
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R3_09", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["archsage", 560, 64]
+  ],
+  "objects": [],
+  "safe_points": [
+    [1150, 64]
+  ],
+  "triggers": [
+    [1040, 64, 40, 400, "arena", "arena_b3"]
+  ],
+  "boss": "archsage"
+}

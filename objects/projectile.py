@@ -31,6 +31,7 @@ class Projectile:
         self.round = spec.get('round', False)  # [v2] 마력탄은 원형으로 그린다
         self.alive = True
         self.reflected = False
+        self.posture = config.POSTURE_REFLECT   # 플레이어 소유일 때 보스·정예에 맞으면 쌓는 자세 (9.3)
 
     def destroy(self):
         if self.alive:
@@ -106,12 +107,46 @@ class Projectile:
                 self.destroy()
                 return
             other.take_damage(self.damage)
-            # 반사탄이 보스·정예(is_boss)에 맞으면 자세가 쌓인다 (9.3)
+            # 반사탄이 보스·정예(is_boss)에 맞으면 자세가 쌓인다 (9.3. 결정 화살은 POSTURE_PER_SKILL)
             if other.is_boss and other.is_alive():
-                other.add_posture(config.POSTURE_REFLECT)
+                other.add_posture(self.posture)
             if other.is_alive():
                 effect.enemy_hurt(self.x, self.y, self.dir_x)
             self.destroy()
+
+
+class CrystalArrow(Projectile):
+    # 결정 화살 (결정 Lv2, 8.2): 플레이어가 쏘는 수평 화살. 처음부터 플레이어 소유(reflected)라
+    # 적·보스에 SKILLS.crystal_arrow.damage(적 체력 단위), 보스·정예 자세 +POSTURE_PER_SKILL, 수정 스위치도 켠다 (18장 110번)
+    def __init__(self, x, y, direction, player, platforms):
+        spec = config.SKILLS['crystal_arrow']
+        super().__init__(x, y, direction, 0, spec['speed'], spec['damage'], False, platforms,
+                         dict(size=spec['size'][1], length=spec['size'][0], color=config.COLOR_CRYSTAL_ARROW),
+                         owner=player)
+        self.reflected = True
+        self.posture = config.POSTURE_PER_SKILL
+        self.w, self.h = spec['size']
+
+    def draw(self):
+        # 길쭉한 결정 몸통 + 앞쪽 끝 촉
+        l, b, r, t = self.get_bb()
+        camera.draw_rect(l, b + self.h / 4, r, t - self.h / 4, *self.color, filled=True)
+        tip = r if self.dir_x > 0 else l
+        camera.draw_rect(tip - self.h / 2, b, tip + self.h / 2, t, *self.color, filled=True)
+        if game_world.show_hitbox:
+            camera.draw_rect(l, b, r, t, *config.COLOR_DEBUG_ATTACK)
+
+    def get_bb(self):
+        return self.x - self.w / 2, self.y - self.h / 2, self.x + self.w / 2, self.y + self.h / 2
+
+
+def fire_arrow(x, y, direction, player, platforms):
+    a = CrystalArrow(x, y, direction, player, platforms)
+    sound.play('shoot')
+    game_world.add_object(a, config.DEPTH_ENEMY)
+    game_world.add_collision_pair(GROUP_ENEMY, None, a)
+    game_world.add_collision_pair(GROUP_SWITCH, None, a)
+    return a
 
 
 def fire(x, y, dir_x, dir_y, speed, damage, parryable, platforms, spec, owner=None):
