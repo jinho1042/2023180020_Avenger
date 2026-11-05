@@ -8,7 +8,7 @@ import config
 import game_framework
 from modes import play_mode
 from objects import effect
-from systems import economy, engravings, sound
+from systems import economy, engravings, sound, world
 from ui import font
 
 # 대화 · 석판 · 상점 (2.5, 2.6, 13.3). play_mode 위에 push된다 (월드·숨 정지)
@@ -16,6 +16,7 @@ from ui import font
 # 상점 상품 이름·설명은 data/items.json
 # 글자는 DIALOG_CHARS_PER_SEC로 한 글자씩 나온다. Z·X·↑·Enter·Space: 다 나오기 전이면 끝까지, 다 나왔으면 다음 페이지
 # 마지막 페이지 뒤 shop이면 상점 목록 (←→ 선택, X 구매, Z·Esc 닫기). Esc는 언제든 닫는다
+# forge면 같은 카드 화면에 대장간 목록 (T62, 13.3): 갑옷 Lv2~5. 숫돌 플래그가 없으면 하르의 no_whetstone 한 줄
 # start(id, after): 마지막 페이지를 넘기면 닫고 after()를 부른다 (룬지기 → 룬 획득·강화 목록). Esc로 닫으면 부르지 않는다
 
 DIALOG_PATH = os.path.join(os.path.dirname(__file__), '..', config.DIALOG_DIR)
@@ -29,7 +30,8 @@ page = 0
 shown = 0.0        # 지금 페이지에서 나온 글자 수 (소수 = 다음 글자까지 진행)
 blink = 0.0
 view = 'talk'      # 'talk' | 'shop'
-stock = []         # 상점 상품 키 (economy.shop_stock)
+market = 'shop'    # 목록 화면 종류: 'shop'(보름) | 'forge'(하르)
+stock = []         # 상품 키 (economy.shop_stock / economy.forge_stock)
 selected = 0
 notice = ''        # 상점 하단 안내 ('광석이 모자랍니다' 등)
 
@@ -51,9 +53,9 @@ def start(dialog_id, then=None):
 
 
 def init():
-    global page, shown, blink, view, selected, notice
+    global page, shown, blink, view, market, selected, notice
     page, shown, blink = 0, 0.0, 0.0
-    view, selected, notice = 'talk', 0, ''
+    view, market, selected, notice = 'talk', 'shop', 0, ''
     sound.play('cursor')
 
 
@@ -77,14 +79,19 @@ def page_len():
 
 def next_page():
     # 반환: 대화가 끝나 닫았으면 True
-    global page, shown, view, stock, selected
+    global page, shown, view, market, stock, selected, notice
     if shown < page_len():
         shown = page_len()   # 다 나오기 전이면 끝까지 보여 준다
     elif page + 1 < len(pages()):
         page, shown = page + 1, 0.0
         sound.play('cursor')
     elif dialog.get('shop'):
-        view, stock, selected = 'shop', economy.shop_stock(), 0
+        view, market, stock, selected = 'shop', 'shop', economy.shop_stock(), 0
+        sound.play('select')
+    elif dialog.get('forge'):
+        view, market, stock, selected = 'shop', 'forge', economy.forge_stock(), 0
+        notice = '' if config.FORGE_PICKAXE_UNLOCK_FLAG in world.state.flags else font.text(
+            dialog.get('no_whetstone', ''), dialog.get('no_whetstone_en', ''))
         sound.play('select')
     else:
         then = after
@@ -97,6 +104,9 @@ def next_page():
 
 def buy():
     global stock, selected, notice
+    if market == 'forge':
+        forge()
+        return
     if not stock:
         return
     key = stock[selected]
@@ -109,6 +119,28 @@ def buy():
     sound.play('chest')
     play_mode.save_game()    # 구매하면 저장 (13.6)
     stock = economy.shop_stock()
+    selected = min(selected, max(0, len(stock) - 1))
+
+
+def forge():
+    # 대장간 강화 (13.3): 보관 광석·희귀 광석을 내고 한 레벨. 갑옷은 최대 체력이 바로 늘어난다
+    global stock, selected, notice
+    if not stock:
+        return
+    key = stock[selected]
+    ore, rare = economy.forge_cost(key)
+    if not economy.forge_buy(key):
+        notice = font.text(f'광석이 모자랍니다 (보관 광석 {ore}, 희귀 광석 {rare})',
+                           f'Not enough ore (stored {ore}, rare {rare})')
+        sound.play('cursor')
+        return
+    p = world.state.player
+    if key == 'armor':
+        play_mode.player.raise_max_hp(p.hp_max)
+        notice = font.text(f'갑옷 Lv{p.armor_level} — 최대 체력 {p.hp_max}칸', f'Armor Lv{p.armor_level} — {p.hp_max} max HP')
+    sound.play('chest')
+    play_mode.save_game()    # 강화하면 저장 (13.6 '구매')
+    stock = economy.forge_stock()
     selected = min(selected, max(0, len(stock) - 1))
 
 
@@ -180,12 +212,34 @@ def draw_talk():
 
 
 def item_name(key):
-    # 상품 이름·설명은 data/items.json (상품 키 = 각인 id 또는 rare_ore_*)
+    # 상품 이름·설명은 data/items.json (상품 키 = 각인 id 또는 rare_ore_*, 대장간은 armor)
+    if market == 'forge' and key == 'armor':
+        return f'{engravings.item_name(key)} Lv{world.state.player.armor_level + 1}'
     return engravings.item_name(key)
 
 
 def item_desc(key):
-    return engravings.item_desc(key)
+    lines = engravings.item_desc(key)
+    if market == 'forge' and key == 'armor':
+        p = world.state.player
+        now, after = p.hp_max, economy.armor_hp(p.armor_level + 1)
+        lines = lines + [font.text(f'최대 체력 {now} → {after}칸', f'Max HP {now} → {after}')]
+    return lines
+
+
+def price_text(key):
+    # 카드 아래 가격 줄과 낼 수 있는지
+    if market == 'forge':
+        ore, rare = economy.forge_cost(key)
+        return font.text(f'광석 {ore} · 희귀 {rare}', f'Ore {ore} · Rare {rare}'), economy.can_pay(ore, rare)
+    price = config.SHOP[key][0]
+    return font.text(f'광석 {price}', f'Ore {price}'), economy.can_pay(price)
+
+
+def empty_text():
+    if market == 'forge':
+        return font.text('더 벼릴 게 없어.', 'Nothing left to forge.')
+    return font.text('더 팔 물건이 없어.', 'Nothing left to sell.')
 
 
 def draw_shop():
@@ -196,17 +250,21 @@ def draw_shop():
         return
     pad, line_h = config.DIALOG_BOX['pad'], config.DIALOG_BOX['line_h']
     y = t - pad - config.FONT_SIZE_TEXT / 2
-    text_font.draw(l + pad, y, f"{name()} — {font.text('상점', 'Shop')}", config.COLOR_DIALOG_NAME)
+    title = font.text('대장간', 'Forge') if market == 'forge' else font.text('상점', 'Shop')
+    text_font.draw(l + pad, y, f"{name()} — {title}", config.COLOR_DIALOG_NAME)
     ore = font.text(f'보관 광석 {economy.banked()}   희귀 광석 {economy.rare()}',
                     f'Stored ore {economy.banked()}   Rare ore {economy.rare()}')
     text_font.draw(l + pad, y - line_h, ore, config.COLOR_ORE)
     if notice:
         small_font.draw(l + pad, y - line_h * 2, notice, config.COLOR_TEXT)
-    help_text = font.text('←→ 선택   X 구매   Z 닫기', '←→ Select   X Buy   Z Close')
+    if market == 'forge':
+        help_text = font.text('←→ 선택   X 강화   Z 닫기', '←→ Select   X Upgrade   Z Close')
+    else:
+        help_text = font.text('←→ 선택   X 구매   Z 닫기', '←→ Select   X Buy   Z Close')
     small_font.draw(l + pad, b + pad, help_text, config.COLOR_TEXT_DIM)
     if not stock:
         text_font.draw(config.SCREEN_W / 2 - config.FONT_SIZE_TEXT * 5, config.SHOP_TOP_Y - config.SHOP_CARD_H / 2,
-                       font.text('더 팔 물건이 없어.', 'Nothing left to sell.'), config.COLOR_TEXT)
+                       empty_text(), config.COLOR_TEXT)
         return
     draw_cards(text_font, small_font)
 
@@ -234,9 +292,9 @@ def draw_cards(text_font, small_font):
         for line in item_desc(key):
             small_font.draw(l + pad, y, line, config.COLOR_TEXT_DIM)
             y -= config.CARD_LINE_H
-        price = config.SHOP[key][0]
-        color = config.COLOR_ORE if economy.can_pay(price) else config.COLOR_TEXT_DIM
-        text_font.draw(l + pad, b + pad, font.text(f'광석 {price}', f'Ore {price}'), color)
+        text, affordable = price_text(key)
+        color = config.COLOR_ORE if affordable else config.COLOR_TEXT_DIM
+        text_font.draw(l + pad, b + pad, text, color)
     # 좌우에 더 있으면 화살표
     mid = (t + b) / 2
     if first > 0:

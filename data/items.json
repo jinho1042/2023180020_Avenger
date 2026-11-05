@@ -61,5 +61,8 @@
   "rare_ore_a": {"kind": "shop", "name": "희귀 광석", "name_en": "Rare Ore",
                  "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
   "rare_ore_b": {"kind": "shop", "name": "희귀 광석", "name_en": "Rare Ore",
-                 "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]}
+                 "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
+
+  "armor": {"kind": "forge", "name": "광부 갑옷", "name_en": "Miner's Armor",
+            "desc": ["하르가 판을 덧대 준다"], "desc_en": ["Har plates it for you"]}
 }

@@ -1,0 +1,13 @@
+{
+  "name": "하르",
+  "name_en": "Har",
+  "pages": [
+    ["...광부로군. 그 얇은 옷으로 여기까지 내려왔나.", "광석을 가져오면 갑옷을 덧대 주지.", "희귀 광석이 있어야 판이 버틴다."]
+  ],
+  "pages_en": [
+    ["...A miner. You came this deep in that thin coat?", "Bring ore and I'll plate your armor.", "Rare ore keeps the plates from cracking."]
+  ],
+  "forge": true,
+  "no_whetstone": "곡괭이는... 결정만큼 단단한 숫돌이 있어야 이 날을 벼릴 수 있어.",
+  "no_whetstone_en": "Your pick... I need a whetstone hard as crystal to hone that edge."
+}

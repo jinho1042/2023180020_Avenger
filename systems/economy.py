@@ -110,6 +110,36 @@ def buy(key):
     return True
 
 
+def armor_hp(level):
+    # 갑옷 레벨의 최대 체력 칸 (6.7, 13.3): Lv1 = HP_START, 한 레벨마다 +1칸
+    return config.HP_START + level - 1
+
+
+def forge_cost(key):
+    # 대장간 다음 강화 비용 (보관 광석, 희귀 광석). 최대 레벨이면 None
+    p = world.state.player
+    if key == 'armor' and p.armor_level <= len(config.FORGE_ARMOR_COST):
+        return config.FORGE_ARMOR_COST[p.armor_level - 1]
+    return None
+
+
+def forge_stock():
+    # 대장간 목록 (13.3): 갑옷은 처음부터. 곡괭이는 숫돌(FORGE_PICKAXE_UNLOCK_FLAG)을 가져온 뒤 T64에서 더한다
+    return [key for key in ('armor',) if forge_cost(key)]
+
+
+def forge_buy(key):
+    # 보관 광석·희귀 광석으로 한 레벨 올린다. 반환: 올렸으면 True. 플레이어 체력 반영·저장은 부른 쪽
+    cost = forge_cost(key)
+    if cost is None or not pay(*cost):
+        return False
+    p = world.state.player
+    if key == 'armor':
+        p.armor_level += 1
+        p.hp_max = armor_hp(p.armor_level)
+    return True
+
+
 def update(dt):
     global bank_timer
     bank_timer = max(0, bank_timer - dt)
