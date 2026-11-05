@@ -1,0 +1,12 @@
+{
+  "name": "경고 석판",
+  "name_en": "Warning Tablet",
+  "pages": [
+    ["이 발판 아래는 포자 굴. 바람이 들지 않는다.", "룬을 한 번 더 깊이 새겨 숨이 길어진 자만", "바닥까지 다녀올 수 있으리라."],
+    ["(↓를 누른 채 점프하면 발판 아래로 내려간다)"]
+  ],
+  "pages_en": [
+    ["Below this ledge lies a spore hollow. No wind reaches it.", "Only one whose rune is carved deeper, whose breath runs longer,", "may reach the bottom and return."],
+    ["(Hold Down and jump to drop through the ledge)"]
+  ]
+}

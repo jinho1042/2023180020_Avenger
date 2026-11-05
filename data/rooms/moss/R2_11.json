@@ -1,0 +1,37 @@
+{
+  "id": "R2_11",
+  "region": "moss",
+  "size": [1, 1],
+  "map_cell": [8, 3],
+  "music": "moss",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 264, 40, 456, "solid"],
+    [1240, 264, 40, 456, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [800, 64, 300, 160, "solid"],
+    [600, 300, 200, 16, "oneway"],
+    [488, 464, 220, 16, "oneway"],
+    [40, 440, 400, 40, "solid"]
+  ],
+  "breakables": [
+    [440, 480, 48, 200, "crack", "crack_a"],
+    [150, 480, 56, 56, "ore_chunk", "chunk_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R2_06", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R2_07", "to_exit": "L"}
+  ],
+  "objects": [],
+  "spawns": [
+    ["shell_warrior", 450, 64],
+    ["thorn_flower", 1000, 224]
+  ],
+  "safe_points": [
+    [200, 64],
+    [900, 224],
+    [1180, 64]
+  ]
+}

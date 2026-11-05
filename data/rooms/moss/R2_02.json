@@ -1,0 +1,43 @@
+{
+  "id": "R2_02",
+  "region": "moss",
+  "size": [2, 1],
+  "map_cell": [1, 4],
+  "music": "moss",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 64, "solid"],
+    [0, 264, 40, 456, "solid"],
+    [2520, 264, 40, 456, "solid"],
+    [0, 680, 2560, 40, "solid"],
+    [700, 64, 240, 90, "solid"],
+    [600, 300, 220, 16, "oneway"],
+    [588, 464, 250, 16, "oneway"],
+    [40, 440, 500, 40, "solid"],
+    [1150, 150, 150, 16, "oneway"],
+    [1300, 64, 400, 180, "solid"],
+    [1850, 200, 220, 16, "oneway"]
+  ],
+  "air_vents": [
+    [2300, 100, "vent_a"]
+  ],
+  "breakables": [
+    [540, 480, 48, 200, "crack", "crack_a"],
+    [200, 480, 56, 56, "ore_chunk", "chunk_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R2_01", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R2_03", "to_exit": "L"}
+  ],
+  "objects": [],
+  "spawns": [
+    ["crawler", 1050, 64],
+    ["thorn_flower", 1550, 244]
+  ],
+  "safe_points": [
+    [300, 64],
+    [1400, 244],
+    [2200, 64]
+  ]
+}

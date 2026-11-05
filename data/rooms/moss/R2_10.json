@@ -1,0 +1,43 @@
+{
+  "id": "R2_10",
+  "region": "moss",
+  "size": [2, 1],
+  "map_cell": [6, 4],
+  "music": "moss",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 300, 64, "solid"],
+    [500, 0, 2060, 64, "solid"],
+    [0, 64, 40, 656, "solid"],
+    [2520, 64, 40, 656, "solid"],
+    [0, 680, 2560, 40, "solid"],
+    [40, 240, 2160, 40, "solid"],
+    [360, 460, 2160, 40, "solid"],
+    [2280, 170, 200, 16, "oneway"],
+    [100, 390, 200, 16, "oneway"]
+  ],
+  "breath_zones": [
+    [600, 500, 1400, 180, "spore"]
+  ],
+  "breath_gates": [
+    [0, 0, 2560, 720, "moss_b", 2]
+  ],
+  "breakables": [
+    [2250, 500, 56, 56, "ore_chunk", "chunk_a"]
+  ],
+  "exits": [
+    {"id": "D", "rect": [300, 0, 200, 16], "to": "R2_06", "to_exit": "U"}
+  ],
+  "objects": [
+    ["item", 2420, 500, "rare_ore_r2_b"]
+  ],
+  "spawns": [
+    ["spore_shroom", 1300, 280]
+  ],
+  "safe_points": [
+    [700, 64],
+    [1200, 280],
+    [800, 500]
+  ]
+}
