@@ -1,0 +1,23 @@
+{
+  "id": "R0_04",
+  "region": "mine",
+  "size": [1, 2],
+  "map_cell": [5, 0],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 480, 1440, "solid"],
+    [800, 0, 480, 1440, "solid"],
+    [480, 0, 320, 64, "solid"]
+  ],
+  "exits": [
+    {"id": "U", "rect": [500, 1424, 280, 16], "to": "R0_03", "to_exit": "D"}
+  ],
+  "spawns": [],
+  "triggers": [
+    [0, 0, 1280, 1440, "fall_backdrop", "backdrop_a"],
+    [480, 64, 320, 300, "fall_end", "fall_end_a"]
+  ],
+  "safe_points": [[640, 64]]
+}

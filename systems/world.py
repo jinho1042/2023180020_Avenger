@@ -18,6 +18,7 @@ phase = None
 timer = 0.0
 lock = 0.0         # 도착 후 TRANSITION_LOCK 동안 출구를 무시한다 (출구 왕복 방지)
 pending = None     # 'out'이 끝나면 들어갈 (방 id, 도착 정보)
+first_visit = False  # 지금 방에 처음 들어왔는가 (도입부 안내 문구, systems/script.py)
 
 
 def new_player_state():
@@ -81,8 +82,10 @@ def map_rooms(region):
 
 def load(room_id, arrival=None):
     # 페이드 없이 바로 방을 바꾼다 (새 게임 첫 방). 평소에는 go_through·warp
+    global first_visit
     room = Room(room_paths[room_id])
     room.build(state)
+    first_visit = room.id not in state.visited
     state.visited.add(room.id)
     enter(room, arrival or {})
 

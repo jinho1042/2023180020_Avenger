@@ -6,7 +6,7 @@ import game_framework
 import game_world
 from objects import effect, projectile
 from objects.player import Player
-from systems import breath, camera, combat, economy, hitstop, input, runes, save, sound, world
+from systems import breath, camera, combat, economy, hitstop, input, runes, save, script, sound, world
 from ui import hud
 
 player = None
@@ -34,6 +34,7 @@ def enter_room(new_room, arrival):
     room = new_room
     game_world.set_room_size(room.width, room.height)
     camera.set_room(room.width, room.height)
+    script.enter_room(room, player)   # 트리거 (도입부 등). 배경 쪽에 그려지도록 먼저 넣는다
     game_world.add_objects(room.breath_gate_objects, config.DEPTH_BG)
     game_world.add_objects(room.breath_zone_objects, config.DEPTH_BG)
     game_world.add_objects(room.safe_zone_objects, config.DEPTH_BG)
@@ -77,6 +78,7 @@ def init():
     respawning = False
     hud.init()
     economy.init()
+    script.init()
     player = Player([], (0, 0))
     loaded = None
     if load_path:
@@ -112,13 +114,13 @@ def handle_events():
             game_framework.quit()
         elif e.type == SDL_KEYDOWN and e.key == SDLK_ESCAPE:
             # 일시정지. 방 전환 중·사망 연출 중에는 열지 않는다 (페이드 중 저장 금지, 13.6)
-            if world.phase is None and not player.dead:
+            if world.phase is None and not player.dead and not player.cutscene:
                 from modes import pause_mode
                 game_framework.push_mode(pause_mode)
                 return
         elif e.type == SDL_KEYDOWN and e.key == MAP_KEY:
             # 지도는 Tab을 누르고 있는 동안 (13.4). 방 전환·사망·기절 중에는 열지 않는다
-            if world.phase is None and not player.dead and not player.blackout:
+            if world.phase is None and not player.dead and not player.blackout and not player.cutscene:
                 from modes import map_mode
                 game_framework.push_mode(map_mode)
                 return
@@ -150,6 +152,7 @@ def update():
     global enemies, play_time, death_timer
     dt = game_framework.frame_time
     world.update(dt)
+    script.update(dt)
     hud.update(dt)
     economy.update(dt)
     if world.frozen():
@@ -181,19 +184,23 @@ def update():
         return   # 대화를 열었다 (dialog_mode가 위에 올라와 월드·숨 정지)
     zone = check_safe_zones()
     check_air_vents()
-    if world.phase is None:
-        # 숨은 방 전환 페이드 중에는 멈춘다 (7.2). 슬로모션이면 월드와 같은 속도로
+    if world.phase is None and not player.cutscene:
+        # 숨은 방 전환 페이드·컷신 중에는 멈춘다 (7.2). 슬로모션이면 월드와 같은 속도로
         breath.update(dt * hitstop.time_scale(), player, room, zone)
     check_exits()
 
 
 def check_hazards():
-    # 가시·산성·구덩이에 몸이 닿으면 환경 피해 → 안전 지점 (6.8). 포고가 먼저 되도록 공격 판정 뒤에 본다
-    if player.dead or player.is_hazard_respawning() or player.blackout:
+    # 가시·산성·구덩이·낙석에 몸이 닿으면 환경 피해 → 안전 지점 (6.8). 포고가 먼저 되도록 공격 판정 뒤에 본다
+    # 도입부 붕괴 중에는 피해 없이 장면 처음부터 (script.on_hazard)
+    if player.dead or player.is_hazard_respawning() or player.blackout or player.cutscene:
         return
     for hazard in room.hazard_objects:
-        if game_world.collide(player, hazard):
-            player.hazard_hit()
+        hazard.notice(player)
+    for hazard in room.hazard_objects:
+        if hazard.is_harmful() and game_world.collide(player, hazard):
+            if not script.on_hazard():
+                player.hazard_hit()
             return
 
 
@@ -324,6 +331,9 @@ def draw_scene():
     if alpha > 0:
         effect.draw_screen_alpha_rect(0, 0, config.SCREEN_W, config.SCREEN_H, config.COLOR_FADE, alpha)
     hud.draw(player, boss if boss and boss.is_alive() else None)
+    if script.fade_alpha() > 0:
+        # 도입부 추락 암전은 HUD까지 덮는다
+        effect.draw_screen_alpha_rect(0, 0, config.SCREEN_W, config.SCREEN_H, config.COLOR_FADE, script.fade_alpha())
 
 
 def draw():

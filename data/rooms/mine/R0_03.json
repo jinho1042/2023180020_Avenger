@@ -1,0 +1,36 @@
+{
+  "id": "R0_03",
+  "region": "mine",
+  "size": [3, 1],
+  "map_cell": [3, 2],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 3440, 64, "solid"],
+    [3440, 0, 240, 64, "solid"],
+    [3680, 0, 160, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [0, 680, 3840, 40, "solid"],
+    [3800, 64, 40, 616, "solid"],
+    [1250, 64, 80, 60, "solid"],
+    [2250, 64, 100, 90, "solid"]
+  ],
+  "hazards": [
+    [900, 64, 90, 560, "rockfall"],
+    [1700, 64, 90, 560, "rockfall"],
+    [2650, 64, 90, 560, "rockfall"],
+    [3150, 64, 90, 560, "rockfall"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R0_02", "to_exit": "R"},
+    {"id": "D", "rect": [3460, 0, 200, 16], "to": "R0_04", "to_exit": "U"}
+  ],
+  "spawns": [],
+  "triggers": [
+    [40, 64, 400, 600, "collapse", "collapse_a"],
+    [260, 64, 200, 120, "sign", "sign_run"],
+    [3520, 64, 80, 600, "fall", "fall_a"]
+  ],
+  "safe_points": [[120, 64]]
+}

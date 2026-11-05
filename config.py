@@ -212,6 +212,13 @@ LEVER_STICK = 36           # px, 손잡이 길이
 COLOR_LEVER_BASE = (80, 70, 60)
 COLOR_LEVER = (200, 170, 90)
 COLOR_LEVER_ON = (130, 220, 120)
+# 낙석 함정 (T41, 12.6): 방 JSON [x, y, w, h, "rockfall"] = 가로 x~x+w에 떨어져 바닥 y에 닿는다. 돌은 y+h에서 출발
+# 몸 가운데가 영역 가운데에서 가로 range 안에 들어오면 빨간 그림자 warn초 → 낙석 → cooldown초 뒤 다시 대기
+ROCKFALL_TRAP = dict(range=420, warn=0.6, fall_speed=1300, rock_h=48, cooldown=2.5,
+                     shadow_h=10, shadow_alpha=150, shake=(5, 0.15),
+                     debris=dict(count=10, speed=(120, 380), life=0.35, size=6))
+COLOR_ROCK = (115, 95, 75)
+COLOR_ROCK_SHADOW = (220, 40, 40)   # 빨간 예고 (14.5)
 
 # 안전지대 (T36, 13.1). 흰색·빨간색은 쓰지 않는다. 의자 (x, y)는 아래쪽 중심
 COLOR_SAFE_ZONE = (70, 150, 90)       # 초록빛 이끼
@@ -260,7 +267,7 @@ REFLECT_UNLOCK_FLAG = 'reflect'   # 이 플래그가 있어야 반사. 정예 �
 PROJECTILE_SHARD = dict(count=8, speed=(80, 260), life=0.2, size=4)  # 반사 해금 전 패링한 투사체가 튕겨 사라지는 파편. 색은 투사체 색
 
 # ===== 월드 · 진행 (T33, 5.6 · 12.5) =====
-START_ROOM = 'TEST_01'     # 새 게임 첫 방. T41에서 'R0_01'
+START_ROOM = 'R0_01'       # 새 게임 첫 방 (도입부 광산)
 TRANSITION_FADE = 0.25     # s, 방 전환 어두워짐·밝아짐 각각
 TRANSITION_LOCK = 0.2      # s, 도착 후 출구를 무시하는 시간
 EXIT_SPAWN_INSET = 48      # px, 도착 출구 안쪽으로 이만큼 들어온 자리
@@ -293,6 +300,40 @@ COLLECTIBLE_COUNTS = dict(  # 임시. 12.7 구역별 수집품 수 (상점·NPC�
                  tablet=dict(corridor=3, moss=3)),
 )
 REGION_BG_TINT = 0.2       # 0~1, 배경색을 구역 색 쪽으로 섞는 비율
+
+# ===== 도입부 (T41, 2.2) =====
+# 광산(R0) 방 + 방 JSON triggers [x, y, w, h, 스크립트 이름, id] (systems/script.py). 처음 한 번만 (flags 'intro_done')
+INTRO_WAKE_ZONE = 'R1_01:safe_a'   # 깨어나는 안전지대 = 자동 저장되는 rest_seat (13.6)
+INTRO = dict(
+    omen_shake=(6, 0.9),            # 이상 징후: 멀리서 울림 (세기 px, 시간 s)
+    bats=dict(count=9, speed=(380, 560), w=14, h=8, flap=0.12, spread=260, delay=0.4,    # 반대쪽으로 날아가는 박쥐 떼
+              height=(0.45, 0.9), bob=40, bob_speed=8),   # height = 화면 높이 비율, bob = 위아래 흔들림 px/s
+    collapse_speed=250,             # px/s, 무너짐이 오른쪽으로 쫓아오는 속도 (PLAYER_SPEED보다 느리게)
+    collapse_lead=420,              # px, 붕괴 시작 때 플레이어 뒤로 떨어진 거리
+    collapse_shake=(7, 0.2),        # 붕괴 중 매 프레임 다시 거는 흔들림
+    collapse_rubble=dict(rate=14, w=(16, 40), speed=(500, 900), life=1.0, spread=120),   # 무너짐 앞 spread px 안에 떨어지는 흙덩이 (개/s)
+    fall_shake=(14, 0.6),           # 바닥이 꺼질 때
+    black_fade=0.8,                 # s, 추락 끝 암전
+    black_hold=1.4,                 # s, 깨어나기 전 검은 화면
+    wake_fade=1.2,                  # s, 깨어나며 밝아짐
+    hint_time=4.0,                  # s, 안내 문구가 HUD에 떠 있는 시간
+    shaft_alpha=26,                 # 깨어나는 방 위 구멍으로 드는 바깥 공기 줄기
+)
+INTRO_SHAFT_COLORS = [(120, 85, 55), (70, 68, 66), (90, 100, 125)]   # 추락 갱 배경: 흙 → 암반 → 고대 석벽 (위 → 아래)
+COLOR_COLLAPSE = (45, 35, 28)
+COLOR_BAT_SWARM = (35, 30, 40)
+SIGN = dict(y=170, pad=10, line_h=30, post_w=8, narrow=0.55)   # 벽 간판: y = 바닥에서 간판 아래까지, narrow = 영문·기호 글자 폭 비율
+COLOR_SIGN = (105, 75, 45)
+COLOR_SIGN_TEXT = (240, 220, 170)
+INTRO_TEXT = dict(         # 간판(sign)·안내(hint) 트리거 id → (한글, 영어 대체)
+    sign_move=('← →  이동     X  곡괭이', '← →  Move     X  Pickaxe'),
+    sign_talk=('↑  말 걸기 · 읽기', '↑  Talk · Read'),
+    sign_jump=('Z  누르는 만큼 높이 점프', 'Hold Z to jump higher'),
+    sign_pogo=('공중에서 ↓ + X  아래 찍기', 'In the air  ↓ + X  Down strike'),
+    sign_run=('무너진다! 오른쪽으로 달려라', 'Cave-in! Run right!'),
+    hint_safe=('바람이 드는 곳 — 여기서는 숨을 쉴 수 있다', 'Air flows here - you can breathe'),
+    hint_breath=('숨이 줄어든다. 안전지대에서 다시 찬다', 'Breath runs out. Safe zones refill it'),
+)
 
 # ===== 카메라 (T32, 14.2) =====
 CAMERA_LERP = 8.0
@@ -645,7 +686,7 @@ DIALOG_CHARS_PER_SEC = 40
 DIALOG_DIR = 'data/dialog'  # <대화 id>.json (NPC id·석판 id와 같은 이름), 상점 상품 이름은 shop.json
 NPC_TALK_RADIUS = 80       # px, NPC·석판 중심과 플레이어 중심의 가로 거리가 이 안이면 ↑로 말 걸기
 NPC_W, NPC_H = 40, 72      # px
-COLOR_NPC = dict(borum=(150, 120, 80))   # NPC id별 몸 색. 없으면 COLOR_NPC_DEFAULT
+COLOR_NPC = dict(borum=(150, 120, 80), borum_mine=(150, 120, 80))   # NPC id별 몸 색. 없으면 COLOR_NPC_DEFAULT
 COLOR_NPC_DEFAULT = (120, 120, 100)
 COLOR_NPC_LAMP = (255, 220, 120)         # 헬멧 랜턴 (플레이어와 같은 광부 표시)
 NPC_LAMP = 8               # px

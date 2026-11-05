@@ -1,0 +1,29 @@
+{
+  "id": "R0_02",
+  "region": "mine",
+  "size": [1, 1],
+  "map_cell": [2, 2],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 264, 40, 456, "solid"],
+    [40, 680, 1240, 40, "solid"],
+    [1240, 64, 40, 376, "solid"],
+    [380, 200, 200, 24, "oneway"],
+    [640, 330, 200, 24, "oneway"],
+    [880, 440, 400, 24, "solid"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R0_01", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 464, 16, 200], "to": "R0_03", "to_exit": "L"}
+  ],
+  "spawns": [["bat", 760, 520]],
+  "triggers": [
+    [40, 64, 300, 400, "omen", "omen_a"],
+    [120, 64, 200, 120, "sign", "sign_jump"],
+    [940, 464, 240, 120, "sign", "sign_pogo"]
+  ],
+  "safe_points": [[120, 64], [1100, 464]]
+}

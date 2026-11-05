@@ -12,11 +12,13 @@ font = None
 icon_font = None
 message = ''          # 하단 중앙 알림 문구 ('저장했습니다' 등). message_timer > 0인 동안 보인다
 message_timer = 0.0
+hide_breath = False   # 도입부 추락·깨어남 동안 숨 게이지를 숨긴다 (2.2 '숨 게이지가 처음 나타남', script.py)
 
 
 def init():
-    global font, icon_font, message, message_timer
+    global font, icon_font, message, message_timer, hide_breath
     message, message_timer = '', 0.0
+    hide_breath = False
     if os.path.exists(config.FONT_PATH):
         font = load_font(config.FONT_PATH, config.FONT_SIZE_TEXT)
         icon_font = load_font(config.FONT_PATH, config.FONT_SIZE_ICON)
@@ -48,7 +50,7 @@ def draw_hp_cells(player):
 
 def draw_breath_bar():
     # 체력 칸 아래 숨 게이지 (14.1): 하늘색 가로 막대, 길이는 용량에 비례. 광산(숨 게이지 없음)에서는 숨김
-    if not breath.has_gauge:
+    if not breath.has_gauge or hide_breath:
         return
     edge = config.HP_BAR_BORDER
     l = config.HUD_MARGIN
@@ -221,9 +223,9 @@ def draw_boss_bar(boss):
         font.draw(l, t + config.BOSS_NAME_GAP, config.BOSS_NAME[boss.boss_key], config.COLOR_TEXT)
 
 
-def show_message(text):
+def show_message(text, time=config.HUD_MESSAGE_TIME):
     global message, message_timer
-    message, message_timer = text, config.HUD_MESSAGE_TIME
+    message, message_timer = text, time
 
 
 def update(dt):
