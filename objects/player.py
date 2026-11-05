@@ -6,7 +6,7 @@ import config
 import game_framework
 import game_world
 from objects import effect
-from systems import breath, camera, engravings, input, runes, sound, terrain, upgrades
+from systems import breath, camera, engravings, input, runes, sound, terrain
 
 # 동작 시작 순서: 패링 → 대시 → 점프 → 공격 (같은 프레임에 버퍼에 있으면 이 순서로 처리)
 # 입력은 handle_event에서 systems/input.py에 저장만 하고, 실제 동작은 update에서 버퍼를 꺼내 시작한다 (6.3 입력 버퍼)
@@ -35,7 +35,7 @@ class Player:
         self.jump_rising = False
         self.jump_elapsed = 0.0
         self.coyote_timer = 0.0
-        self.jumps_left = 0  # 공중 추가 점프 남은 횟수 (v2 2단 점프 강화, T44에서 정리)
+        self.jumps_left = 0  # 공중 추가 점프 남은 횟수 (결정 디딤은 T52. 그 전에는 max_jumps = 1)
         # 강착지: 내려가는 동안 fall_time을 세고, 길면 착지 후 hard_land_timer 동안 입력 잠금
         self.fall_time = 0.0
         self.hard_land_timer = 0.0
@@ -57,9 +57,7 @@ class Player:
         # 반동: 옆 공격 적중 시 recoil_timer 동안 recoil_dir 쪽으로 ATTACK_RECOIL만큼 밀린다
         self.recoil_timer = 0.0
         self.recoil_dir = 0
-        # 세 번째 일격 (각인, 8.4): 적중 사이 간격이 interval 이하인 연속 3번째 적중
-        # 각인 시스템(T44) 전까지는 꺼져 있다. 연속 적중 수는 항상 센다
-        self.third_strike_on = False
+        # 세 번째 일격 (각인, 8.4): 적중 사이 간격이 interval 이하인 연속 3번째 적중. 연속 적중 수는 항상 센다
         self.strike_chain = 0
         self.since_last_strike = math.inf
         # 패링: parry_timer > 0인 동안 판정 중. 아무것도 못 막고 끝나면 parry_stun_timer 동안 경직
@@ -98,20 +96,34 @@ class Player:
         self.sitting = False
         # 충돌을 검사할 지형 목록
         self.platforms = platforms
-        # 강화로 바뀌는 수치 (systems/upgrades.py). upgrades는 획득 순서대로 강화 키
-        self.upgrades = []
         self.max_hp = config.HP_START
-        self.parry_window = config.PARRY_WINDOW
-        self.reflect_damage_mult = 1  # 반사 피해 각인 배율 ('거울 결정', T44. 그 전에는 v2 강화)
         # 룬·플래그를 담은 월드 상태 (play_mode가 넣어 준다). can()·rune_lv()가 유일한 확인 창구
         self.world_state = None
-        self.invincible_on_hit = config.INVINCIBLE_ON_HIT
-        self.attack_mult = 1.0
-        self.swing_mult = 1.0  # 이번 한 번 휘두름의 추가 배율 (upgrades.on_attack이 정함)
+        self.swing_mult = 1.0  # 이번 한 번 휘두름의 추가 배율 (engravings.on_attack_start가 정함)
         self.max_jumps = 1
-        self.dash_dist = config.DASH_DIST
-        self.dash_cooldown_time = config.DASH_COOLDOWN
-        self.dash_strike_ready = False
+        self.dash_strike_timer = 0.0   # 「질풍 일격」: 대시가 끝난 뒤 남은 시간 (> 0이면 첫 공격 강화)
+
+    # ---------- 각인으로 바뀌는 수치 (8.4): 매번 기본값 × 장착 각인으로 계산 (누적 대입 없음) ----------
+
+    @property
+    def parry_window(self):
+        return engravings.parry_window()
+
+    @property
+    def invincible_on_hit(self):
+        return engravings.invincible_on_hit()
+
+    @property
+    def reflect_damage_mult(self):
+        return engravings.reflect_mult()
+
+    @property
+    def dash_dist(self):
+        return engravings.dash_dist()
+
+    @property
+    def dash_cooldown_time(self):
+        return engravings.dash_cooldown()
 
     def enter_room(self, platforms, start, safe_points=()):
         # 다음 방으로 옮길 때 위치·속도·지형만 바꾸고 체력 등 런 상태는 유지한다
@@ -264,12 +276,12 @@ class Player:
             self.attack_dir = 'side'
             self.swing_alt = not self.swing_alt
         self.attack_active = config.ATTACK_ACTIVE
-        self.attack_cooldown = config.ATTACK_COOLDOWN
+        self.attack_cooldown = engravings.attack_cooldown()
         self.attack_hits.clear()
         self.swing_landed = False
         self.swing_strong = False
         self.swing_count += 1
-        upgrades.on_attack(self)
+        self.swing_mult = engravings.on_attack_start(self)
         sound.play('swing')
 
     # ---------- 패링 · 피격 ----------
@@ -281,7 +293,7 @@ class Player:
         self.parry_cooldown = 0
         self.parry_count += 1
         breath.add(engravings.parry_breath_gain(target))   # 패링 숨은 여기서 한 번만 (8.4)
-        upgrades.on_parry_success(self, target)
+        engravings.on_parry_success(self, target)
 
     def update_parry(self, dt):
         self.parry_cooldown = max(0, self.parry_cooldown - dt)
@@ -332,6 +344,7 @@ class Player:
         self.lose_hp(damage)
         self.hit_timer = config.PLAYER_HIT_STUN
         self.hit_dir = 1 if self.x >= from_x else -1
+        engravings.on_hurt(self)   # 「가시 갑각」
         return True
 
     def hazard_hit(self):
@@ -453,7 +466,7 @@ class Player:
         input.clear_buffers()
 
     def update_sitting(self):
-        # ←·→·Z로 일어난다. Z는 일어나기에만 쓰고 점프하지 않는다. X(각인)는 T44, 그 전에는 버린다
+        # ←·→·Z로 일어난다. Z는 일어나기에만 쓰고 점프하지 않는다. X(각인 화면)는 play_mode가 키 입력에서 받는다
         if input.consume('jump') or input.axis_x() != 0:
             self.sitting = False
         input.clear_buffers()
@@ -473,9 +486,10 @@ class Player:
 
     # ---------- 공격 적중 ----------
 
-    def on_attack_hit(self):
+    def on_attack_hit(self, target=None):
         # combat이 이번 휘두름에서 대상을 맞힐 때마다 부른다. 반동·포고·세 번째 일격 판정은 휘두름당 1번
         # 반환: 이번 휘두름이 세 번째 일격인가
+        engravings.on_attack_hit(self, target)
         if self.swing_landed:
             return self.swing_strong
         self.swing_landed = True
@@ -498,7 +512,7 @@ class Player:
         if self.strike_chain < 3:
             return False
         self.strike_chain = 0
-        return self.third_strike_on
+        return engravings.third_strike_on()
 
     def pogo(self):
         # 아래 공격 적중: 튀어 오르고 대시·추가 점프 재충전, 체공 시간 리셋
@@ -510,7 +524,7 @@ class Player:
         self.jumps_left = self.max_jumps - 1
 
     def attack_damage(self):
-        damage = config.PICKAXE_DAMAGE[self.pickaxe_lv - 1] * self.attack_mult * self.swing_mult
+        damage = config.PICKAXE_DAMAGE[self.pickaxe_lv - 1] * engravings.damage_mult(self) * self.swing_mult
         if self.swing_strong:
             damage *= config.THIRD_STRIKE['damage_mult']
         return damage
@@ -535,6 +549,10 @@ class Player:
         if not self.is_attacking():
             return None
         w, h = config.ATTACK_HITBOX[self.attack_dir]
+        if self.attack_dir == 'side':
+            w *= engravings.attack_reach_mult()   # 「긴 자루」: 닿는 길이만 늘린다
+        else:
+            h *= engravings.attack_reach_mult()
         if self.attack_dir == 'up':
             l, b = self.x - w / 2, self.y + config.PLAYER_H
         elif self.attack_dir == 'down':
@@ -556,6 +574,7 @@ class Player:
         self.attack_active = max(0, self.attack_active - dt)
         self.attack_cooldown = max(0, self.attack_cooldown - dt)
         self.since_last_strike += dt
+        self.dash_strike_timer = max(0, self.dash_strike_timer - dt)
         if self.is_hazard_respawning():
             # HazardRespawn: 입력 잠금, 움직이지 않는다. 누름은 버리지만 누름 상태는 계속 받는다
             self.update_hazard_respawn(dt)
@@ -598,7 +617,7 @@ class Player:
         self.vy = 0
         self.move_x(self.vx * step)
         if self.dash_timer <= 0:
-            upgrades.on_dash_end(self)
+            engravings.on_dash_end(self)
 
     def update_move_x(self, dt):
         if self.dead or self.is_parry_stunned() or self.is_hard_landing() or self.is_mending():

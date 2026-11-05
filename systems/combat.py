@@ -15,7 +15,7 @@ def resolve(player, enemies, gimmicks=()):
             if game_world.overlap(attack_bb, e.get_bb()):
                 player.attack_hits.add(e)
                 x, y = contact_point(attack_bb, e.get_bb())
-                strong = player.on_attack_hit()   # 반동·포고·세 번째 일격 (휘두름당 1번)
+                strong = player.on_attack_hit(e)   # 반동·포고·세 번째 일격 (휘두름당 1번)
                 if e.kind == 'statue':
                     effect.statue_spark(x, y)       # 연습 석상은 회색 스파크만 (5.4)
                     continue
@@ -54,7 +54,7 @@ def hit_gimmicks(player, attack_bb, gimmicks):
             continue
         player.attack_hits.add(g)
         if g.on_pickaxe_hit(player):
-            player.on_attack_hit()
+            player.on_attack_hit(g)
             effect.attack_hit(*contact_point(attack_bb, g.get_bb()), player.attack_angle(), False, False)
 
 

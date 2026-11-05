@@ -6,7 +6,7 @@ import game_framework
 import game_world
 from objects import effect, projectile
 from objects.player import Player
-from systems import breath, camera, combat, economy, hitstop, input, runes, save, script, sound, world
+from systems import breath, camera, combat, economy, engravings, hitstop, input, runes, save, script, sound, world
 from ui import hud
 
 player = None
@@ -20,6 +20,8 @@ ore_lost = 0        # 이번 사망으로 잃은 소지 광석 (부활 후 알�
 load_path = None  # 이어하기면 불러올 세이브 경로, 새 게임이면 None. title_mode가 change_mode 직전에 start()로 정한다
 DEBUG_KEY = {getattr(pico2d, name): action for action, name in config.DEBUG_KEYS.items()}
 MAP_KEY = getattr(pico2d, config.KEYS['map'])
+INVENTORY_KEY = getattr(pico2d, config.KEYS['inventory'])
+ENGRAVE_KEY = getattr(pico2d, config.KEYS['attack'])   # 앉아 있을 때 X = 각인 화면 (13.1)
 
 
 def enter_room(new_room, arrival):
@@ -124,11 +126,23 @@ def handle_events():
                 from modes import map_mode
                 game_framework.push_mode(map_mode)
                 return
+        elif e.type == SDL_KEYDOWN and e.key == INVENTORY_KEY:
+            # 인벤토리 (I). 지도와 같은 때만 연다 (월드·숨 정지)
+            if world.phase is None and not player.dead and not player.blackout and not player.cutscene:
+                from modes import inventory_mode
+                game_framework.push_mode(inventory_mode)
+                return
+        elif e.type == SDL_KEYDOWN and e.key == ENGRAVE_KEY and player.sitting and world.phase is None:
+            # 안전지대에 앉아 있을 때만 각인을 바꾼다 (8.4, 13.1)
+            from modes import engrave_mode
+            game_framework.push_mode(engrave_mode)
+            return
         elif e.type == SDL_KEYDOWN and e.key == SDLK_F1:
             game_world.show_hitbox = not game_world.show_hitbox
         elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) == 'unlock_all':
             runes.unlock_all(world.state)
-            print('[DEBUG] F3 전체 해금: 모든 룬 최대 레벨 + 반사')
+            engravings.give_all()
+            print('[DEBUG] F3 전체 해금: 모든 룬 최대 레벨 + 반사 + 각인 전부 보유')
         elif config.DEBUG and e.type == SDL_KEYDOWN and DEBUG_KEY.get(e.key) == 'infinite_breath':
             on = breath.toggle_infinite()
             hud.show_message(f"숨 무한 {'켬' if on else '끔'}")

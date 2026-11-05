@@ -47,8 +47,10 @@ EXIT_UP_BOOST = 900        # px/s, 위쪽 출구로 들어왔을 때 밀어올�
 
 # ===== 곡괭이 공격 (T29) =====
 ATTACK_COOLDOWN = 0.41
+ATTACK_COOLDOWN_QUICK = 0.25   # 각인 '빠른 손놀림'
 ATTACK_ACTIVE = 0.1
 ATTACK_HITBOX = dict(side=(80, 50), up=(60, 85), down=(60, 85))  # (w, h) px
+ATTACK_RANGE_LONG = 1.25   # 각인 '긴 자루' (닿는 길이: 옆 공격 w, 위·아래 공격 h)
 PICKAXE_DAMAGE = [5, 9, 13, 17, 21]   # 곡괭이 Lv1~5
 ATTACK_RECOIL = 60         # px, 옆 공격 적중 시 플레이어가 밀리는 거리
 ATTACK_RECOIL_TIME = 0.08  # s, 반동 거리를 이 시간 동안 나눠 민다
@@ -385,13 +387,14 @@ RUNE_CARD = dict(w=560, h=300, pad=28, line_h=34)   # px, 설명 카드
 CARVER_CARD = dict(w=300, h=230, gap=24, top=560, visible=3)   # px, 강화 목록 카드 (top = 카드 위쪽 화면 y, visible장씩 ←→로 넘김)
 COLOR_MAP_QUESTION = (240, 200, 120)     # 지도 새김터 물음표 (7.5)
 
-# 각인 id (8.4 표 순서). T44에서 data/items.json으로 옮긴다. 지금은 F7 지급 메뉴만 쓴다
-ENGRAVING_IDS = ['third_strike', 'quick_hands', 'long_handle', 'miners_grit', 'last_stand', 'deep_lung',
-                 'parry_breath', 'steady_breath', 'thrifty_breath', 'wind_step', 'long_dash', 'dash_strike',
-                 'mirror_crystal', 'counter_wave', 'sharp_counter', 'stone_skin', 'thorn_shell', 'compass',
-                 'ore_magnet', 'first_breath', 'breath_echo']
+ENGRAVE_SLOTS = dict(      # 룬 레벨별 각인 홈 수 (인덱스 = 룬 레벨)
+    breath=[0, 2, 2, 3, 3, 4], burrow=[0, 1, 1, 2], brace=[0, 1, 1, 2],   # breath는 '받아친 숨' 몫으로 +1
+    crystal=[0, 1, 1, 2], breakthrough=[0, 1, 1, 2], shadow=[0, 1, 1, 2],
+)
+PICKAXE_ENGRAVE_SLOTS = [1, 1, 2, 2, 3]   # 곡괭이 Lv1~5
+ITEMS_PATH = 'data/items.json'   # 각인·수집품 이름·설명·대상 (각인 id 목록 = kind가 engraving인 항목, 8.4 표 순서)
 
-# ===== 각인 효과 수치 (T37, 키 = 8.4 표의 id). T37은 숨 관련 각인만 읽는다, 나머지는 T44 =====
+# ===== 각인 효과 수치 (키 = 8.4 표의 id) =====
 ENGRAVING = dict(
     miners_grit=1.2,                       # 곡괭이 피해 배율
     last_stand=1.75,                       # 체력 1칸일 때 피해 배율
@@ -409,6 +412,23 @@ ENGRAVING = dict(
     first_breath=2.0,                      # 질식 간격 배율
     breath_echo=2.0,                       # '되받은 숨': 패링 숨 배율
 )
+# third_strike → THIRD_STRIKE, quick_hands → ATTACK_COOLDOWN_QUICK, long_handle → ATTACK_RANGE_LONG,
+# ore_magnet → ORE_MAGNET_RADIUS, parry_breath → BREATH_PER_PARRY, compass → 수치 없음
+COLOR_COUNTER_WAVE = (150, 230, 255)       # 「반격 파동」 (v2 검기 색)
+THORN_STREAK = dict(count=10, length=(60, 100), life=0.2, width=3, color=(190, 170, 120))   # 「가시 갑각」
+
+# 각인 화면 (T44, engrave_mode). 왼쪽 = 곡괭이·룬과 홈, 오른쪽 = 보유 각인. 좌표는 화면 px
+ENGRAVE_UI = dict(
+    title_y=680, top=620, left_x=40, row_h=62, name_w=160, slot_w=148, slot_h=40, slot_gap=8, slot_pad=6,
+    right_x=840, right_w=400, list_row_h=32, list_rows=13, desc_y=150, help_y=30, border=3,
+)
+COLOR_ENGRAVE_PANEL = (30, 30, 42)
+ENGRAVE_DIM_ALPHA = 230     # 0~255, 각인 화면·인벤토리 뒤 화면을 어둡게 (HUD가 비치지 않게)
+COLOR_ENGRAVE_SLOT = (55, 55, 70)
+COLOR_ENGRAVE_SET = (140, 180, 220)      # 다른 홈에 끼워진 각인 표시
+COLOR_ENGRAVE_LOCKED = (110, 110, 125)
+# 인벤토리 (T44, inventory_mode, I). 왼쪽 = 룬·장비·수집품, 오른쪽 = 보유 각인
+INVENTORY_UI = dict(title_y=680, top=620, left_x=60, right_x=640, set_x=260, line_h=30, list_rows=12, desc_y=150, help_y=30)
 
 # ===== 디버그 메뉴 (T34, F4 방 이동 · F7 개별 지급) =====
 DEBUG_GIVE_FLAGS = ['reflect', 'whetstone', 'met_oram', 'intro_done']   # F7에서 켜고 끄는 플래그 (13.6)
@@ -628,7 +648,6 @@ SAVE_DEBUG_PATH = 'save_debug.json'   # F3·F7을 쓴 뒤의 저장
 SAVE_VERSION = 5
 
 # 진행
-UPGRADE_CHOICES = 3
 DEATH_DELAY = 1.5          # s, 사망 연출 뒤 암전 → 마지막으로 앉은 안전지대에서 부활 (13.2)
 
 # 광석 · 사망 (T38, 13.2)
@@ -647,25 +666,7 @@ ORE_BANK_SLIDE = 120       # px, 소지 숫자가 왼쪽으로 미끄러지는 �
 COLOR_ORE_CARRIED = (255, 230, 170)
 HUD_FONT_NARROW = 0.55    # 숫자·영문·공백 글자 폭 ÷ 글자 크기 (글자 폭 어림)
 
-# 강화 (효과 구현은 systems/upgrades.py)
-UPGRADE_PARRY_WINDOW_BONUS = 0.05  # s
-UPGRADE_REFLECT_MULT = 2.0
-UPGRADE_PARRY_HEAL = 1   # 칸
-UPGRADE_MAX_HP_BONUS = 1 # 칸 (HP_MAX까지)
-UPGRADE_ATTACK_MULT = 1.2
-UPGRADE_ATTACK3_MULT = 1.5
-UPGRADE_INVINCIBLE_BONUS = 0.3     # s
-UPGRADE_MAX_JUMPS = 2
-UPGRADE_DASH_DIST_MULT = 1.5
-UPGRADE_DASH_COOLDOWN_MULT = 0.7
-UPGRADE_DASH_ATTACK_MULT = 2.0
-# 패링 성공 시 검기: 플레이어 소유 투사체로 바라보는 방향에 발사
-SWORD_WAVE = dict(speed=700, damage=20, size=40, length=40, color=(150, 230, 255))
-UPGRADE_CATEGORIES = ['parry', 'stat', 'util']
-UPGRADE_CATEGORY_NAME = dict(parry='패링 변형', stat='기초 스탯', util='유틸리티')
-COLOR_UPGRADE = dict(parry=(120, 220, 255), stat=(240, 110, 90), util=(130, 220, 120))
-
-# 강화 선택 화면
+# 카드 (룬지기 강화 목록·상점·각인 화면)
 CARD_W, CARD_H = 300, 260  # px
 CARD_GAP = 40              # px
 CARD_PAD = 20              # px, 카드 안쪽 여백
@@ -694,10 +695,6 @@ DASH_ICON_DOT = 6          # px, 점 한 변
 COLOR_DASH_READY = (180, 220, 255)
 COLOR_DASH_COOL = (70, 80, 100)
 COLOR_DASH_FILL = (120, 160, 220)
-UPGRADE_ICON = 36          # px, 강화 아이콘 한 변
-UPGRADE_ICON_GAP = 6       # px
-UPGRADE_ICON_PAD = 4       # px, 아이콘 안 글자 여백
-FONT_SIZE_ICON = 14
 
 # 보스 HUD (하단 중앙): 체력 바 + 그 아래 자세 게이지 (POSTURE_MAX칸)
 BOSS_BAR_W, BOSS_BAR_H = 640, 18
@@ -725,7 +722,7 @@ CONTROLS_TEXT = [          # 조작법 화면 (config.KEYS와 맞춘다)
 
 # 대화 · 석판 · 상점 (T39, 2.5, 13.3). 흰색·빨간색은 쓰지 않는다. NPC·석판 (x, y)는 아래쪽 중심
 DIALOG_CHARS_PER_SEC = 40
-DIALOG_DIR = 'data/dialog'  # <대화 id>.json (NPC id·석판 id와 같은 이름), 상점 상품 이름은 shop.json
+DIALOG_DIR = 'data/dialog'  # <대화 id>.json (NPC id·석판 id와 같은 이름), 상점 상품 이름은 items.json (ITEMS_PATH)
 NPC_TALK_RADIUS = 80       # px, NPC·석판 중심과 플레이어 중심의 가로 거리가 이 안이면 ↑로 말 걸기
 NPC_W, NPC_H = 40, 72      # px
 COLOR_NPC = dict(borum=(150, 120, 80), borum_mine=(150, 120, 80), har=(105, 100, 95), oram=(90, 120, 160))   # NPC id별 몸 색. 없으면 COLOR_NPC_DEFAULT

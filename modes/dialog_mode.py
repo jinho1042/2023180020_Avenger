@@ -8,11 +8,12 @@ import config
 import game_framework
 from modes import play_mode
 from objects import effect
-from systems import economy, sound
+from systems import economy, engravings, sound
 from ui import font
 
 # 대화 · 석판 · 상점 (2.5, 2.6, 13.3). play_mode 위에 push된다 (월드·숨 정지)
 # 대사: data/dialog/<id>.json {name, name_en, pages: [[줄, ...], ...], pages_en, shop}. 한 페이지 최대 3줄 (2.6)
+# 상점 상품 이름·설명은 data/items.json
 # 글자는 DIALOG_CHARS_PER_SEC로 한 글자씩 나온다. Z·X·↑·Enter·Space: 다 나오기 전이면 끝까지, 다 나왔으면 다음 페이지
 # 마지막 페이지 뒤 shop이면 상점 목록 (←→ 선택, X 구매, Z·Esc 닫기). Esc는 언제든 닫는다
 # start(id, after): 마지막 페이지를 넘기면 닫고 after()를 부른다 (룬지기 → 룬 획득·강화 목록). Esc로 닫으면 부르지 않는다
@@ -31,7 +32,6 @@ view = 'talk'      # 'talk' | 'shop'
 stock = []         # 상점 상품 키 (economy.shop_stock)
 selected = 0
 notice = ''        # 상점 하단 안내 ('광석이 모자랍니다' 등)
-shop_names = {}
 
 
 def load_dialog(dialog_id):
@@ -51,10 +51,9 @@ def start(dialog_id, then=None):
 
 
 def init():
-    global page, shown, blink, view, selected, notice, shop_names
+    global page, shown, blink, view, selected, notice
     page, shown, blink = 0, 0.0, 0.0
     view, selected, notice = 'talk', 0, ''
-    shop_names = load_dialog('shop') if dialog.get('shop') else {}
     sound.play('cursor')
 
 
@@ -181,13 +180,12 @@ def draw_talk():
 
 
 def item_name(key):
-    item = shop_names.get(key, {})
-    return font.text(item.get('name', key), item.get('name_en', key))
+    # 상품 이름·설명은 data/items.json (상품 키 = 각인 id 또는 rare_ore_*)
+    return engravings.item_name(key)
 
 
 def item_desc(key):
-    item = shop_names.get(key, {})
-    return font.text(item.get('desc', []), item.get('desc_en', []))
+    return engravings.item_desc(key)
 
 
 def draw_shop():

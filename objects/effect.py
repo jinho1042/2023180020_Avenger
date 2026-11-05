@@ -323,3 +323,8 @@ def ore_mined(x, y):
 def door_opened(x, y):
     burst(x, y, config.DOOR_SPARK, config.COLOR_DOOR_OPEN)
     sound.play('door')
+
+
+def thorn_burst(x, y):
+    # 각인 「가시 갑각」: 맞은 자리에서 가시가 사방으로 뻗는다
+    streaks(x, y, config.THORN_STREAK)

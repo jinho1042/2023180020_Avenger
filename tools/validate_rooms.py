@@ -263,7 +263,7 @@ def check_safe_distance(rooms, complete, scope_regions):
 
 
 def collectible_kind(obj, items):
-    # 수집품 종류. items.json이 있으면 그 kind, 없으면 id로 짐작 (items.json은 T44)
+    # 수집품 종류. items.json이 있으면 그 kind, 없으면 id 접두어로 짐작
     if obj[0] in ('miner', 'tablet'):
         return obj[0]
     if obj[0] != 'item':
@@ -275,7 +275,7 @@ def collectible_kind(obj, items):
         return 'rare_ore'
     if item_id.startswith('map_stone'):
         return 'map_stone'
-    return 'engraving' if item_id in config.ENGRAVING_IDS else None
+    return None
 
 
 def check_collectibles(rooms, complete, items):
