@@ -35,6 +35,7 @@ JUMP_HOLD_MAX = 0.15       # s → 꾹 누르면 약 210px (5u)
 JUMP_HOLD_MIN = 0.06       # s → 톡 치면 약 43px (1u)
 JUMP_CUT = 0.0             # 떼는 순간 상승 속도에 곱함 (0 = 즉시 정지, v2는 0.5)
 COYOTE_TIME = 0.1
+DROP_THROUGH_TIME = 0.15   # s, ↓+Z로 one-way 발판 아래로 내려갈 때 그 발판에 다시 서지 않는 시간 (명세 밖 조작, 18장)
 JUMP_BUFFER = 0.1
 CORNER_CORRECTION = 8      # px
 HARD_LAND_FALL_TIME = 1.1  # s

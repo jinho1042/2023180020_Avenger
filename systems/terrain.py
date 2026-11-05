@@ -29,6 +29,14 @@ def body_blocked(x, y, w, h, platforms):
     return False
 
 
+def oneway_under(x, y, w, platforms):
+    # 발밑(y)에 닿아 있는 one-way 발판 목록. 같은 자리에 단단한 지형도 닿아 있으면 빈 목록 (내려갈 수 없음)
+    under = [p for p in platforms if p.kind is not None and overlaps_x(x, w, p) and abs(p.top - y) < 1]
+    if any(p.kind == 'solid' for p in under):
+        return []
+    return [p for p in under if p.kind == 'oneway']
+
+
 def corner_correct(x, prev_y, y, w, h, platforms, max_px):
     # 상승 중 머리가 천장 모서리에 max_px 이내로만 걸리면 옆으로 밀어 통과시킨 x를 돌려준다 (6.4)
     # 밀 곳이 막혀 있거나 더 깊게 걸렸으면 x 그대로
@@ -50,13 +58,14 @@ def corner_correct(x, prev_y, y, w, h, platforms, max_px):
     return x
 
 
-def resolve_y(x, prev_y, y, vy, w, h, platforms):
+def resolve_y(x, prev_y, y, vy, w, h, platforms, ignore=()):
     # 이동 전후 구간으로 판정해서 빠르게 떨어질 때 얇은 발판을 뚫지 않게 한다
+    # ignore: 이번에 무시할 발판 (플레이어가 ↓+Z로 내려가는 one-way 발판)
     # 반환: (y, vy, on_ground)
     on_ground = False
     for p in platforms:
         # kind가 None이면 부서진 벽·열린 문 (objects/breakable.py, gate.py)
-        if p.kind is None or not overlaps_x(x, w, p):
+        if p.kind is None or p in ignore or not overlaps_x(x, w, p):
             continue
         if vy <= 0 and prev_y >= p.top and y <= p.top:
             # 착지: solid, oneway 모두 위에서 떨어질 때만
