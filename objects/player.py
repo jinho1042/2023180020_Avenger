@@ -873,12 +873,16 @@ class Player:
     def update_wall(self, dt):
         # 벽 매달리기 (6.4, 버팀의 룬): 공중에서 벽 쪽 방향키를 누르고 있고 몸 옆이 단단한 벽에 닿아 있으면 WallSlide
         # 매달린 동안 대시·공중 점프 재충전, 체공 시간 리셋 (강착지 없음). 같은 벽에 다시 매달릴 수 있다
+        # 가시 덩굴벽(thorn_vine)은 버팀 Lv2(thorn_cling)부터 매달린다 (12.6, T65). 그 전에는 닿으면 환경 피해
         move = input.axis_x()
+        walls = self.platforms
+        if not self.can('thorn_cling'):
+            walls = [p for p in walls if getattr(p, 'hazard_type', None) != 'thorn_vine']
         cling = (move != 0 and not self.on_ground and self.can('wall_cling') and not self.is_dashing()
                  and not self.is_skill_active()
                  and self.wall_jump_lock <= 0 and not self.dead and not self.is_hit() and not self.is_mending()
                  and terrain.body_blocked(self.x + move, self.y + config.PLAYER_H * 0.25, config.PLAYER_W,
-                                          config.PLAYER_H * 0.5, self.platforms))
+                                          config.PLAYER_H * 0.5, walls))
         self.wall_dir = move if cling else 0
         if not cling:
             self.wall_spark_timer = 0.0
