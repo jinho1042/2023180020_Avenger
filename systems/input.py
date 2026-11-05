@@ -13,7 +13,11 @@ KEY_TO_ACTION = {getattr(pico2d, name): action for action, name in config.KEYS.i
 # 동작별 입력 버퍼 시간. 여기 없는 동작은 버퍼를 쓰지 않는다
 # up은 앉기·말 걸기 누름 (위 공격·위 보기는 누름 상태 pressed('up')를 쓴다)
 BUFFER_TIME = dict(jump=config.JUMP_BUFFER, attack=config.INPUT_BUFFER,
-                   parry=config.INPUT_BUFFER, dash=config.INPUT_BUFFER, up=config.INPUT_BUFFER)
+                   parry=config.INPUT_BUFFER, dash=config.INPUT_BUFFER, up=config.INPUT_BUFFER,
+                   rune_tap=config.INPUT_BUFFER)
+# 짧게 누름(뗄 때 판정): 동작 → (기준 시간, 버퍼 이름). 기준보다 짧게 눌렀다 떼면 버퍼에 넣는다
+# A 짧게 = 룬 기술, 길게 = 숨 고르기 (6.1, 6.7)
+TAP_ACTIONS = dict(rune=(config.RUNE_HOLD_THRESHOLD, 'rune_tap'))
 
 held = set()       # 지금 누르고 있는 동작
 hold_time = {}     # 동작 → 누른 뒤 지난 시간 (누르고 있는 동안만)
@@ -35,7 +39,10 @@ def handle_event(e):
                 buffers[action] = BUFFER_TIME[action]
     else:
         held.discard(action)
-        hold_time.pop(action, None)
+        elapsed = hold_time.pop(action, None)
+        if action in TAP_ACTIONS and elapsed is not None and elapsed < TAP_ACTIONS[action][0]:
+            tap = TAP_ACTIONS[action][1]
+            buffers[tap] = BUFFER_TIME[tap]
     return action
 
 

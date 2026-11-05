@@ -194,6 +194,7 @@ COLOR_PLAYER_SLASH = (220, 240, 255)  # 공격 판정 중 베기 표시
 COLOR_PLAYER_DEAD = (70, 70, 80)
 COLOR_PLAYER_PARRY = (120, 255, 255)  # 패링 판정 중 몸 앞 방패 표시
 COLOR_PLAYER_STUN = (110, 110, 150)   # 헛입력 경직 중 색
+COLOR_PLAYER_ROCKFALL = (150, 120, 90)  # 낙반 시전·낙하 중 색 (T51)
 PARRY_SHIELD_W = 10        # px, 패링 방패 표시 두께
 
 # 디버그
@@ -214,6 +215,12 @@ COLOR_CRACK_WALL = (110, 100, 95)
 COLOR_SOIL = (125, 95, 65)         # 무른 흙벽 (굴착 대시로 통과, T46)
 COLOR_SOIL_DOT = (90, 65, 45)      # 흙벽 표면 흙덩이 점
 SOIL_DOTS = dict(step=24, size=6)  # px, 흙덩이 점 간격·크기
+COLOR_HARD_SOIL = (95, 75, 60)     # 단단한 흙벽 (굴착 Lv3 대시로 통과, T51)
+COLOR_HARD_SOIL_DOT = (60, 45, 35)
+HARD_SOIL_DOTS = dict(step=14, size=8)   # px, 무른 흙벽보다 촘촘하고 굵은 점
+COLOR_FRAGILE_FLOOR = (120, 110, 100)    # 깨지는 바닥 (낙반으로 파괴, T51)
+COLOR_FRAGILE_LINE = (55, 50, 45)        # 깨지는 바닥 금
+FRAGILE_CRACK_STEP = 32                  # px, 깨지는 바닥 금 간격
 COLOR_CRACK_LINE = (40, 35, 35)
 CRACK_WIND = dict(count=6, dist=70, period=1.6, size=3)   # 균열벽(숨은 벽) 바람 단서: 양옆 dist px에서 균열로 빨려 드는 먼지 (7.5)
 COLOR_CRACK_WIND = (175, 165, 150)
@@ -380,6 +387,22 @@ RUNE_UPGRADE_COST = dict(  # 임시. 레벨 n→n+1 비용 (광석, 희귀 광�
     shadow=[(900, 1), (1800, 2)],
 )
 RUNE_ORDER = ['breath', 'burrow', 'brace', 'crystal', 'breakthrough', 'shadow']   # 강화 목록 순서 (8.2 표)
+SKILLS = dict(            # 룬 기술 (8.2). 피해는 적 체력 단위
+    rockfall=dict(damage=15, shockwave_damage=20, fall_speed=1500, shockwave_w=300,   # 굴착 Lv2 (4장 값)
+                  shockwave_h=60),   # px, 충격파 높이 (발밑부터, T51)
+    crystal_arrow=dict(damage=15, speed=900, size=(60, 30)),                         # 결정 Lv2 (T52)
+)
+SKILL_CAST_TIME = 0.2     # s, 룬 기술 시전(Cast). 이 동안 공중에 멈추고 피격 시 취소 (8.2)
+RUNE_LV_EFFECT = dict(    # 룬 레벨 효과 수치 (8.2). 매번 기본값에서 다시 계산
+    burrow_lv3_dash_mult=1.3,       # 굴착 Lv3 대시 거리
+    brace_lv3_drain_mult=0.5,       # 버팀 Lv3 매달린 동안 숨 소모
+    crystal_lv3_steps=2,            # 결정 Lv3 디딤 횟수
+    breakthrough_lv2_damage=20,     # 돌파 Lv2 돌진 중 적 관통 피해 (적 체력 단위)
+    shadow_lv2_cooldown_mult=0.7,   # 그림자 Lv2 질풍 쿨
+    shadow_lv3_dist_mult=1.4,       # 그림자 Lv3 질풍 거리
+)
+ROCKFALL_WAVE = dict(count=24, speed=(200, 520), life=0.4, size=8, color=(160, 140, 110))   # 낙반 착지 충격파 먼지
+ROCKFALL_SHAKE = dict(amp=7, time=0.15)
 HINT_FAIL_COUNT = 2        # 숨막이 갱에서 기절한 횟수 → 보름 힌트, 한 번 더 기절하면 지도 물음표 (7.5)
 
 # 룬 획득 연출 (T43, 8.5). rune_get_mode. 흰색·빨간색은 쓰지 않는다

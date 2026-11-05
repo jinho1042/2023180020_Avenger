@@ -279,6 +279,22 @@ def hard_land(x, y):
     camera.shake(config.HARD_LAND_SHAKE['amp'], config.HARD_LAND_SHAKE['time'])
 
 
+def rockfall_land(x, y, width):
+    # 낙반 착지 충격파: 충격파 폭 안 바닥 곳곳에서 먼지가 위로 튄다 + 흔들림
+    spec = config.ROCKFALL_WAVE
+    spread = math.radians(config.HARD_LAND_DUST['spread'])
+
+    def angle():
+        rise = random.uniform(0, spread)
+        return rise if random.random() < 0.5 else math.pi - rise
+
+    game_world.add_objects([Particle(x + random.uniform(-width / 2, width / 2), y, spec['speed'], spec['life'],
+                                     spec['size'], spec['color'], angle())
+                            for _ in range(spec['count'])], config.DEPTH_EFFECT)
+    camera.shake(config.ROCKFALL_SHAKE['amp'], config.ROCKFALL_SHAKE['time'])
+    sound.play('door')
+
+
 def enemy_killed(x, y, color):
     hitstop.start(config.HITSTOP_KILL)
     camera.shake(config.SHAKE_KILL, config.SHAKE_KILL_TIME)
