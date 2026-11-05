@@ -620,9 +620,19 @@ class Player:
         self.dash_timer -= step
         self.vx = self.dash_dir * self.dash_dist / config.DASH_TIME
         self.vy = 0
+        self.dig_soil(self.x + self.vx * step)
         self.move_x(self.vx * step)
         if self.dash_timer <= 0:
             engravings.on_dash_end(self)
+
+    def dig_soil(self, x):
+        # 굴착 대시 (6.4): 몸을 x에 두면 닿는 무른 흙벽을 파고 지나간다 (막히기 전에 먼저 부순다)
+        half_w = config.PLAYER_W / 2
+        for p in self.platforms:
+            if (getattr(p, 'type', None) == 'soil' and p.kind == 'solid'
+                    and x + half_w >= p.left and x - half_w <= p.right
+                    and self.y + config.PLAYER_H > p.bottom and self.y < p.top):
+                p.dig()
 
     def update_move_x(self, dt):
         if self.dead or self.is_parry_stunned() or self.is_hard_landing() or self.is_mending():

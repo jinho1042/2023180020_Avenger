@@ -201,6 +201,9 @@ COLOR_ACID = (120, 200, 60)
 SPIKE_W = 16               # px, 가시 한 개의 밑변
 SPIKE_STEP = 4             # px, 가시 삼각형을 쌓아 그리는 가로줄 두께
 COLOR_CRACK_WALL = (110, 100, 95)
+COLOR_SOIL = (125, 95, 65)         # 무른 흙벽 (굴착 대시로 통과, T46)
+COLOR_SOIL_DOT = (90, 65, 45)      # 흙벽 표면 흙덩이 점
+SOIL_DOTS = dict(step=24, size=6)  # px, 흙덩이 점 간격·크기
 COLOR_CRACK_LINE = (40, 35, 35)
 CRACK_WIND = dict(count=6, dist=70, period=1.6, size=3)   # 균열벽(숨은 벽) 바람 단서: 양옆 dist px에서 균열로 빨려 드는 먼지 (7.5)
 COLOR_CRACK_WIND = (175, 165, 150)
