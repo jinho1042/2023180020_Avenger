@@ -1,4 +1,4 @@
-# 트리거 · 컷신 (2.2 도입부). 보스 등장·엔딩은 T45·T60에서 여기에 더한다
+# 트리거 · 컷신 (2.2 도입부, 11.2 보스 아레나). 엔딩은 T60에서 여기에 더한다
 # 방 JSON triggers [x, y, w, h, 스크립트 이름, id] → 트리거 객체. 몸이 처음 닿으면 enter()를 한 번 부른다 (방에 들어올 때마다 다시)
 # 도입부 스크립트(omen·collapse·fall·fall_end)는 flags 'intro_done'이 없을 때만 동작한다 (이어하기에서는 재생 안 함)
 # sign·hint·fall_backdrop·air_shaft는 방 꾸미기·안내라 늘 동작한다
@@ -315,5 +315,48 @@ class AirShaft(Trigger):
         super().draw()
 
 
+class Arena(Trigger):
+    # 보스 아레나 (11.2): 몸이 닿으면 출구의 아레나 돌문이 닫히고 보스 등장 (첫 만남이면 타이틀 카드)
+    # 플레이어가 죽으면 문이 열린다. 보스가 쓰러지면 문 열림 → play_mode.on_boss_defeated (안전지대·기록·저장)
+    # 처치한 아레나는 보스가 없으므로 아무것도 하지 않는다 (문은 열린 채)
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.done = False
+
+    def boss(self):
+        from modes import play_mode
+        return play_mode.boss
+
+    def update(self):
+        boss = self.boss()
+        if boss is None or self.done:
+            return
+        if not self.fired:
+            super().update()
+        elif not boss.is_alive():
+            self.done = True
+            self.open_gates()
+            from modes import play_mode
+            play_mode.on_boss_defeated(boss)
+        elif player.dead:
+            self.open_gates()
+
+    def enter(self):
+        boss = self.boss()
+        if not boss.is_dormant():
+            return
+        for gate in room.arena_gates:
+            gate.close()
+        met = world.state.bosses_met
+        first = boss.boss_key not in met
+        met.add(boss.boss_key)
+        boss.wake(first)
+        print(f"[보스] {boss.boss_key} 등장 ({'첫 만남' if first else '재도전'})")
+
+    def open_gates(self):
+        for gate in room.arena_gates:
+            gate.open()
+
+
 TRIGGERS = dict(sign=Sign, hint=Hint, omen=Omen, collapse=Collapse, fall=Fall, fall_end=FallEnd,
-                fall_backdrop=FallBackdrop, air_shaft=AirShaft)
+                fall_backdrop=FallBackdrop, air_shaft=AirShaft, arena=Arena)

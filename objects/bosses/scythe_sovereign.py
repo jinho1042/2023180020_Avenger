@@ -5,17 +5,18 @@ from pico2d import *
 import config
 import game_world
 from objects import effect, projectile
-from objects.boss_base import BossBase, boss_damage
+from objects.bosses.boss_base import BossBase, boss_damage
 from objects.enemy_base import ACTIVE, RECOVER, TELEGRAPH, WINDUP, Attack
 from systems import camera, terrain
 
 STATS = config.BOSS_TWINBLADE
 
 
-class BossTwinblade(BossBase):
-    # 최종 보스 쌍검 기사: 4연속 베기(흰색) · 순간이동 기습(빨간색) · 검기 발사(흰색, 반사 가능)
-    # 체력이 phase2_hp_ratio 이하가 되면 2페이즈: 더 빠르고, 페이크를 섞고, 빨간 예고가 잦아진다
-    boss_key = 'twinblade'
+class ScytheSovereign(BossBase):
+    # B5 쌍낫 군주 (← v2 쌍검 기사). 아직 v2 패턴 그대로: 4연속 베기(흰색) · 순간이동 기습(빨간색) · 검기 발사(흰색, 반사 가능)
+    # 체력이 phase_hp 이하가 되면 2페이즈 (boss_base 페이즈 전환 → on_phase): 더 빠르고, 페이크를 섞고, 빨간 예고가 잦아진다
+    # 소용돌이·페이크 규칙(원칙 14)·B5 수치(BOSS_SCYTHE)는 T56
+    boss_key = 'scythe'
 
     def __init__(self, x, y, player, platforms):
         super().__init__(x, y, STATS, player, platforms)
@@ -107,19 +108,13 @@ class BossTwinblade(BossBase):
             return
         super().recoil()
 
-    def take_damage(self, damage, knockback=0):
-        super().take_damage(damage)
-        if not self.phase2 and self.is_alive() and self.hp <= self.max_hp * STATS['phase2_hp_ratio']:
-            self.enter_phase2()
-
-    def enter_phase2(self):
+    def on_phase(self, phase):
+        # 2페이즈: 색이 바뀌고 모든 동작이 빨라진다 (포효·무적·투사체 제거는 boss_base)
         self.phase2 = True
         mult = STATS['phase2_speed_mult']
         self.speed *= mult
         self.color = STATS['color_phase2']
-        # 지금 진행 중인 공격은 그대로 두고 다음 패턴부터 빨라진다
         self.build_patterns(mult)
-        effect.boss_phase2(self.x, self.y + self.h / 2, self.color)
 
     def draw_weapon(self, l, b, r, t):
         # 양손에 짧은 검: 평소엔 몸 양옆에 비스듬히 내려 들고, 모션 중엔 둘 다 앞으로 치켜든다

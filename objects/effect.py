@@ -301,6 +301,28 @@ def boss_groggy(x, y):
     sound.play('groggy')
 
 
+def boss_roar(x, y, color):
+    # 보스 등장 (11.2): 포효 + 흔들림
+    roar = config.BOSS_INTRO_ROAR
+    camera.shake(roar['shake'], roar['shake_time'])
+    streaks(x, y, dict(config.GROGGY_STREAK, color=color))
+    sound.play('phase2')
+
+
+def boss_dying():
+    # 보스 처치 순간 (11.2): 슬로모션 + 섬광
+    hitstop.start_slowmo(config.BOSS_DEATH_SLOWMO)
+    flash = config.BOSS_DEATH_FLASH
+    game_world.add_object(ScreenFlash(flash['color'], flash['alpha'], flash['time']), config.DEPTH_EFFECT)
+    camera.shake(config.SHAKE_GROGGY, config.SHAKE_GROGGY_TIME)
+    sound.play('groggy')
+
+
+def air_burst(x, y):
+    # 보스 몸의 공기 주머니가 터짐 (그로기·처치): 숨 색 파편이 사방으로
+    burst(x, y, config.BOSS_AIR_BURST, config.COLOR_BREATH)
+
+
 def boss_phase2(x, y, color):
     camera.shake(config.SHAKE_PARRY, config.SHAKE_PARRY_TIME)
     game_world.add_object(ScreenFlash(color, config.FLASH_GROGGY_ALPHA, config.FLASH_GROGGY_TIME),

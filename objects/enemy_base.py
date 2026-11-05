@@ -149,6 +149,10 @@ class EnemyBase:
         # 현재 공격이 플레이어에게 주는 피해 (칸, 근접 판정·투사체·마법진 모두 이 값을 쓴다)
         return round(self.attack.damage * self.dmg_mult)
 
+    def invulnerable(self):
+        # 맞아도 피해가 없는 동안 (보스 등장·페이즈 전환 등, objects/bosses/boss_base.py)
+        return False
+
     def deals_contact(self):
         # 몸에 닿으면 CONTACT_DAMAGE (6.8). 패링당해 비틀거리는 동안은 닿아도 피해 없음
         return self.state not in (STAGGER, DEAD)

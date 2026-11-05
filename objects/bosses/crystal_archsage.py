@@ -5,7 +5,7 @@ from pico2d import *
 import config
 import game_framework
 from objects import effect, magic_circle, projectile
-from objects.boss_base import BossBase
+from objects.bosses.boss_base import BossBase
 from objects.enemies.crystal_sage import blink_away, fit_x
 from objects.enemies.crystal_sprite import CrystalSprite
 from objects.enemy_base import ACTIVE, TELEGRAPH, WINDUP, Attack
@@ -14,12 +14,13 @@ from systems import camera
 STATS = config.BOSS_MAGE
 
 
-class BossMage(BossBase):
-    # [v2] 마법사 루트 보스 대마법사 (1페이즈): 거리를 벌리고 투사체로 압박한다. 반사가 가장 큰 딜 수단
+class CrystalArchsage(BossBase):
+    # B3 수정 대술사 (← v2 대마법사, 1페이즈). 거리를 벌리고 투사체로 압박한다. 반사가 가장 큰 딜 수단
+    # 2페이즈·B3 수치(BOSS_ARCHSAGE)는 T52
     # 마력탄 연사(흰색) · 대형 마력구(흰색, 반사하면 큰 피해) · 마법진 폭격(빨간색) · 견습 소환(흰색 번쩍임)
     # 플레이어가 blink_trigger_dist 안이면 반대쪽으로 순간이동 (공격 아님, 예고 없음)
-    # 근접 공격이 없으므로 자세는 투사체 반사로만 쌓인다 (combat.projectile_hit → add_posture)
-    boss_key = 'mage'
+    # 근접 공격이 없으므로 자세는 반사탄(+POSTURE_REFLECT)과 곡괭이 적중으로 쌓인다
+    boss_key = 'archsage'
 
     def __init__(self, x, y, player, platforms):
         super().__init__(x, y, STATS, player, platforms)
@@ -38,21 +39,9 @@ class BossMage(BossBase):
         self.cast_timer = 0.0  # 다음 시전까지 남은 시간
         self.cast_interval = 0.0
         self.blink_cooldown = 0.0
-        self.summon_cooldown = 0.0
-        self.summons = []      # 소환한 견습 마법사 (보스가 죽으면 같이 제거)
-        self.new_summons = []  # 아직 play_mode가 가져가지 않은 소환
-
-    def pop_summons(self):
-        new, self.new_summons = self.new_summons, []
-        return new
-
-    def alive_summons(self):
-        return [s for s in self.summons if s.is_alive()]
 
     def update(self):
-        dt = game_framework.frame_time
-        self.blink_cooldown = max(0, self.blink_cooldown - dt)
-        self.summon_cooldown = max(0, self.summon_cooldown - dt)
+        self.blink_cooldown = max(0, self.blink_cooldown - game_framework.frame_time)
         super().update()
 
     def chase(self):
@@ -68,7 +57,8 @@ class BossMage(BossBase):
         if self.attack_cooldown <= 0:
             name = self.pick_pattern(self.pattern_weights(dist))
             if name:
-                self.remember_pattern(name)
+                cooldown = STATS['summon_cooldown'] if name == 'summon' else 0
+                self.remember_pattern(name, cooldown)
                 self.attack_queue = [self.patterns[name]]
                 self.start_next_attack()
                 return
@@ -80,7 +70,7 @@ class BossMage(BossBase):
 
     def pattern_weights(self, dist):
         weights = dict(STATS['near'] if dist <= STATS['near_range'] else STATS['far'])
-        if self.summon_cooldown > 0 or len(self.alive_summons()) >= STATS['summon_max']:
+        if len(self.alive_summons()) >= STATS['summon_max']:
             weights['summon'] = 0
         return weights
 
@@ -143,12 +133,6 @@ class BossMage(BossBase):
             self.summons.append(mage)
             self.new_summons.append(mage)
             effect.burst(x, self.y + mage.h / 2, config.TELEPORT_PUFF, mage.color)
-        self.summon_cooldown = STATS['summon_cooldown']
-
-    def die(self):
-        super().die()
-        for s in self.alive_summons():
-            s.die()
 
     def draw_weapon(self, l, b, r, t):
         # 긴 지팡이 + 끝의 구슬. 예고·시전 준비 중엔 구슬이 빛나고, 대형 마력구는 구체 크기까지 부풀어 오른다

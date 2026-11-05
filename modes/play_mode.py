@@ -54,8 +54,10 @@ def enter_room(new_room, arrival):
     enemies = []
     add_enemies(room.spawn_enemies(player))
     boss = next((e for e in enemies if e.is_boss), None)
-    if any(e.kind != 'statue' for e in enemies):   # 연습 석상만 있는 방은 전투 음악 없음
-        sound.play_music('boss' if boss else 'battle')
+    if boss:
+        sound.stop_music()   # 보스 BGM은 아레나 트리거에서 등장할 때 (boss.wake)
+    elif any(e.kind != 'statue' for e in enemies):   # 연습 석상만 있는 방은 전투 음악 없음
+        sound.play_music('battle')
     else:
         sound.stop_music()
 
@@ -291,6 +293,15 @@ def save_game():
     hud.show_message('저장했습니다 (디버그)' if state.debug_unlocked else '저장했습니다')
 
 
+def on_boss_defeated(defeated):
+    # 보스가 쓰러짐 (11.2, script.Arena가 문을 연 뒤 부른다): 품고 있던 공기가 풀려 아레나 전체가
+    # 영구 안전지대가 되고, 처치 기록 → 자동 저장 → BGM 멈춤
+    world.state.bosses_defeated.add(defeated.boss_key)
+    game_world.add_object(room.release_air(world.state), config.DEPTH_BG)
+    sound.stop_music()
+    save_game()
+
+
 def check_exits():
     # 출구에 몸이 닿으면 그 방으로. 두 출구에 동시에 닿아도 하나만 처리한다
     if player.dead or player.is_hazard_respawning() or player.blackout or not world.can_exit():
@@ -349,6 +360,8 @@ def draw_scene():
     if alpha > 0:
         effect.draw_screen_alpha_rect(0, 0, config.SCREEN_W, config.SCREEN_H, config.COLOR_FADE, alpha)
     hud.draw(player, boss if boss and boss.is_alive() else None)
+    if boss and boss.is_alive():
+        hud.draw_boss_card(boss)   # 첫 만남 타이틀 카드 (11.2)
     if script.fade_alpha() > 0:
         # 도입부 추락 암전은 HUD까지 덮는다
         effect.draw_screen_alpha_rect(0, 0, config.SCREEN_W, config.SCREEN_H, config.COLOR_FADE, script.fade_alpha())
