@@ -54,6 +54,7 @@ class Player:
         self.swing_strong = False  # 이번 휘두름이 세 번째 일격인가
         self.attack_hits = set()   # 이번 휘두름에 이미 맞힌 대상 (한 번 휘두름에 한 번만 피해)
         self.pickaxe_lv = 1
+        self.ore = 0               # 소지 광석. T38에서 systems/economy.py로 옮긴다
         # 반동: 옆 공격 적중 시 recoil_timer 동안 recoil_dir 쪽으로 ATTACK_RECOIL만큼 밀린다
         self.recoil_timer = 0.0
         self.recoil_dir = 0

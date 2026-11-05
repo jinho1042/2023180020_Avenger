@@ -289,6 +289,16 @@ def boss_phase2(x, y, color):
     sound.play('phase2')
 
 
+def wall_broken(x, y, color):
+    # 균열벽·광석 덩어리가 부서짐
+    burst(x, y, config.WALL_DEBRIS, color)
+    sound.play('door')
+
+
+def ore_mined(x, y):
+    burst(x, y, config.ORE_SPARK, config.COLOR_ORE)
+
+
 def door_opened(x, y):
     burst(x, y, config.DOOR_SPARK, config.COLOR_DOOR_OPEN)
     sound.play('door')

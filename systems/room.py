@@ -5,6 +5,7 @@ import config
 from objects.boss_greatsword import BossGreatsword
 from objects.boss_mage import BossMage
 from objects.boss_twinblade import BossTwinblade
+from objects.breakable import Breakable
 from objects.enemy_adept_mage import EnemyAdeptMage
 from objects.enemy_apprentice_mage import EnemyApprenticeMage
 from objects.enemy_archer import EnemyArcher
@@ -13,7 +14,10 @@ from objects.enemy_dual_dagger import EnemyDualDagger
 from objects.enemy_flyer import EnemyFlyer
 from objects.enemy_melee import EnemyMelee
 from objects.exit_zone import ExitZone
+from objects.gate import Gate
+from objects.hazard import Hazard
 from objects.platform import Platform
+from objects.switch import Switch
 
 # spawns의 이름 → 적 클래스
 ENEMY_TYPES = {'melee': EnemyMelee, 'flyer': EnemyFlyer, 'archer': EnemyArcher,
@@ -43,7 +47,7 @@ class Room:
         self.safe_points = [tuple(p) for p in data.get('safe_points', [])]
         # [v2] player_start. v3 방은 출구로 들어오고, 워프는 safe_points[0] → 첫 출구 순으로 자리를 고른다
         self.player_start = tuple(data['player_start']) if 'player_start' in data else None
-        # 나머지 12.5 필드. 객체로 만드는 것은 각 기믹 작업에서 (T35~). 지금은 배치 정보만 보관한다
+        # 나머지 12.5 필드. 기믹 객체는 build()가 만든다 (T35~). 아직 객체가 없는 필드는 배치 정보만 보관한다
         self.map_cell = tuple(data.get('map_cell', (0, 0)))
         self.music = data.get('music')
         self.air = data.get('air')
@@ -57,8 +61,21 @@ class Room:
                       'switches', 'objects', 'triggers'):
             setattr(self, field, [tuple(item) for item in data.get(field, [])])
 
+    def build(self, state):
+        # 기믹 객체를 만든다 (12.6). 부서진 벽·열린 문은 만들지 않는다 (5.6)
+        # 닫힌 문·부서지기 전 벽은 terrain에 넣어 플레이어·적·투사체가 지형처럼 부딪힌다
+        self.hazard_objects = [Hazard(*h) for h in self.hazards if h[4] in Hazard.KINDS]
+        breakables = [Breakable(self.id, *b, state) for b in self.breakables
+                      if b[4] in Breakable.KINDS and f'{self.id}:{b[5]}' not in state.broken]
+        gates = {g[5]: Gate(self.id, *g, state) for g in self.gates
+                 if g[4] in Gate.KINDS and f'{self.id}:{g[5]}' not in state.opened}
+        switches = [Switch(self.id, *s, gates.get(s[4]), state) for s in self.switches if s[2] in Switch.KINDS]
+        self.terrain = self.platforms + breakables + list(gates.values())
+        # 곡괭이에 맞는 기믹 전부 (combat.hit_gimmicks)
+        self.gimmicks = self.hazard_objects + breakables + list(gates.values()) + switches
+
     def exit(self, exit_id):
         return next(e for e in self.exits if e.id == exit_id)
 
     def spawn_enemies(self, player):
-        return [ENEMY_TYPES[kind](x, y, player, self.platforms) for kind, x, y in self.spawns]
+        return [ENEMY_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns]

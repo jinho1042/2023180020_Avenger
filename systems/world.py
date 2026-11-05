@@ -6,7 +6,7 @@ from systems.room import Room
 
 ROOM_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'rooms')
 
-# 영구 월드 상태 (5.6, 13.6 world). 저장은 T36. runes·engravings_*는 13.6에서 player 쪽이지만 지금은 여기에 둔다 (18장 8번)
+# 영구 월드 상태 (5.6, 13.6 world). 저장은 T36. mined = 덜 부순 벽·덩어리의 친 횟수 (18장 25번). runes·engravings_*는 13.6에서 player 쪽이지만 지금은 여기에 둔다 (18장 8번)
 state = None
 room_paths = {}    # 방 id(파일 이름) → JSON 경로. data/rooms 아래 모든 폴더
 enter = None       # 방을 실제로 채우는 함수 (play_mode.enter_room). Room과 도착 정보를 받는다
@@ -20,7 +20,7 @@ pending = None     # 'out'이 끝나면 들어갈 (방 id, 도착 정보)
 def new_state():
     return SimpleNamespace(
         runes={}, engravings_owned=set(), engravings_set={}, flags=set(), debug_unlocked=False,
-        visited=set(), map_stones=set(), broken=set(), opened=set(), switches=set(), collected=set(),
+        visited=set(), map_stones=set(), broken=set(), mined={}, opened=set(), switches=set(), collected=set(),
         miners_rescued=set(), miner_rewards_taken=set(), safe_zones_found=set(),
         bosses_met=set(), bosses_defeated=set(), elites_defeated=set(), cores=set(), hint_fail_count=0)
 
@@ -51,6 +51,7 @@ def room_ids():
 def load(room_id, arrival=None):
     # 페이드 없이 바로 방을 바꾼다 (새 게임 첫 방). 평소에는 go_through·warp
     room = Room(room_paths[room_id])
+    room.build(state)
     state.visited.add(room.id)
     enter(room, arrival or {})
 
@@ -131,10 +132,10 @@ def place_player(player, room, arrival):
         spot = arrival.get('spot') or room.player_start or (room.safe_points[0] if room.safe_points else None)
         if spot is None and room.exits:
             spot = exit_spot(room.exits[0], 0)
-        player.enter_room(room.platforms, spot or (room.width / 2, 0), room.safe_points)
+        player.enter_room(room.terrain, spot or (room.width / 2, 0), room.safe_points)
         return
     exit_zone = room.exit(arrival['exit_id'])
-    player.enter_room(room.platforms, exit_spot(exit_zone, arrival['along']), room.safe_points)
+    player.enter_room(room.terrain, exit_spot(exit_zone, arrival['along']), room.safe_points)
     if exit_zone.side in ('left', 'right'):
         player.vx, player.vy = arrival['vx'], arrival['vy']
     elif exit_zone.side == 'up':

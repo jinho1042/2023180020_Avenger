@@ -55,7 +55,8 @@ def resolve_y(x, prev_y, y, vy, w, h, platforms):
     # 반환: (y, vy, on_ground)
     on_ground = False
     for p in platforms:
-        if not overlaps_x(x, w, p):
+        # kind가 None이면 부서진 벽·열린 문 (objects/breakable.py, gate.py)
+        if p.kind is None or not overlaps_x(x, w, p):
             continue
         if vy <= 0 and prev_y >= p.top and y <= p.top:
             # 착지: solid, oneway 모두 위에서 떨어질 때만

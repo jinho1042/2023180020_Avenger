@@ -5,9 +5,10 @@ from objects import effect
 # 공격 hitbox와 몸 hitbox의 판정. 적 공격이 닿으면 패링 성공/피격으로 분기한다
 
 
-def resolve(player, enemies):
+def resolve(player, enemies, gimmicks=()):
     attack_bb = player.get_attack_bb()
     if attack_bb:
+        hit_gimmicks(player, attack_bb, gimmicks)
         for e in enemies:
             if not e.is_alive() or e in player.attack_hits:
                 continue
@@ -41,6 +42,17 @@ def resolve(player, enemies):
         if e.is_alive() and e.deals_contact() and game_world.overlap(e.get_bb(), body_bb):
             if player.take_hit(config.CONTACT_DAMAGE, e.x):
                 effect.player_hit(player.x, player.y + config.PLAYER_H / 2)
+
+
+def hit_gimmicks(player, attack_bb, gimmicks):
+    # 곡괭이가 벽·문·레버·가시에 닿음 (5.4). 대상마다 휘두름당 1번, 맞은 대상은 적과 똑같이 반동·포고
+    for g in gimmicks:
+        if g in player.attack_hits or not game_world.overlap(attack_bb, g.get_bb()):
+            continue
+        player.attack_hits.add(g)
+        if g.on_pickaxe_hit(player):
+            player.on_attack_hit()
+            effect.attack_hit(*contact_point(attack_bb, g.get_bb()), player.attack_angle(), False, False)
 
 
 def projectile_hit(player, p):

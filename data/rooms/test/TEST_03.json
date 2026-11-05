@@ -21,6 +21,20 @@
     [2950, 1200, 240, 24, "oneway"],
     [2600, 80, 80, 300, "solid"]
   ],
+  "hazards": [
+    [1000, 80, 200, 24, "spike"]
+  ],
+  "breakables": [
+    [1800, 80, 48, 300, "crack", "crack_a"],
+    [2250, 80, 64, 64, "ore_chunk", "ore_a"]
+  ],
+  "gates": [
+    [2300, 1040, 48, 360, "lever_gate", "gate_a"],
+    [3500, 80, 48, 300, "one_way", "short_a", {"open_from": "right"}]
+  ],
+  "switches": [
+    [2450, 80, "lever", "lever_a", "gate_a"]
+  ],
   "exits": [
     {"id": "L", "rect": [0, 80, 16, 200], "to": "TEST_02", "to_exit": "R"}
   ],
