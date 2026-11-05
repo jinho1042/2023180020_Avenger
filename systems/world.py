@@ -66,6 +66,19 @@ def room_region(room_id):
     return os.path.basename(os.path.dirname(path)) if path else None
 
 
+def map_rooms(region):
+    # 지도에 그릴 그 구역 방 (13.4): 방문한 방 + 지도석을 얻은 구역이면 나머지 방도. 반환: [(Room, 방문 여부)]
+    # Room은 배치 정보만 읽고 build()하지 않는다
+    shown = []
+    for room_id in room_ids():
+        if room_region(room_id) != region:
+            continue
+        visited = room_id in state.visited
+        if visited or region in state.map_stones:
+            shown.append((Room(room_paths[room_id]), visited))
+    return shown
+
+
 def load(room_id, arrival=None):
     # 페이드 없이 바로 방을 바꾼다 (새 게임 첫 방). 평소에는 go_through·warp
     room = Room(room_paths[room_id])

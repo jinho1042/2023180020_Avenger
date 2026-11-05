@@ -669,6 +669,33 @@ SHOP = dict(               # 보름 상점: (가격, 판매 조건). 조건 'reg
 )
 SHOP_RARE_ORE = 1          # 각인이 아닌 상품(rare_ore_*) 하나에 든 희귀 광석 수
 
+# 지도 (T40, 13.4). Tab을 누르고 있는 동안. 지금 있는 구역만 그린다. 방 1화면 = MAP_CELL_W × MAP_CELL_H px
+MAP_CELL_W, MAP_CELL_H = 96, 54
+MAP_ROOM_BORDER = 3        # px, 방 테두리
+MAP_EXIT_GAP_MIN = 10      # px, 출구 틈 최소 길이 (출구 길이를 줄인 값이 이보다 짧으면)
+MAP_SCROLL_SPEED = 600     # px/s, ←→↑↓ 스크롤
+MAP_DIM_ALPHA = 245       # 0~255, 지도 뒤 화면을 어둡게
+MAP_FILL_DIM = 0.35        # 방문한 방 안쪽 칠 = 구역 색 × 이 값
+MAP_SAFE_RADIUS = 9        # px, 안전지대 (큰 원)
+MAP_VENT_RADIUS = 4        # px, 숨구멍 (작은 원)
+MAP_DOT_GAP = 10           # px, 숨 소모가 큰 곳의 점 무늬 간격
+MAP_DOT = 2                # px
+MAP_HATCH_GAP = 10         # px, 숨 게이트 방 빗금 간격
+MAP_ICON = 12              # px, 보름 캠프·대장간·새김터 사각 아이콘 한 변
+MAP_PLAYER_RADIUS = 6      # px, 현재 위치 (각인 '광부의 나침반' 장착 시)
+MAP_PLAYER_BLINK = 0.4     # s
+MAP_TOP_PAD = 50           # px, 화면 위 구역 이름 줄
+MAP_DISC_STEP = 2          # px, 지도 원을 쌓는 가로 띠 두께
+MAP_NPC_ICON = dict(borum='camp', har='forge')   # NPC id → 지도 아이콘 (13.4)
+COLOR_MAP_BG = (10, 10, 16)
+COLOR_MAP_UNVISITED = (110, 110, 120)  # 지도석으로만 아는 방 (회색 윤곽)
+COLOR_MAP_SAFE = (70, 150, 90)         # 안전지대 = COLOR_SAFE_ZONE
+COLOR_MAP_VENT = (120, 200, 240)       # 숨구멍 = COLOR_AIR_VENT
+COLOR_MAP_HATCH = (150, 150, 190)      # 숨 게이트 빗금·요구 레벨 숫자
+COLOR_MAP_ICON = dict(camp=(220, 170, 90), forge=(200, 120, 70), carver=(140, 180, 220),
+                      boss=(200, 70, 160), boss_done=(110, 80, 100), shortcut=(130, 220, 120))
+COLOR_MAP_PLAYER = (255, 220, 120)
+
 # 결과 화면
 COLOR_RESULT_DEAD = (239, 68, 68)
 COLOR_RESULT_CLEAR = (255, 220, 120)
