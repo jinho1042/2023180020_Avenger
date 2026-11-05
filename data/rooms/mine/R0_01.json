@@ -1,0 +1,32 @@
+{
+  "id": "R0_01",
+  "region": "mine",
+  "size": [2, 1],
+  "map_cell": [0, 2],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 64, "solid"],
+    [0, 64, 40, 656, "solid"],
+    [40, 660, 2520, 60, "solid"],
+    [2520, 264, 40, 396, "solid"],
+    [1150, 190, 200, 24, "oneway"]
+  ],
+  "breakables": [
+    [1600, 64, 64, 72, "ore_chunk", "chunk_a"],
+    [2050, 64, 64, 72, "ore_chunk", "chunk_b"]
+  ],
+  "exits": [
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R0_02", "to_exit": "L"}
+  ],
+  "objects": [
+    ["npc", 1000, 64, "borum_mine"]
+  ],
+  "spawns": [],
+  "triggers": [
+    [260, 64, 200, 120, "sign", "sign_move"],
+    [700, 64, 200, 120, "sign", "sign_talk"]
+  ],
+  "safe_points": [[140, 64], [1400, 64]]
+}

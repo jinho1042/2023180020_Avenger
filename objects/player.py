@@ -76,6 +76,10 @@ class Player:
         self.mend_wait = False
         # 숨 게이트 기절 (Blackout, 7.3): 입력 잠금·무적. 시작·끝은 systems/breath.py가 정한다
         self.blackout = False
+        # 컷신 (Cutscene, 2.2 추락): 입력 잠금·무적, 중력만 받는다. 시작·끝은 systems/script.py가 정한다
+        self.cutscene = False
+        # 체력이 이 아래로 내려가지 않는다. 광산(R0)은 사망이 없어 1 (13.6, script.py가 방마다 정함)
+        self.min_hp = 0
         # 피격: hit_timer > 0인 동안 경직(조작 불가, 밀려남), 무적은 invincible_timer로 따로 센다
         # 체력은 칸 단위 정수 (6.7)
         self.hp = config.HP_START
@@ -149,7 +153,7 @@ class Player:
 
     def is_invincible(self):
         return ((self.is_dashing() and config.DASH_INVINCIBLE) or self.invincible_timer > 0 or self.dead
-                or self.is_hazard_respawning() or self.blackout)
+                or self.is_hazard_respawning() or self.blackout or self.cutscene)
 
     def is_hazard_respawning(self):
         return self.hazard_timer > 0
@@ -178,7 +182,7 @@ class Player:
         # 새 동작을 시작할 수 없는 상태. 패링은 캔슬 불가 (6.3)
         return (self.dead or self.is_hit() or self.is_parrying() or self.is_parry_stunned()
                 or self.is_hard_landing() or self.is_hazard_respawning() or self.sitting
-                or self.is_mending() or self.blackout)
+                or self.is_mending() or self.blackout or self.cutscene)
 
     # ---------- 동작 시작 ----------
 
@@ -300,7 +304,7 @@ class Player:
 
     def lose_hp(self, damage):
         # 체력을 깎고 무적을 건다. 체력 0이면 사망 (부활은 play_mode가 DEATH_DELAY 뒤에 한다)
-        self.hp = max(0, self.hp - self.final_damage(damage))
+        self.hp = max(self.min_hp, self.hp - self.final_damage(damage))
         self.sitting = False
         self.parry_timer = 0
         self.parry_stun_timer = 0
@@ -314,7 +318,7 @@ class Player:
 
     def suffocate_hit(self):
         # 질식 피해 (7.3): 1칸. 히트스톱·경직·무적 없이, 피격 무적 중에도 들어간다
-        self.hp = max(0, self.hp - 1)
+        self.hp = max(self.min_hp, self.hp - 1)
         self.sitting = False
         self.cancel_mend()
         if self.hp == 0:
@@ -417,6 +421,16 @@ class Player:
 
     def end_blackout(self):
         self.blackout = False
+
+    def start_cutscene(self):
+        # 컷신 (2.2 추락): 기절과 같이 하던 동작을 끊고 입력을 잠근다. 몸은 그대로 떨어진다
+        self.start_blackout()
+        self.blackout = False
+        self.cutscene = True
+
+    def end_cutscene(self):
+        self.cutscene = False
+        input.clear_buffers()
 
     def revive(self):
         # 사망 부활 (13.2): 체력 전부. 자리·속도는 방에 들어올 때 enter_room이 정한다
@@ -552,8 +566,8 @@ class Player:
             self.update_sitting()
             input.update(dt)
             return
-        if self.blackout:
-            # Blackout: 입력 잠금, 중력만 받는다
+        if self.blackout or self.cutscene:
+            # Blackout · Cutscene: 입력 잠금, 중력만 받는다
             self.vx = 0.0
             self.update_move_y(dt)
             input.update(dt)

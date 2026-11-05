@@ -17,14 +17,14 @@ from objects.enemy_flyer import EnemyFlyer
 from objects.enemy_melee import EnemyMelee
 from objects.exit_zone import ExitZone
 from objects.gate import Gate
-from objects.hazard import Hazard
+from objects.hazard import Hazard, Rockfall
 from objects.npc import Npc
 from objects.platform import Platform
 from objects.safe_zone import SafeZone
 from objects.switch import Switch
 
-# spawns의 이름 → 적 클래스
-ENEMY_TYPES = {'melee': EnemyMelee, 'flyer': EnemyFlyer, 'archer': EnemyArcher,
+# spawns의 이름 → 적 클래스. bat(동굴 박쥐, 10.2)은 T42에서 bat.py로 바꾸기 전까지 플라잉 몹
+ENEMY_TYPES = {'melee': EnemyMelee, 'flyer': EnemyFlyer, 'bat': EnemyFlyer, 'archer': EnemyArcher,
                'apprentice_mage': EnemyApprenticeMage, 'adept_mage': EnemyAdeptMage,
                'dual_dagger': EnemyDualDagger, 'assassin': EnemyAssassin,
                'greatsword': BossGreatsword, 'mage': BossMage, 'twinblade': BossTwinblade}
@@ -68,7 +68,8 @@ class Room:
     def build(self, state):
         # 기믹 객체를 만든다 (12.6). 부서진 벽·열린 문은 만들지 않는다 (5.6)
         # 닫힌 문·부서지기 전 벽은 terrain에 넣어 플레이어·적·투사체가 지형처럼 부딪힌다
-        self.hazard_objects = [Hazard(*h) for h in self.hazards if h[4] in Hazard.KINDS]
+        self.hazard_objects = ([Hazard(*h) for h in self.hazards if h[4] in Hazard.KINDS]
+                               + [Rockfall(*h) for h in self.hazards if h[4] in Rockfall.KINDS])
         breakables = [Breakable(self.id, *b, state) for b in self.breakables
                       if b[4] in Breakable.KINDS and f'{self.id}:{b[5]}' not in state.broken]
         gates = {g[5]: Gate(self.id, *g, state) for g in self.gates

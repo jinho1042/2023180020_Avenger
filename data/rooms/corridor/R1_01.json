@@ -1,0 +1,30 @@
+{
+  "id": "R1_01",
+  "region": "corridor",
+  "size": [1, 1],
+  "map_cell": [4, 6],
+  "music": "corridor",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 64, 40, 656, "solid"],
+    [40, 680, 480, 40, "solid"],
+    [760, 680, 520, 40, "solid"],
+    [1240, 264, 40, 416, "solid"]
+  ],
+  "safe_zones": [
+    [40, 64, 820, 560, "safe_a"]
+  ],
+  "exits": [
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R1_02", "to_exit": "L"}
+  ],
+  "objects": [
+    ["seat", 240, 64, "safe_a"]
+  ],
+  "spawns": [],
+  "triggers": [
+    [520, 64, 240, 656, "air_shaft", "shaft_a"]
+  ],
+  "safe_points": [[450, 64]]
+}

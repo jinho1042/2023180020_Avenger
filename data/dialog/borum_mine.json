@@ -1,0 +1,12 @@
+{
+  "name": "보름",
+  "name_en": "Borum",
+  "pages": [
+    ["오늘은 이 줄만 캐면 끝이야.", "벽에 박힌 광석 덩어리는 곡괭이로 몇 번 치면 떨어져."],
+    ["...방금 그 소리 들었어? 저 안쪽에서 뭔가 울려.", "기분이 안 좋네. 얼른 끝내고 올라가자."]
+  ],
+  "pages_en": [
+    ["Just this seam and we're done for today.", "Hit those ore chunks a few times with your pickaxe."],
+    ["...Did you hear that? Something's rumbling deep inside.", "I don't like it. Let's finish up and head out."]
+  ]
+}
