@@ -174,10 +174,10 @@ def place_player(player, room, arrival):
                 or room.player_start or (room.safe_points[0] if room.safe_points else None))
         if spot is None and room.exits:
             spot = exit_spot(room.exits[0], 0)
-        player.enter_room(room.terrain, spot or (room.width / 2, 0), room.safe_points)
+        player.enter_room(room.terrain, spot or (room.width / 2, 0), room.safe_points, room.water)
         return
     exit_zone = room.exit(arrival['exit_id'])
-    player.enter_room(room.terrain, exit_spot(exit_zone, arrival['along']), room.safe_points)
+    player.enter_room(room.terrain, exit_spot(exit_zone, arrival['along']), room.safe_points, room.water)
     if exit_zone.side in ('left', 'right'):
         player.vx, player.vy = arrival['vx'], arrival['vy']
     elif exit_zone.side == 'up':

@@ -1,7 +1,8 @@
 import config
 from objects import effect
 from objects.bosses.boss_base import BossBase
-from objects.enemy_base import ACTIVE, RECOVER, STAGGER, WINDUP, Attack
+from objects.enemies.ruin_golem import draw_golem, release_waves
+from objects.enemy_base import ACTIVE, RECOVER, STAGGER, TELEGRAPH, WINDUP, Attack
 from systems import camera, sound
 
 # 정예 (10.4): 자세 게이지가 있고 한 번 처치하면 다시 나오지 않는다 (world_state.elites_defeated)
@@ -10,6 +11,7 @@ from systems import camera, sound
 # 방 JSON: objects ["elite", x, y, 종류, id] (x, y = 발 중심)
 
 CAPTAIN = config.ELITE_SHELL_CAPTAIN
+GOLEM = config.ELITE_TEMPLE_GOLEM
 
 
 class ShellCaptain(BossBase):
@@ -147,3 +149,74 @@ class ShellCaptain(BossBase):
         camera.draw_rect(sl, b + self.h * 0.2, sl + sw, b + self.h * 0.2 + sh, *config.COLOR_SHIELD, filled=True)
         if self.state == WINDUP and self.attack is not None and self.attack.name != 'leap':
             super().draw_weapon(l, b, r, t)
+
+
+class TempleGolem(BossBase):
+    # 정예 신전 골렘 (R4 신전 중층, 10.4): 유적 골렘 확장. 넉백·경직 없음 (BossBase)
+    # 주먹 2연타 (흰) · 충격파 (빨강, 양쪽 바닥 파동) · 돌진 (빨강, 벽에 닿으면 멈춤)
+    # 처치 보상(희귀 광석·숏컷 문)은 play_mode.on_elite_defeated (config.ELITE_REWARD_RARE_ORE·ELITE_REWARD_GATE)
+    kind = 'elite'
+    boss_key = 'temple_golem'
+
+    def __init__(self, x, y, player, platforms, elite_gid):
+        super().__init__(x, y, GOLEM, player, platforms)
+        self.gid = elite_gid
+        f, wv, r = GOLEM['fist'], GOLEM['wave'], GOLEM['rush']
+        dmg = GOLEM['damage']
+        combo = GOLEM['combo_telegraph']
+        self.patterns = dict(
+            fist2=[Attack('fist2', True, GOLEM['telegraph'], f['windup'], f['active'], f['recover'], dmg, f['hitbox']),
+                   Attack('fist2', True, combo, f['windup'], f['active'], GOLEM['last_recover'], dmg, f['hitbox'])],
+            wave=[Attack('wave', False, wv['telegraph'], wv['windup'], wv['active'], wv['recover'], dmg, None)],
+            rush=[Attack('rush', False, r['telegraph'], r['windup'], r['active'], r['recover'], dmg, r['hitbox'])])
+
+    def wake(self, first):
+        super().wake(False)   # 정예는 타이틀 카드 없이 짧은 등장만
+
+    def chase(self):
+        self.vx = 0
+        if self.player.dead:
+            return
+        self.face_player()
+        near = abs(self.player.x - self.x) <= GOLEM['near_range']
+        if self.attack_cooldown <= 0:
+            name = self.pick_pattern(GOLEM['near'] if near else GOLEM['far'])
+            if name:
+                self.remember_pattern(name)
+                self.attack_queue = list(self.patterns[name])
+                self.start_next_attack()
+                return
+        if not near:
+            self.vx = self.face_dir * self.speed
+
+    def is_rushing(self):
+        return self.state == ACTIVE and self.attack is not None and self.attack.name == 'rush'
+
+    def next_phase(self):
+        super().next_phase()
+        if self.state == ACTIVE and self.attack is not None and self.attack.name == 'wave':
+            release_waves(self, GOLEM, self.attack_damage())
+
+    def move(self, dt):
+        if not self.is_rushing():
+            super().move(dt)
+            return
+        # 돌진: 예고 때 바라본 방향 그대로. 벽(방 가장자리 포함)에 막히면 쿵 하고 멈춘다
+        self.vx = self.face_dir * GOLEM['rush']['speed']
+        prev_x = self.x
+        super().move(dt)
+        if abs(self.x - prev_x) < abs(self.vx * dt) * 0.5:
+            self.vx = 0
+            effect.burst(self.x + self.face_dir * self.w / 2, self.y + self.h / 2, GOLEM['dust'], config.COLOR_ROCK)
+            camera.shake(*GOLEM['shake'])
+            sound.play('door')
+            self.set_state(RECOVER, self.attack.recover)
+
+    def draw_weapon(self, l, b, r, t):
+        raised = (self.attack is not None and self.attack.name == 'wave' and self.state in (TELEGRAPH, WINDUP))
+        draw_golem(self, l, b, r, t, raised)
+        if self.attack is not None and self.attack.name == 'rush' and self.state != RECOVER:
+            # 돌진: 어깨를 앞으로 숙인다 (몸 앞 위쪽 돌덩이)
+            sh = self.w * 0.3
+            front = r if self.face_dir > 0 else l - sh
+            camera.draw_rect(front, t - sh * 1.5, front + sh, t - sh * 0.5, *config.COLOR_ROCK, filled=True)

@@ -1,0 +1,36 @@
+{
+  "id": "R4_03",
+  "region": "temple",
+  "size": [2, 1],
+  "map_cell": [3, 0],
+  "music": "temple",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 200, "solid"],
+    [0, 400, 40, 280, "solid"],
+    [2520, 400, 40, 280, "solid"],
+    [0, 680, 2560, 40, "solid"],
+    [1950, 330, 150, 16, "oneway"],
+    [2200, 440, 320, 24, "solid"]
+  ],
+  "air_vents": [
+    [1750, 260, "vent_a"]
+  ],
+  "breakables": [
+    [900, 200, 100, 120, "ore_vein", "vein_a"],
+    [2300, 464, 40, 176, "crack", "crack_a"],
+    [2420, 464, 56, 56, "ore_chunk", "chunk_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 200, 16, 200], "to": "R4_02", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 200, 16, 200], "to": "R4_04", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["ruin_golem", 1500, 200]
+  ],
+  "safe_points": [
+    [300, 200],
+    [2300, 200]
+  ]
+}

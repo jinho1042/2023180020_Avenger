@@ -12,10 +12,13 @@ from systems import breath, camera, engravings, input, runes, sound, terrain
 # 입력은 handle_event에서 systems/input.py에 저장만 하고, 실제 동작은 update에서 버퍼를 꺼내 시작한다 (6.3 입력 버퍼)
 
 
-def fall_motion(vy, t):
+def fall_motion(vy, t, wet=False):
     # 중력 가속을 t초 동안 정확히 적분한다 (프레임률과 상관없이 같은 궤적). 최대 낙하 속도에서 멈춘다
+    # wet = 물 안 (6.4): 중력 × WATER_GRAVITY_MULT, 최대 낙하 속도 WATER_MAX_FALL_SPEED
     # 반환: (이동 거리, 새 vy)
     g, v_max = config.GRAVITY, config.MAX_FALL_SPEED
+    if wet:
+        g, v_max = g * config.WATER_GRAVITY_MULT, config.WATER_MAX_FALL_SPEED
     if vy <= v_max:
         return v_max * t, v_max
     t_cap = (v_max - vy) / g
@@ -118,6 +121,10 @@ class Player:
         self.rockfall = False
         self.rockfall_hits = set()   # 이번 낙하에 몸으로 이미 맞힌 적 (한 번 낙하에 한 번만 피해)
         self.shockwave = None        # 착지 충격파 판정 (l, b, r, t). combat이 한 번 꺼내 쓴다
+        # 물 (6.4, T53): 지금 방의 water 영역 (x, y, w, h)과 이번 프레임에 몸 중심이 물 안인지
+        # 배율은 wet일 때만 곱해 쓰고 값에 누적해 대입하지 않는다 (16장 '물 안 이동')
+        self.water = []
+        self.wet = False
 
     # ---------- 각인으로 바뀌는 수치 (8.4): 매번 기본값 × 장착 각인으로 계산 (누적 대입 없음) ----------
 
@@ -152,9 +159,11 @@ class Player:
     def dash_cooldown_time(self):
         return engravings.dash_cooldown()
 
-    def enter_room(self, platforms, start, safe_points=()):
+    def enter_room(self, platforms, start, safe_points=(), water=()):
         # 다음 방으로 옮길 때 위치·속도·지형만 바꾸고 체력 등 런 상태는 유지한다
         self.x, self.y = start
+        self.water = [tuple(w[:4]) for w in water]
+        self.wet = self.in_water()
         self.safe_points = list(safe_points)
         self.safe_point = None
         self.ground_spot = start
@@ -191,6 +200,16 @@ class Player:
 
     def rune_lv(self, rune):
         return runes.rune_lv(self.world_state, rune)
+
+    def in_water(self):
+        # 몸 중심이 water 영역 안인가 (6.4)
+        cx, cy = self.x, self.y + config.PLAYER_H / 2
+        return any(x <= cx <= x + w and y <= cy <= y + h for x, y, w, h in self.water)
+
+    @property
+    def water_speed_mult(self):
+        # 물 안이면 좌우 속도·대시 거리 × WATER_SPEED_MULT (6.4)
+        return config.WATER_SPEED_MULT if self.wet else 1.0
 
     def is_dashing(self):
         return self.dash_timer > 0
@@ -366,7 +385,7 @@ class Player:
         # 지금 속도로 JUMP_BUFFER초 떨어지는 동안 발밑 지형 윗면에 닿는가
         if self.vy > 0 or self.jump_rising:
             return False
-        dy, _ = fall_motion(self.vy, config.JUMP_BUFFER)   # 아래로 움직이므로 음수
+        dy, _ = fall_motion(self.vy, config.JUMP_BUFFER, self.wet)   # 아래로 움직이므로 음수
         ignore = self.drop_platforms if self.drop_timer > 0 else ()
         return any(p.kind is not None and p not in ignore and terrain.overlaps_x(self.x, config.PLAYER_W, p)
                    and self.y >= p.top >= self.y + dy for p in self.platforms)
@@ -717,6 +736,7 @@ class Player:
         self.since_last_strike += dt
         self.dash_strike_timer = max(0, self.dash_strike_timer - dt)
         self.wall_jump_lock = max(0, self.wall_jump_lock - dt)
+        self.wet = self.in_water()
         if self.is_hazard_respawning():
             # HazardRespawn: 입력 잠금, 움직이지 않는다. 누름은 버리지만 누름 상태는 계속 받는다
             self.update_hazard_respawn(dt)
@@ -761,7 +781,7 @@ class Player:
         # 마지막 프레임은 남은 시간만큼만 이동해서 이동 거리를 DASH_DIST에 맞춘다. 중력 무시
         step = min(dt, self.dash_timer)
         self.dash_timer -= step
-        self.vx = self.dash_dir * self.dash_dist / config.DASH_TIME
+        self.vx = self.dash_dir * self.dash_dist * self.water_speed_mult / config.DASH_TIME
         self.vy = 0
         self.dig_soil(self.x + self.vx * step)
         self.move_x(self.vx * step)
@@ -832,7 +852,7 @@ class Player:
         else:
             # 즉시 가감속, 공중 제어 100%. 공격 중에도 이동한다 (hitbox가 살아 있는 동안만 방향 고정)
             move = input.axis_x()
-            self.vx = move * config.PLAYER_SPEED
+            self.vx = move * config.PLAYER_SPEED * self.water_speed_mult
             if self.is_parrying() and self.on_ground:
                 self.vx = 0  # 지상 패링은 제자리
             if move != 0 and not self.is_attacking() and not self.is_parrying():
@@ -868,7 +888,7 @@ class Player:
                     self.vy *= config.JUMP_CUT
                 self.jump_rising = False
         if remaining > 0:
-            fall_dy, self.vy = fall_motion(self.vy, remaining)
+            fall_dy, self.vy = fall_motion(self.vy, remaining, self.wet)
             if self.is_wall_sliding() and self.vy < config.WALL_SLIDE_SPEED:
                 # 벽에 매달린 동안은 WALL_SLIDE_SPEED보다 빨리 떨어지지 않는다
                 fall_dy = max(fall_dy, config.WALL_SLIDE_SPEED * remaining)
