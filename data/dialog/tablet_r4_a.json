@@ -1,0 +1,26 @@
+{
+  "name": "석판",
+  "name_en": "Tablet",
+  "pages": [
+    [
+      "왕국은 숨샘을 신으로 섬겼다.",
+      "물이 차오르기 전, 이 회랑에는",
+      "숨을 바치러 오는 이들이 줄을 이었다."
+    ],
+    [
+      "봉인은 핵으로 잠겨 있다.",
+      "핵을 지키는 것은 돌로 깎은 수호상들이다."
+    ]
+  ],
+  "pages_en": [
+    [
+      "The kingdom worshipped the Breath Spring as a god.",
+      "Before the water rose, this hall was crowded",
+      "with those who came to offer their breath."
+    ],
+    [
+      "The seal is locked with cores.",
+      "Stone guardians keep watch over them."
+    ]
+  ]
+}

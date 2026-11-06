@@ -27,6 +27,9 @@ class BreathZone:
                 offset = gap / 2 if row % 2 else 0
                 for x in range(int(l + gap / 4 + offset), int(r), gap):
                     camera.draw_rect(x, y, x + dot, y + dot, *color, filled=True)
+        elif self.air == 'water':
+            # 물: 윗면에 수면 선 (14.5)
+            camera.draw_rect(l, t - config.WATER_SURFACE_H, r, t, *config.COLOR_WATER_SURFACE, filled=True)
         if game_world.show_hitbox:
             camera.draw_rect(l, b, r, t, *color)
 

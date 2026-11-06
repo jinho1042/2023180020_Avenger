@@ -1,0 +1,24 @@
+{
+  "name": "경고 석판",
+  "name_en": "Warning Tablet",
+  "pages": [
+    [
+      "이 아래는 깊은 물. 숨방도 바람 구멍도 없다.",
+      "물속에서는 숨이 세 배로 빨리 닳는다."
+    ],
+    [
+      "룬을 세 번 새겨 숨이 아주 길어진 자만",
+      "바닥 끝까지 다녀올 수 있으리라."
+    ]
+  ],
+  "pages_en": [
+    [
+      "Deep water lies below. No breath chamber, no vent.",
+      "Underwater, breath runs out three times as fast."
+    ],
+    [
+      "Only one whose rune is carved three times, whose breath runs very long,",
+      "may reach the far end and return."
+    ]
+  ]
+}

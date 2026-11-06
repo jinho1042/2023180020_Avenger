@@ -51,6 +51,12 @@ DASH_TIME = 0.25
 DASH_COOLDOWN = 0.6
 DASH_INVINCIBLE = False    # 일반 대시는 무적 아님
 EXIT_UP_BOOST = 900        # px/s, 위쪽 출구로 들어왔을 때 밀어올림
+# 물 안 (6.4, T53): 몸 중심이 water 영역 안일 때만. 점프·대시·벽 매달리기는 그대로, 헤엄 없음
+WATER_SPEED_MULT = 0.75    # 물 안 좌우 속도·대시 거리 배율
+WATER_GRAVITY_MULT = 0.5   # 물 안 중력 배율 (점프는 그대로 가능)
+WATER_MAX_FALL_SPEED = -350  # px/s, 물 안 최대 낙하 속도
+WATER_SURFACE_H = 4        # px, 물 영역 윗면에 긋는 수면 선 (그림)
+COLOR_WATER_SURFACE = (120, 220, 225)
 
 # ===== 곡괭이 공격 (T29) =====
 ATTACK_COOLDOWN = 0.41
@@ -590,7 +596,31 @@ VINE_LURKER = dict(hp=18, ambush_dist=150, damage=1, telegraph=0.4, claw_telegra
                    attack_cooldown=1.0, ceiling_probe=8)   # px, spawn 바로 아래 이만큼 안에 바닥이 없으면 천장 매복
 COLOR_LURKER_MOUND = (95, 75, 50)
 COLOR_LURKER_VINE = (70, 120, 55)
-# 독 거머리·유적 골렘 (T53), 정예 신전 골렘 (T53)은 해당 작업에서. 갑각 대장은 아래 ELITE_SHELL_CAPTAIN
+# 독 거머리 (T53, 10.3): spawn이 들어 있는 water 영역 안에서만, 수면 아래 depth px에서 헤엄친다 (가로 swim_speed)
+#   플레이어 발이 수면 위에 있고 가로 trigger_dist 안이면 흰 예고 → 포물선 도약 (위로 leap_speed, 가로는 플레이어 x 쪽,
+#   leap_vx_max까지). 도약 중에는 몸 전체가 공격 판정. 물로 돌아오면 recover 뒤 다시 헤엄 (active = 도약 시간 상한)
+#   물 밖 땅에 떨어지면 stranded초 동안 퍼덕이다 죽는다 (광석은 그대로 뿌림)
+LEECH = dict(hp=10, swim_speed=180, leap_speed=700, trigger_dist=200,
+             damage=1, telegraph=0.4, ore=3,
+             w=40, h=18, color=(110, 140, 60), speed=180, detect_range=600, attack_range=0,
+             windup=0.1, active=3.0, recover=0.5, attack_cooldown=1.2,
+             leap_vx_max=350, depth=6, stranded=1.0, flop=0.08,   # flop = 퍼덕임 좌우 뒤집기 간격 (그림)
+             splash=dict(count=8, speed=(80, 220), life=0.3, size=5))
+COLOR_LEECH_SPOT = (200, 190, 80)
+# 유적 골렘 (T53, 10.3): 느린 접근, 넉백·경직 없음 (패링 비틀거림은 있음)
+#   ① 주먹 (흰): attack_range 안에서 앞으로 내지름
+#   ② 충격파 (빨강, 패링 불가): 바닥을 내려쳐 양쪽으로 바닥을 따라 가는 낮은 파동 (shockwave_speed, 벽·발판 끝에서 사라짐, 점프로 넘김)
+#   attack_range 안이면 shockwave_chance로 충격파, 아니면 주먹. wave_range 안 · attack_range 밖이면
+#   공격 쿨이 끝날 때마다 shockwave_chance로 충격파, 아니면 reroll초 동안 걸어서 다가간다
+RUIN_GOLEM = dict(hp=45, speed=90, damage=2, telegraph=0.7, shockwave_chance=0.4,
+                  shockwave_speed=450, ore=12,
+                  w=80, h=110, color=(95, 125, 120), detect_range=900, attack_range=110,
+                  wave_range=600, reroll=0.8, attack_cooldown=1.0,
+                  fist=dict(windup=0.25, active=0.12, recover=0.6, hitbox=(90, 60)),
+                  wave=dict(telegraph=0.8, windup=0.3, active=0.1, recover=0.9),
+                  wave_w=40, wave_h=36,   # 충격파 한 줄 크기 (px)
+                  dust=dict(count=8, speed=(80, 240), life=0.35, size=6), shake=(4, 0.12))
+COLOR_GOLEM_RUNE = (120, 220, 210)   # 골렘 몸의 룬 무늬 (가슴·눈)
 
 # 수정 유생 (← v2 견습 마법사): keep_distance ± distance_tolerance 유지, shoot_range 안이면 조준해 수정탄 1발 (흰색)
 CRYSTAL_SPRITE = dict(hp=13, speed=120, keep_distance=450, bolt_speed=350,
@@ -677,9 +707,26 @@ ELITE_SHELL_CAPTAIN = dict(hp=80, speed=200, damage=1, telegraph=0.5, ore=60,
                                      dust=dict(count=10, speed=(80, 260), life=0.4, size=7)),
                            rush=dict(telegraph=0.6, windup=0.2, active=0.55, recover=0.9, speed=720,
                                      hitbox=(28, 84)))
-ELITE_NAME = dict(shell_captain='갑각 대장')          # 하단 이름 (보스 HUD를 같이 쓴다)
-ELITE_NAME_EN = dict(shell_captain='Shell Captain')
+# 정예 신전 골렘 (T53, 10.4): R4 신전 중층. objects ["elite", x, y, "temple_golem", id]. 유적 골렘 확장, 넉백·경직 없음
+#   ① 주먹 2연타 (흰): fist.telegraph → 2타는 combo_telegraph
+#   ② 충격파 (빨강): 유적 골렘과 같음 (양쪽 바닥 파동, 점프로 넘김)
+#   ③ 돌진 (빨강): 예고 때 바라본 방향으로 rush.speed, 벽에 닿거나 active가 끝나면 멈춤
+#   패턴 고르기: 거리 near_range 이하면 near 가중치, 아니면 far 가중치. 패턴 사이 BOSS_IDLE_GAP
+ELITE_TEMPLE_GOLEM = dict(hp=150, speed=90, damage=2, telegraph=0.7, ore=120,
+                          w=110, h=150, color=(70, 125, 130), detect_range=2560, near_range=170,
+                          near=dict(fist2=3, wave=1, rush=1), far=dict(fist2=0, wave=2, rush=2),
+                          fist=dict(windup=0.25, active=0.12, recover=0.3, hitbox=(110, 80)),
+                          combo_telegraph=0.4, last_recover=0.8,
+                          wave=dict(telegraph=0.8, windup=0.3, active=0.1, recover=1.0),
+                          rush=dict(telegraph=0.8, windup=0.3, active=1.2, recover=1.0, speed=520,
+                                    hitbox=(30, 130)),
+                          shockwave_speed=450, wave_w=48, wave_h=40,
+                          dust=dict(count=12, speed=(80, 280), life=0.4, size=7), shake=(6, 0.15))
+ELITE_NAME = dict(shell_captain='갑각 대장', temple_golem='신전 골렘')   # 하단 이름 (보스 HUD를 같이 쓴다)
+ELITE_NAME_EN = dict(shell_captain='Shell Captain', temple_golem='Temple Golem')
 ELITE_REWARD_ENGRAVINGS = dict(shell_captain=['counter_wave', 'breath_echo'])   # 처치 보상 각인 (10.4)
+ELITE_REWARD_RARE_ORE = dict(temple_golem=2)   # 처치 보상 희귀 광석 (10.4, 아이템 줍기 전이라 바로 더한다)
+ELITE_REWARD_GATE = dict(temple_golem='short_elite')   # 처치하면 같은 방의 이 문이 열린다 (구역 안 숏컷, 10.4)
 
 # ===== 자세 · 보스 공통 (9.4, 11.2) =====
 POSTURE_MAX = 100

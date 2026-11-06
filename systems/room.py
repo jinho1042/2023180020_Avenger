@@ -12,9 +12,11 @@ from objects import enemy_base
 from objects.breakable import Breakable
 from objects.enemies.bat import Bat
 from objects.enemies.crawler import Crawler
-from objects.enemies.elites import ShellCaptain
+from objects.enemies.elites import ShellCaptain, TempleGolem
 from objects.enemies.crystal_sage import CrystalSage
 from objects.enemies.crystal_sprite import CrystalSprite
+from objects.enemies.leech import Leech
+from objects.enemies.ruin_golem import RuinGolem
 from objects.enemies.scythe_mantis import ScytheMantis
 from objects.enemies.shadow_stalker import ShadowStalker
 from objects.enemies.shell_warrior import ShellWarrior
@@ -30,15 +32,16 @@ from objects.safe_zone import SafeZone
 from objects.switch import Switch
 from objects.training_statue import TrainingStatue
 
-# spawns의 이름 → 적 클래스 (10.2). 독 거머리·유적 골렘은 T53
+# spawns의 이름 → 적 클래스 (10.2)
 ENEMY_TYPES = {'crawler': Crawler, 'bat': Bat, 'shell_warrior': ShellWarrior, 'thorn_flower': ThornFlower,
                'spore_shroom': SporeShroom, 'vine_lurker': VineLurker,
                'crystal_sprite': CrystalSprite, 'crystal_sage': CrystalSage,
+               'leech': Leech, 'ruin_golem': RuinGolem,
                'scythe_mantis': ScytheMantis, 'shadow_stalker': ShadowStalker}
 # 보스 (11.4): 방 JSON boss 값 = 키. 보스 자리는 spawns에 같은 이름으로 둔다 ([종류, x, y])
 BOSS_TYPES = {'borer': RockshellBorer, 'moss_warden': MossWarden, 'archsage': CrystalArchsage, 'scythe': ScytheSovereign}
-# 정예 (10.4): objects ["elite", x, y, 종류, id]. 신전 골렘은 T53
-ELITE_TYPES = {'shell_captain': ShellCaptain}
+# 정예 (10.4): objects ["elite", x, y, 종류, id]
+ELITE_TYPES = {'shell_captain': ShellCaptain, 'temple_golem': TempleGolem}
 ARENA_ZONE_ID = 'arena'   # 처치 후 아레나 전체를 덮는 안전지대 id (앉는 자리 없음, 11.2)
 
 
@@ -154,6 +157,9 @@ class Room:
         # 일반 적은 안전지대 영역에 들어오지 않는다 (10.1)
         enemy_base.set_safe_zones(z.get_bb() for z in self.safe_zone_objects)
         enemies = [ENEMY_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns if kind in ENEMY_TYPES]
+        for e in enemies:
+            if hasattr(e, 'set_water'):
+                e.set_water(self.water)   # 독 거머리는 자기 물 영역 안에서만 (10.3)
         if not self.boss_defeated(self.state):
             enemies += [BOSS_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns
                         if kind in BOSS_TYPES]

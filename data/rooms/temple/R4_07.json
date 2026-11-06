@@ -1,0 +1,43 @@
+{
+  "id": "R4_07",
+  "region": "temple",
+  "size": [2, 1],
+  "map_cell": [1, 1],
+  "music": "temple",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 200, "solid"],
+    [0, 400, 40, 280, "solid"],
+    [2520, 400, 40, 280, "solid"],
+    [0, 680, 1200, 40, "solid"],
+    [1400, 680, 1160, 40, "solid"],
+    [1000, 360, 200, 16, "oneway"],
+    [1250, 520, 200, 16, "oneway"],
+    [1600, 360, 200, 16, "oneway"]
+  ],
+  "air_vents": [
+    [1100, 420, "vent_a"]
+  ],
+  "gates": [
+    [60, 200, 48, 200, "lever_gate", "short_elite"],
+    [2488, 200, 32, 200, "arena", "arena_r"],
+    [1200, 680, 200, 40, "arena", "arena_u"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 200, 16, 200], "to": "R4_01", "to_exit": "R2"},
+    {"id": "R", "rect": [2544, 200, 16, 200], "to": "R4_08", "to_exit": "L"},
+    {"id": "U", "rect": [1200, 704, 200, 16], "to": "R4_09", "to_exit": "D"}
+  ],
+  "spawns": [],
+  "objects": [
+    ["elite", 700, 200, "temple_golem", "golem"]
+  ],
+  "safe_points": [
+    [2300, 200],
+    [400, 200]
+  ],
+  "triggers": [
+    [1700, 200, 160, 400, "arena", "arena_temple"]
+  ]
+}

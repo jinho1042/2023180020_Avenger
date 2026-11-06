@@ -1,0 +1,33 @@
+{
+  "id": "R4_04",
+  "region": "temple",
+  "size": [1, 1],
+  "map_cell": [5, 0],
+  "music": "temple",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 900, 64, "solid"],
+    [1100, 0, 180, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [1240, 264, 40, 416, "solid"],
+    [0, 680, 1280, 40, "solid"]
+  ],
+  "safe_zones": [
+    [40, 64, 1200, 560, "safe_b"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R4_03", "to_exit": "R"},
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R4_06", "to_exit": "L"},
+    {"id": "D", "rect": [900, 0, 200, 16], "to": "R4_05", "to_exit": "U"}
+  ],
+  "spawns": [],
+  "objects": [
+    ["seat", 300, 64, "safe_b"],
+    ["warning_tablet", 780, 64, "tablet_r4_deep"]
+  ],
+  "safe_points": [
+    [300, 64],
+    [1180, 64]
+  ]
+}

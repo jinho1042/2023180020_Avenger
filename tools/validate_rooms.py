@@ -162,6 +162,15 @@ def check_room(room_id, data, items, global_ids):
             error(room_id, f'한쪽 문 {g[5]}에 open_from(left|right|up|down)이 없음')
         if attrs.get('to_hub') and g[4] != 'one_way':
             error(room_id, f'허브행 숏컷 {g[5]}이 한쪽 문(one_way)이 아님')
+    # 독 거머리는 일반 물 안에서만 (10.3, T53): spawn 자리가 water 영역 안, 숨 게이트 방(깊은 물)에는 두지 않음
+    for kind, x, y in data.get('spawns', []):
+        if kind != 'leech':
+            continue
+        if not any(wx <= x <= wx + ww and wy <= y <= wy + wh for wx, wy, ww, wh in
+                   (w[:4] for w in data.get('water', []))):
+            error(room_id, f'독 거머리 ({x}, {y})가 water 영역 밖')
+        if data.get('breath_gates'):
+            error(room_id, '독 거머리가 숨 게이트 방에 있음 (일반 물에만 둔다)')
 
 
 def check_map_cells(rooms):

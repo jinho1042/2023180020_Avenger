@@ -1,0 +1,31 @@
+{
+  "id": "R4_10",
+  "region": "temple",
+  "size": [2, 1],
+  "map_cell": [2, 2],
+  "music": "temple",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 500, 200, "solid"],
+    [2200, 0, 360, 200, "solid"],
+    [0, 400, 40, 160, "solid"],
+    [2520, 400, 40, 160, "solid"],
+    [0, 560, 2560, 160, "solid"]
+  ],
+  "hazards": [
+    [500, 0, 1700, 40, "pit"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 200, 16, 200], "to": "R4_09", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 200, 16, 200], "to": "R5_01", "to_exit": "L"}
+  ],
+  "spawns": [],
+  "objects": [
+    ["tablet", 300, 200, "tablet_r4_b"]
+  ],
+  "safe_points": [
+    [300, 200],
+    [2350, 200]
+  ]
+}

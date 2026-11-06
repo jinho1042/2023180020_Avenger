@@ -342,9 +342,22 @@ def on_elite_defeated(elite):
     if unlock:
         state.flags.add(config.REFLECT_UNLOCK_FLAG)
         add_enemies(room.spawn_targets(player))
+    # 신전 골렘: 희귀 광석 + 같은 방의 숏컷 문이 열린다 (구역 안 숏컷, 10.4)
+    rare = config.ELITE_REWARD_RARE_ORE.get(elite.boss_key, 0)
+    if rare:
+        state.player.rare_ore += rare
+    gate_id = config.ELITE_REWARD_GATE.get(elite.boss_key)
+    if gate_id:
+        gid = f'{room.id}:{gate_id}'
+        for gate in room.gimmicks:
+            if getattr(gate, 'gid', None) == gid and getattr(gate, 'kind', None) is not None:
+                gate.open()
     sound.stop_music()
     save_game()
-    print(f'[정예] {elite.gid} 처치 → 각인 {rewards}' + (', 반사 해금' if unlock else ''))
+    if rare:
+        hud.show_message(f'희귀 광석 +{rare}')   # 저장 알림 대신 보상을 보여 준다
+    print(f'[정예] {elite.gid} 처치 → 각인 {rewards}' + (', 반사 해금' if unlock else '')
+          + (f', 희귀 광석 +{rare}' if rare else '') + (f', 문 {gate_id} 열림' if gate_id else ''))
     if unlock:
         from modes import rune_get_mode
         rune_get_mode.start('reflect', 1, carver=True)   # 룬이 아니므로 룬지기 안내 줄은 뺀다
