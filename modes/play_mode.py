@@ -315,18 +315,20 @@ def on_boss_defeated(defeated):
     item = config.BOSS_ITEM_FLAG.get(key)
     if item:
         state.flags.add(item)
+    # 아이템 카드가 없는 보스의 봉인 핵은 핵 카드로 보여 준다 (B4 신전 핵. 플래그는 남기지 않음)
+    card = item or config.BOSS_CORE_CARD.get(key)
     sound.stop_music()
     save_game()
     from modes import rune_get_mode
 
     def show_item():
-        rune_get_mode.start(item, 1, carver=True)   # 룬이 아니므로 룬지기 안내 줄은 뺀다
+        rune_get_mode.start(card, 1, carver=True)   # 룬이 아니므로 룬지기 안내 줄은 뺀다
         game_framework.push_mode(rune_get_mode)
 
     if rune:
-        rune_get_mode.start(rune, 1, after=show_item if item else None)
+        rune_get_mode.start(rune, 1, after=show_item if card else None)
         game_framework.push_mode(rune_get_mode)
-    elif item:
+    elif card:
         show_item()
 
 

@@ -59,6 +59,12 @@
     "levels_en": [["Bring it to Har at the forge to hone your pickaxe", "Gained the Crystal Core (seal key {cores}/{need})"]],
     "hint": "잊힌 회랑의 대장간으로", "hint_en": "To the forge in the Forgotten Halls"
   },
+  "temple_core": {
+    "name": "신전 핵", "name_en": "Temple Core", "key": "",
+    "levels": [["거상의 가슴에서 봉인 열쇠를 얻었다 (봉인 열쇠 {cores}/{need})"]],
+    "levels_en": [["Took a seal key from the Colossus's chest (seal key {cores}/{need})"]],
+    "hint": "왕의 묘실 봉인문으로", "hint_en": "To the sealed door of the King's Tomb"
+  },
   "carver_line": "룬지기에게 가면 더 깊이 새길 수 있다",
   "carver_line_en": "The Rune Carver can carve it deeper"
 }

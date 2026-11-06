@@ -125,6 +125,17 @@ class Player:
         # 배율은 wet일 때만 곱해 쓰고 값에 누적해 대입하지 않는다 (16장 '물 안 이동')
         self.water = []
         self.wet = False
+        # 돌파 (돌파의 룬, 6.4, T54): break_charging인 동안 BreakCharge (제자리, break_charge = 충전한 시간)
+        # breaking인 동안 BreakDash (break_dir 쪽으로 BREAK_SPEED, 중력 무시). 쿨다운은 돌진이 끝난 뒤부터
+        # break_hits = 이번 돌진에 몸으로 이미 꿰뚫은 적 (Lv2 관통 피해는 돌진당 1번, 그 적의 몸 접촉 피해는 무시)
+        self.break_charging = False
+        self.break_charge = 0.0
+        self.breaking = False
+        self.break_dir = 1
+        self.break_wall = 0          # 벽에 매달린 채 충전을 시작했으면 그 벽 쪽 (돌진은 반대쪽으로)
+        self.break_cooldown = 0.0
+        self.break_hits = set()
+        self.break_trail_timer = 0.0
 
     # ---------- 각인으로 바뀌는 수치 (8.4): 매번 기본값 × 장착 각인으로 계산 (누적 대입 없음) ----------
 
@@ -248,6 +259,13 @@ class Player:
         # Cast 또는 낙반 낙하 중
         return self.is_casting() or self.rockfall
 
+    def is_breaking(self):
+        # 돌파 충전(BreakCharge) 또는 돌진(BreakDash) 중
+        return self.break_charging or self.breaking
+
+    def break_charged(self):
+        return self.break_charge >= config.BREAK_CHARGE_TIME
+
     def is_attacking(self):
         # 공격 hitbox가 살아 있는 동안 (공격은 이동을 막지 않는다)
         return self.attack_active > 0
@@ -256,7 +274,8 @@ class Player:
         # 새 동작을 시작할 수 없는 상태. 패링은 캔슬 불가 (6.3)
         return (self.dead or self.is_hit() or self.is_parrying() or self.is_parry_stunned()
                 or self.is_hard_landing() or self.is_hazard_respawning() or self.sitting
-                or self.is_mending() or self.blackout or self.cutscene or self.is_skill_active())
+                or self.is_mending() or self.blackout or self.cutscene or self.is_skill_active()
+                or self.is_breaking())
 
     # ---------- 동작 시작 ----------
 
@@ -267,6 +286,10 @@ class Player:
         if input.buffered('parry') and self.can_parry():
             input.consume('parry')
             self.start_parry()
+            return
+        if input.buffered('breakthrough') and self.can_break():
+            input.consume('breakthrough')
+            self.start_break_charge()
             return
         if input.buffered('dash') and self.can_dash():
             input.consume('dash')
@@ -325,6 +348,94 @@ class Player:
         self.attack_active = 0  # 공격 캔슬
         sound.play('dash')
 
+    def can_break(self):
+        # 돌파 (6.4): 돌파의 룬이 있고, 쿨다운이 끝났고, 바닥이나 벽에 매달린 채 (Lv3는 공중에서도). 물 안에서는 안 된다
+        # 해금 전에는 D가 아무 반응도 하지 않는다
+        if not self.can('breakthrough') or self.wet or self.break_cooldown > 0 or self.is_dashing():
+            return False
+        return self.on_ground or self.is_wall_sliding() or self.can('air_breakthrough')
+
+    def start_break_charge(self):
+        # BreakCharge: 제자리에서 D를 누르고 있는 동안 충전. 공격·매달리기·점프 상승은 끊는다
+        self.break_charging = True
+        self.break_charge = 0.0
+        self.break_wall = self.wall_dir
+        if self.break_wall:
+            self.face_dir = -self.break_wall   # 벽에서는 벽 반대쪽으로 돌진
+        else:
+            move = input.axis_x()
+            if move != 0:
+                self.face_dir = move
+        self.attack_active = 0
+        self.jump_rising = False
+        self.wall_dir = 0
+        self.vx, self.vy = 0.0, 0.0
+
+    def update_break_input(self):
+        # 충전 중 D를 떼면: 다 찼으면 돌진, 덜 찼으면 취소 (쿨다운 없음). 돌진 중 D를 다시 누르면 정지 (6.4)
+        if self.breaking:
+            if input.consume('breakthrough'):
+                self.end_break()
+            return
+        if self.break_charging and not input.pressed('breakthrough'):
+            charged = self.break_charged()
+            self.break_charging = False
+            if charged:
+                self.start_break()
+
+    def start_break(self):
+        self.breaking = True
+        self.break_dir = self.face_dir
+        self.break_hits.clear()
+        self.break_trail_timer = 0.0
+        self.vy = 0.0
+        self.fall_time = 0.0
+        sound.play('dash')
+
+    def end_break(self, bumped=False):
+        # 돌진이 끝남: 이때부터 BREAK_COOLDOWN (16장 '돌파 쿨다운'). bumped = 벽에 부딪힘
+        if not self.breaking:
+            return
+        self.breaking = False
+        self.break_cooldown = config.BREAK_COOLDOWN
+        self.vx = 0.0
+        self.fall_time = 0.0
+        if bumped:
+            effect.burst(self.x + self.break_dir * config.PLAYER_W / 2, self.y + config.PLAYER_H / 2,
+                         config.BREAK_TRAIL, config.COLOR_ROCK)
+            camera.shake(config.ROCKFALL_SHAKE['amp'], config.ROCKFALL_SHAKE['time'])
+
+    def cancel_break(self):
+        # 피격·환경 피해·기절·방 이동: 충전은 쿨다운 없이 취소, 돌진은 끝난 것으로 친다
+        self.break_charging = False
+        self.break_charge = 0.0
+        self.end_break()
+
+    def update_break_charge(self, dt):
+        # 충전 중: 중력 없이 제자리. 벽에서 시작하지 않았으면 방향키로 돌진 방향을 바꿀 수 있다
+        self.vx, self.vy = 0.0, 0.0
+        self.break_charge += dt
+        move = input.axis_x()
+        if move != 0 and not self.break_wall:
+            self.face_dir = move
+
+    def update_break(self, dt):
+        # 돌진: 수평 직선, 중력 무시. 벽(방 가장자리 포함)에 막히면 정지
+        self.vx = self.break_dir * config.BREAK_SPEED
+        self.vy = 0.0
+        want = self.vx * dt
+        prev_x = self.x
+        self.move_x(want)
+        if abs(self.x - prev_x) < abs(want) - 0.5:
+            self.end_break(bumped=True)
+            return
+        self.break_trail_timer -= dt
+        if self.break_trail_timer <= 0:
+            trail = config.BREAK_TRAIL
+            self.break_trail_timer = trail['interval']
+            effect.burst(self.x - self.break_dir * config.PLAYER_W / 2, self.y + config.PLAYER_H / 2,
+                         trail, trail['color'])
+
     def can_skill(self, skill):
         ability = 'rockfall' if skill == 'rockfall' else 'crystal_arrow'
         return self.can(ability) and (breath.infinite or breath.value >= config.SKILL_BREATH_COST)
@@ -357,10 +468,11 @@ class Player:
         projectile.fire_arrow(x, self.y + config.PLAYER_H / 2, self.face_dir, self, self.platforms)
 
     def end_skill(self):
-        # 피격·환경 피해·기절·방 이동 시 룬 기술을 끊는다 (Cast 중 취소면 숨 차감 없음)
+        # 피격·환경 피해·기절·방 이동 시 룬 기술·돌파를 끊는다 (Cast 중 취소면 숨 차감 없음)
         self.cast_timer = 0.0
         self.rockfall = False
         self.shockwave = None
+        self.cancel_break()
 
     def can_drop(self):
         # ↓를 누른 채 Z: one-way 발판 위에 서 있으면 점프 대신 아래로 내려간다 (명세 밖 조작, 18장)
@@ -475,6 +587,7 @@ class Player:
         self.attack_active = 0  # 공격 중이면 끊는다
         self.cancel_mend()      # 숨 고르기 중이면 숨 차감 없이 취소 (6.3)
         self.cast_timer = 0.0   # Cast 중 피격 시 취소 (6.3). 숨은 낙하를 시작할 때 내므로 잃지 않는다
+        self.cancel_break()     # BreakCharge 중 피격 시 취소, 돌진 중 피격되면 정지 (6.3, 6.4)
         self.jump_rising = False
         if self.hp == 0:
             self.dead = True
@@ -728,6 +841,8 @@ class Player:
     def update(self):
         dt = game_framework.frame_time
         self.dash_cooldown = max(0, self.dash_cooldown - dt)
+        if not self.breaking:
+            self.break_cooldown = max(0, self.break_cooldown - dt)
         self.invincible_timer = max(0, self.invincible_timer - dt)
         self.hit_timer = max(0, self.hit_timer - dt)
         self.hard_land_timer = max(0, self.hard_land_timer - dt)
@@ -757,10 +872,15 @@ class Player:
             return
         self.update_parry(dt)
         self.update_mend(dt)
+        self.update_break_input()
         self.handle_actions()
 
         was_on_ground = self.on_ground
-        if self.is_dashing():
+        if self.break_charging:
+            self.update_break_charge(dt)
+        elif self.breaking:
+            self.update_break(dt)
+        elif self.is_dashing():
             self.update_dash(dt)
         elif self.is_casting():
             self.update_cast(dt)
@@ -934,7 +1054,7 @@ class Player:
         if not self.can('thorn_cling'):
             walls = [p for p in walls if getattr(p, 'hazard_type', None) != 'thorn_vine']
         cling = (move != 0 and not self.on_ground and self.can('wall_cling') and not self.is_dashing()
-                 and not self.is_skill_active()
+                 and not self.is_skill_active() and not self.is_breaking()
                  and self.wall_jump_lock <= 0 and not self.dead and not self.is_hit() and not self.is_mending()
                  and terrain.body_blocked(self.x + move, self.y + config.PLAYER_H * 0.25, config.PLAYER_W,
                                           config.PLAYER_H * 0.5, walls))
@@ -983,6 +1103,8 @@ class Player:
             elif self.is_skill_active():
                 color = (config.COLOR_PLAYER_CAST_ARROW if self.is_casting() and self.cast_skill == 'arrow'
                          else config.COLOR_PLAYER_ROCKFALL)
+            elif self.is_breaking():
+                color = config.COLOR_PLAYER_BREAK
             elif self.is_dashing():
                 color = config.COLOR_PLAYER_DASH
             elif self.is_parry_stunned():
@@ -1019,6 +1141,13 @@ class Player:
             radius = ring['radius'][0] + (ring['radius'][1] - ring['radius'][0]) * progress
             effect.draw_ring(self.x, self.y + config.PLAYER_H / 2, radius, radius,
                              ring['dots'], ring['size'], config.COLOR_MEND)
+        if self.break_charging:
+            # 돌파 충전: 점 고리가 조여들고, 다 차면 밝은 색으로 멈춘다
+            ring = config.BREAK_CHARGE_RING
+            k = min(1.0, self.break_charge / config.BREAK_CHARGE_TIME)
+            radius = ring['radius'][0] + (ring['radius'][1] - ring['radius'][0]) * k
+            color = config.COLOR_BREAK_READY if k >= 1 else config.COLOR_PLAYER_BREAK
+            effect.draw_ring(self.x, self.y + config.PLAYER_H / 2, radius, radius, ring['dots'], ring['size'], color)
         if game_world.show_hitbox:
             camera.draw_rect(l, b, r, t, *config.COLOR_DEBUG_BODY)
             if attack_bb:
