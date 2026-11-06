@@ -308,5 +308,19 @@ class EnemyBase:
         half_w = self.w / 2
         return self.x - half_w, self.y, self.x + half_w, self.y + self.h
 
+    # 부위 판정 (systems/combat.struck_part). 보통 적은 몸 전체가 피해 부위이고 몸에 닿으면 접촉 피해
+    # 신전 골렘 거상(11.4 B4)처럼 일부만 피해를 받는 적은 이 셋을 바꾸고, get_bb()는 모든 부위를 감싸게 한다
+    def hurt_bbs(self):
+        # 맞으면 피해·자세가 들어가는 부위
+        return [self.get_bb()]
+
+    def armor_bbs(self):
+        # 맞아도 회색 스파크만 나는 부위 (피해 0, 자세 0)
+        return []
+
+    def contact_bbs(self):
+        # 닿으면 몸 접촉 피해를 주는 부위
+        return [self.get_bb()]
+
     def handle_collision(self, group, other):
         pass

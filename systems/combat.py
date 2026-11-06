@@ -14,11 +14,12 @@ def resolve(player, enemies, gimmicks=()):
         for e in enemies:
             if not e.is_alive() or e in player.attack_hits:
                 continue
-            if game_world.overlap(attack_bb, e.get_bb()):
+            part, part_bb = struck_part(attack_bb, e)
+            if part:
                 player.attack_hits.add(e)
-                x, y = contact_point(attack_bb, e.get_bb())
+                x, y = contact_point(attack_bb, part_bb)
                 strong = player.on_attack_hit(e)   # 반동·포고·세 번째 일격 (휘두름당 1번)
-                if e.kind == 'statue' or e.invulnerable():
+                if e.kind == 'statue' or e.invulnerable() or part == 'armor':
                     effect.statue_spark(x, y)       # 연습 석상·무적 보스는 회색 스파크만 (5.4)
                     continue
                 e.take_damage(player.attack_damage(), player.attack_knockback(e))
@@ -47,8 +48,11 @@ def resolve(player, enemies, gimmicks=()):
                     effect.player_hit(player.x, player.y + config.PLAYER_H / 2)
 
     # 몸 접촉 피해 (6.8). 공격 판정 뒤에 본다 (같은 프레임에 공격에 맞았으면 무적이라 무시됨)
+    # 돌파 Lv2로 이번 돌진에 꿰뚫은 적은 몸에 닿아도 피해 없음 (18장 이슈)
     for e in enemies:
-        if e.is_alive() and e.deals_contact() and game_world.overlap(e.get_bb(), body_bb):
+        if player.breaking and e in player.break_hits:
+            continue
+        if e.is_alive() and e.deals_contact() and any(game_world.overlap(bb, body_bb) for bb in e.contact_bbs()):
             if player.take_hit(config.CONTACT_DAMAGE, e.x):
                 effect.player_hit(player.x, player.y + config.PLAYER_H / 2)
 
@@ -63,13 +67,19 @@ def skill_hits(player, enemies):
     wave = player.take_shockwave()
     if wave:
         areas.append((wave, spec['shockwave_damage'], set()))
+    # 돌파 Lv2 (8.2): 돌진 중 몸에 닿은 적에게 breakthrough_lv2_damage (돌진당 1번)
+    if player.breaking and player.can('breakthrough_pierce'):
+        areas.append((player.get_bb(), config.RUNE_LV_EFFECT['breakthrough_lv2_damage'], player.break_hits))
     for bb, damage, hits in areas:
         for e in enemies:
-            if not e.is_alive() or e in hits or not game_world.overlap(bb, e.get_bb()):
+            if not e.is_alive() or e in hits:
+                continue
+            part, part_bb = struck_part(bb, e)
+            if not part:
                 continue
             hits.add(e)
-            x, y = contact_point(bb, e.get_bb())
-            if e.kind == 'statue' or e.invulnerable():
+            x, y = contact_point(bb, part_bb)
+            if e.kind == 'statue' or e.invulnerable() or part == 'armor':
                 effect.statue_spark(x, y)
                 continue
             e.take_damage(damage, config.ENEMY_KNOCKBACK if e.x >= player.x else -config.ENEMY_KNOCKBACK)
@@ -104,6 +114,18 @@ def projectile_hit(player, p):
     elif player.take_hit(p.damage, player.x - p.dir_x):
         effect.player_hit(player.x, player.y + config.PLAYER_H / 2)
         p.destroy()
+
+
+def struck_part(bb, e):
+    # 판정 bb가 적의 어느 부위에 닿았나: ('hurt', 부위 bb) 피해 부위 | ('armor', 부위 bb) 회색 스파크만 | (None, None)
+    # 보통 적은 몸 전체가 피해 부위. 신전 골렘 거상은 머리 핵·주먹(·가슴 핵)만 피해 부위, 몸통은 armor (11.4 B4)
+    for part_bb in e.hurt_bbs():
+        if game_world.overlap(bb, part_bb):
+            return 'hurt', part_bb
+    for part_bb in e.armor_bbs():
+        if game_world.overlap(bb, part_bb):
+            return 'armor', part_bb
+    return None, None
 
 
 def contact_point(bb_a, bb_b):

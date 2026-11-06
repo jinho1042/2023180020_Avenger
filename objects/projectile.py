@@ -102,7 +102,10 @@ class Projectile:
             if self.reflected and other.on_reflected_hit(self):
                 self.destroy()
         elif group == GROUP_ENEMY and self.reflected and other.is_alive():
-            if other.invulnerable():
+            part, _ = combat.struck_part(self.get_bb(), other)
+            if part is None:
+                return   # 부위 사이 빈 곳 (거상의 머리·주먹 사이 등)은 지나간다
+            if other.invulnerable() or part == 'armor':
                 effect.statue_spark(self.x, self.y)
                 self.destroy()
                 return

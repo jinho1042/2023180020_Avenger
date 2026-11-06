@@ -50,6 +50,14 @@ DASH_DIST = 215            # px
 DASH_TIME = 0.25
 DASH_COOLDOWN = 0.6
 DASH_INVINCIBLE = False    # 일반 대시는 무적 아님
+# 돌파 (돌파의 룬, 6.4, T54): 바닥이나 벽(Lv3는 공중도)에서 D를 누르고 있으면 BREAK_CHARGE_TIME 충전(BreakCharge, 제자리)
+# → 떼면 BREAK_SPEED 수평 직선 돌진(BreakDash, 중력 무시). 벽에 닿거나 D를 다시 누르거나 피격되면 정지
+# 충전이 덜 찼을 때 떼면 취소. 쿨다운은 돌진이 끝난 뒤부터. 물 안에서는 충전할 수 없다
+BREAK_CHARGE_TIME = 0.8    # 돌파 충전
+BREAK_SPEED = 1290         # px/s
+BREAK_COOLDOWN = 1.0       # s, 돌진이 끝난 뒤 다음 충전까지
+BREAK_TRAIL = dict(interval=0.03, count=2, speed=(40, 140), life=0.3, size=6, color=(120, 220, 210))   # 돌진 잔상
+BREAK_CHARGE_RING = dict(radius=(44, 20), dots=12, size=5)   # 충전 중 몸 둘레 점 고리 (다 차면 조여듦)
 EXIT_UP_BOOST = 900        # px/s, 위쪽 출구로 들어왔을 때 밀어올림
 # 물 안 (6.4, T53): 몸 중심이 water 영역 안일 때만. 점프·대시·벽 매달리기는 그대로, 헤엄 없음
 WATER_SPEED_MULT = 0.75    # 물 안 좌우 속도·대시 거리 배율
@@ -205,6 +213,8 @@ COLOR_PLAYER_PARRY = (120, 255, 255)  # 패링 판정 중 몸 앞 방패 표시
 COLOR_PLAYER_STUN = (110, 110, 150)   # 헛입력 경직 중 색
 COLOR_PLAYER_ROCKFALL = (150, 120, 90)  # 낙반 시전·낙하 중 색 (T51)
 COLOR_PLAYER_CAST_ARROW = (170, 150, 230)   # 결정 화살 시전 중 색 (T52)
+COLOR_PLAYER_BREAK = (120, 220, 210)        # 돌파 충전·돌진 중 색 (T54)
+COLOR_BREAK_READY = (230, 250, 240)         # 충전이 다 찬 고리 색
 # 결정 디딤 (T52, 6.4): 공중 점프 때 발밑에 잠깐 생겼다 부서지는 결정 발판 (그림만, 판정 없음)
 CRYSTAL_STEP = dict(w=56, h=10, life=0.18, shatter=dict(count=8, speed=(80, 240), life=0.3, size=6))
 COLOR_CRYSTAL_STEP = (190, 170, 250)
@@ -795,8 +805,9 @@ COLOR_BORER_CRACK = (90, 70, 55)       # 잠행 균열
 BOSS_FIGHT_TARGET = dict(  # 임시. 보스전 예상 시간(초). 아레나 숨구멍 수를 정할 때 참고 (7.6 목표 3)
     borer=50, moss_warden=80, archsage=90, colossus=100, scythe=110, king=180, first_miner=90,
 )
-BOSS_RUNE = dict(borer='burrow', moss_warden='brace', archsage='crystal')   # 처치 보상 룬 (11.4 보상). 다른 보스는 해당 보스 작업(T54~)에서 넣는다
-BOSS_CORE = dict(archsage='crystal')   # 처치 보상 봉인 핵 id (world_state.cores, 11.4 보상). B4·B5는 T54·T56
+BOSS_RUNE = dict(borer='burrow', moss_warden='brace', archsage='crystal', colossus='breakthrough')   # 처치 보상 룬 (11.4 보상). B5·B6는 해당 보스 작업에서
+BOSS_CORE = dict(archsage='crystal', colossus='temple')   # 처치 보상 봉인 핵 id (world_state.cores, 11.4 보상). B5는 T56
+BOSS_CORE_CARD = dict(colossus='temple_core')   # 아이템이 없는 보스의 핵 카드 (룬 카드 뒤, rune_get_mode). B3은 숫돌 카드에 함께
 # B2 이끼 수문장 (T49, ← v2 대검 기사). 첫 줄은 4장 값 그대로, 둘째 줄부터 행동·그림 값. 넉백을 받지 않는다
 # 패턴 선택: 거리 < near_range → near 표(내려찍기·회전), 아니면 far 표(돌진·도약) (11.4 선택 규칙). 회전 쿨 spin_cooldown
 # 2페이즈(체력 phase_hp 아래): 이끼 갑옷이 벗겨짐(color_phase2, 균열) + 내려찍기+충격파·도약 내려찍기 추가 (phase2_near·far)
@@ -881,6 +892,42 @@ BOSS_ARCHSAGE = dict(hp=420, damage=1, phase_hp=[0.5],
                      shards=dict(count=14, speed=(120, 360), life=0.45, size=7),
                      armor_break=dict(count=26, speed=(150, 450), life=0.7, size=9))
 COLOR_ARCHSAGE_ARMOR = (190, 160, 245)   # 1페이즈 결정 갑옷 · 순간이동 파편
+# B4 신전 골렘 거상 (T54). 첫 줄~넷째 줄은 4장 값 그대로, 다음 줄부터 행동·그림 값. 넉백·경직 없음
+# 피해 부위는 머리 핵·주먹(2페이즈부터 가슴 핵)뿐. 몸통·다리는 회색 스파크 (피해 0, 자세 0)
+# 몸(w × h)은 발 위 몸통+다리. 머리는 몸통 위 head 크기. 주먹은 평소 몸 양옆 아래에 내려 둔다
+# 패턴 선택: base 가중치, 플레이어가 머리 높이(발이 바닥 + head_height_y 이상)면 beam = head_weight (11.4 선택 규칙)
+#   충격파 쿨 wave_cooldown, 잔해 쿨 debris_cooldown, 양주먹 연타는 2페이즈부터
+BOSS_COLOSSUS = dict(hp=480, damage=1, heavy_damage=2, phase_hp=[0.5],  # 패턴별 피해는 11.4 표
+                     fist_stuck=1.2, fist_stuck_parried=1.6,
+                     shockwave_lines=[2, 3], shockwave_gap=0.5, shockwave_speed=500,
+                     beam_charge=0.9, debris_count=5, ore=400,
+                     w=220, h=380, color=(95, 120, 115), color_phase2=(120, 115, 100), speed=60, detect_range=2560,
+                     near_range=0, keep_range=380,   # 플레이어와 가로 거리가 keep_range보다 멀면 천천히 다가간다
+                     head=(110, 90), fist_size=(90, 80), fist_rest_y=20,   # 주먹 평소 높이 (발 위)
+                     fist_reach=700,                 # 주먹 내려찍기가 닿는 가로 거리 (몸 중심에서)
+                     head_height_y=150, head_weight=3, wave_cooldown=6.0, debris_cooldown=10.0,
+                     base=dict(fist=3, wave=2, beam=1, debris=1, combo=0),
+                     phase2_base=dict(fist=2, wave=2, beam=1, debris=1, combo=2),
+                     # 주먹 내려찍기 (흰): 팔을 들고 주먹에 빛 → Windup 끝에 정한 자리(플레이어 x, fist_reach 안)로 내려찍음
+                     #   → 주먹이 recover(= fist_stuck, 패링하면 fist_stuck_parried)초 박힘. 박힌 동안 팔이 발판 2단
+                     fist=dict(telegraph=0.7, windup=0.15, active=0.12, hitbox=(110, 90)),
+                     arm=dict(fore_h=110, upper_h=210, thick=20, gap=10),   # 팔 발판 2단 윗면 높이 (발 위), 두께, 몸과 틈
+                     # 양주먹 연타 (흰, 2페이즈): 두 팔을 차례로 (두 번째 예고 combo_gap), 마지막 박힘 combo_recover
+                     combo_gap=0.5, combo_stuck=0.5, combo_recover=1.4,
+                     # 충격파 (빨강): 양팔을 들고 바닥 떨림 → 양쪽으로 shockwave_lines줄 (shockwave_gap 간격)
+                     wave=dict(telegraph=0.8, windup=0.2, recover=0.8), wave_w=48, wave_h=70,
+                     # 룬 광선 (빨강, 2칸): 눈 충전 + 그 높이에 가는 선 beam_charge → 바라보는 쪽 벽까지 수평 광선
+                     #   높이는 서 있는 높이(low)·점프 높이(high)를 번갈아 (발 위 아랫면, 두께)
+                     beam=dict(windup=0.1, active=0.3, recover=1.0, low=(8, 44), high=(150, 44), line_h=4),
+                     # 잔해 낙하 (빨강): 천장을 침 → 그림자 → 잔해 debris_count개 (하나는 플레이어 발밑). 보스 정지 recover
+                     debris=dict(telegraph=0.6, windup=0.1, active=0.1, recover=1.0, margin=100),
+                     dust=dict(count=14, speed=(80, 300), life=0.45, size=8), shake=(7, 0.18),
+                     plate_fall=dict(count=24, speed=(120, 400), life=0.7, size=10),   # 2페이즈 가슴판이 떨어짐
+                     chest=(70, 60), chest_y=0.62,   # 가슴 핵 크기, 높이 (몸 비율)
+                     groggy_head_drop=170)           # 그로기: 무릎을 꿇어 머리 핵이 이만큼 내려온다
+COLOR_COLOSSUS_CORE = (120, 220, 210)    # 머리·가슴 핵 (룬 빛)
+COLOR_COLOSSUS_FIST = (110, 130, 125)
+COLOR_COLOSSUS_PLATE = (80, 100, 95)     # 1페이즈 가슴판
 # 대술사 수정탄은 반사해도 1배, 대형 마력구는 반사하면 orb_reflect_mult배 (「거울 결정」 배율과 곱해진다)
 BOSS_BOLT = dict(size=20, length=0, color=(200, 150, 255), round=True)
 MAGE_ORB = dict(size=56, length=0, color=(170, 100, 255), round=True,

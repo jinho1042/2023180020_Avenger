@@ -114,6 +114,11 @@ def draw_glyph(progress):
     if rune == config.FORGE_PICKAXE_UNLOCK_FLAG:
         draw_whetstone(cx, cy, half, bar)
         return
+    if rune in config.BOSS_CORE_CARD.values():
+        # 봉인 핵 (B4 신전 핵): 룬 빛 원판 + 테두리
+        effect.draw_ring(cx, cy, half, half, 16, bar * 1.5, color)
+        effect.draw_disc(cx, cy, half * 0.55, config.COLOR_COLOSSUS_CORE)
+        return
     effect.draw_ring(cx, cy, half, half, 16, bar * 1.5, color)
     camera.draw_rect(cx - bar / 2, cy - half * 0.7, cx + bar / 2, cy + half * 0.7, *color, filled=True)
     camera.draw_rect(cx - half * 0.5, cy + half * 0.2 - bar / 2, cx + half * 0.5, cy + half * 0.2 + bar / 2, *color, filled=True)

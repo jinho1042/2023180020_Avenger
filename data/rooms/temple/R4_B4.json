@@ -1,0 +1,45 @@
+{
+  "id": "R4_B4",
+  "region": "temple",
+  "size": [2, 1],
+  "map_cell": [-1, 2],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 64, "solid"],
+    [0, 680, 2560, 40, "solid"],
+    [0, 64, 40, 616, "solid"],
+    [2520, 264, 40, 416, "solid"]
+  ],
+  "hazards": [],
+  "water": [
+    [40, 64, 340, 60],
+    [2100, 64, 300, 60]
+  ],
+  "breath_zones": [],
+  "breath_gates": [],
+  "safe_zones": [],
+  "air_vents": [
+    [1280, 100, "vent_a"]
+  ],
+  "breakables": [],
+  "gates": [
+    [2512, 64, 32, 200, "arena", "arena_door"]
+  ],
+  "switches": [],
+  "exits": [
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R4_09", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["colossus", 1500, 64]
+  ],
+  "objects": [],
+  "safe_points": [
+    [2460, 64]
+  ],
+  "triggers": [
+    [2000, 64, 40, 400, "arena", "arena_b4"]
+  ],
+  "boss": "colossus"
+}
