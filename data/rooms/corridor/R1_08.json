@@ -7,7 +7,8 @@
   "air": null,
   "hub": false,
   "platforms": [
-    [0, 0, 1280, 64, "solid"],
+    [0, 0, 880, 64, "solid"],
+    [1080, 0, 200, 64, "solid"],
     [0, 264, 40, 416, "solid"],
     [1240, 264, 40, 416, "solid"],
     [0, 680, 1280, 40, "solid"],
@@ -20,16 +21,21 @@
     [540, 440, 48, 240, "crack", "crack_a"],
     [120, 440, 56, 56, "ore_chunk", "chunk_a"]
   ],
+  "gates": [
+    [880, 0, 200, 64, "seal", "seal"]
+  ],
   "exits": [
     {"id": "L", "rect": [0, 64, 16, 200], "to": "R1_09", "to_exit": "R"},
-    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R1_07", "to_exit": "L"}
-  ],
-  "objects": [
-    ["item", 330, 440, "rare_ore_r1_b"]
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R1_07", "to_exit": "L"},
+    {"id": "D", "rect": [900, 0, 160, 16], "to": "R6_01", "to_exit": "U"}
   ],
   "spawns": [
     ["bat", 900, 450],
-    ["crawler", 900, 64]
+    ["crawler", 760, 64]
+  ],
+  "objects": [
+    ["item", 330, 440, "rare_ore_r1_b"],
+    ["warning_tablet", 1160, 64, "tablet_r1_seal"]
   ],
   "safe_points": [
     [300, 64],

@@ -47,12 +47,21 @@ ELITE_TYPES = {'shell_captain': ShellCaptain, 'temple_golem': TempleGolem}
 ARENA_ZONE_ID = 'arena'   # 처치 후 아레나 전체를 덮는 안전지대 id (앉는 자리 없음, 11.2)
 
 
+def apply_rune_variant(data):
+    # rune_variants: {룬 이름: {필드: [항목, ...]}}. config.R6_GATE_RUNE과 같은 룬의 항목을 같은 필드에 덧붙인다
+    # R6 통로 앞 방(R6_01)의 장애물이 범위에 따라 다르다 (T57: 완전판 그림자 장막 / 목표판 돌파 구덩이)
+    # tools/validate_rooms.py도 같은 규칙으로 읽는다
+    for field, items in data.get('rune_variants', {}).get(config.R6_GATE_RUNE, {}).items():
+        data[field] = data.get(field, []) + items
+    return data
+
+
 class Room:
     # 방 JSON v3 (12.5) 하나를 읽어 지형·출구 객체와 배치 정보를 보관한다. 방 파일 찾기는 systems/world.py
     # [v2] 템플릿(id 대신 name, exits 없음)도 읽는다. 보스방을 F4로 시험하는 용도 (T45에서 v3로 옮김)
     def __init__(self, path):
         with open(path, encoding='utf-8') as f:
-            data = json.load(f)
+            data = apply_rune_variant(json.load(f))
         self.id = data.get('id') or data['name']
         self.region = data.get('region')
         # size: [가로, 세로] 화면 수. 방 크기 = size × (SCREEN_W, SCREEN_H), 월드 좌표는 방 좌하단 = (0, 0)
@@ -115,6 +124,7 @@ class Room:
                         if o[0] == 'statue' and f'{self.id}:{o[3]}' not in state.broken]
         self.state = state
         self.arena_gates = [g for g in gates.values() if g.type == 'arena']
+        self.seal_gates = [g for g in gates.values() if g.type == 'seal']   # 봉인문 (T57, play_mode.check_seals)
         self.terrain = self.platforms + breakables + list(gates.values()) + thorn_vines + self.crystal_switches
         for trap in bolt_traps:
             trap.platforms = self.terrain   # 쇠뇌 화살은 닫힌 문·벽에도 부딪힌다

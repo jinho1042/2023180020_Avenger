@@ -38,6 +38,13 @@ def report(strict, room_id, msg):
     (error if strict else warn)(room_id, msg)
 
 
+def apply_rune_variant(data):
+    # systems/room.py apply_rune_variant와 같은 규칙 (그쪽은 pico2d를 불러오므로 여기서 다시 쓴다, T57)
+    for field, items in data.get('rune_variants', {}).get(config.R6_GATE_RUNE, {}).items():
+        data[field] = data.get(field, []) + items
+    return data
+
+
 def load_rooms(folder):
     rooms = {}
     for path, _, files in os.walk(folder):
@@ -45,7 +52,7 @@ def load_rooms(folder):
             if not name.endswith('.json'):
                 continue
             with open(os.path.join(path, name), encoding='utf-8') as f:
-                data = json.load(f)
+                data = apply_rune_variant(json.load(f))
             if 'id' not in data:
                 continue  # [v2] 템플릿 (id 대신 name, 출구 없음). T42·T45에서 정리
             if data['id'] != name[:-len('.json')]:

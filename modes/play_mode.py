@@ -7,7 +7,7 @@ import game_world
 from objects import effect, projectile
 from objects.player import Player
 from systems import breath, camera, combat, economy, engravings, hitstop, input, runes, save, script, sound, world
-from ui import hud
+from ui import font, hud
 
 player = None
 room = None
@@ -201,6 +201,7 @@ def update():
     check_hazards()
     if check_npcs():
         return   # 대화를 열었다 (dialog_mode가 위에 올라와 월드·숨 정지)
+    check_seals()
     zone = check_safe_zones()
     check_air_vents()
     if world.phase is None and not player.cutscene:
@@ -245,6 +246,18 @@ def check_npcs():
     dialog_mode.start(near.dialog_id(world.state))
     game_framework.push_mode(dialog_mode)
     return True
+
+
+def check_seals():
+    # 봉인문 (T57, 12.6): 가까이에서 ↑ → 핵이 다 있으면 끼우는 연출 뒤 열림, 모자라면 몇 개 있는지 알림
+    for seal in room.seal_gates:
+        seal.prompt = world.phase is None and seal.can_unseal(player)
+        if not seal.prompt or not input.consume('up'):
+            continue
+        if not seal.unseal(player):
+            have, need = len(world.state.cores), config.SEAL_CORES_REQUIRED
+            hud.show_message(font.text(f'봉인 핵이 모자라다 ({have}/{need})', f'Not enough seal cores ({have}/{need})'))
+            sound.play('cursor')
 
 
 def check_safe_zones():

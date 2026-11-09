@@ -1,0 +1,41 @@
+{
+  "id": "R6_03",
+  "region": "tomb",
+  "size": [2, 1],
+  "map_cell": [10, 3],
+  "music": "tomb",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 64, "solid"],
+    [0, 680, 2560, 40, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [2520, 264, 40, 416, "solid"],
+    [40, 360, 900, 40, "solid"],
+    [1000, 220, 200, 16, "oneway"],
+    [1500, 64, 100, 150, "solid"]
+  ],
+  "safe_zones": [
+    [1880, 64, 640, 560, "safe_b"]
+  ],
+  "breakables": [
+    [400, 400, 48, 280, "crack", "crack_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R6_02", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R6_B6", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["shadow_stalker", 800, 64],
+    ["ruin_golem", 1300, 64]
+  ],
+  "objects": [
+    ["seat", 2200, 64, "safe_b"],
+    ["tablet", 1750, 64, "tablet_r6_b"],
+    ["item", 200, 400, "map_stone_r6"]
+  ],
+  "safe_points": [
+    [300, 64],
+    [1800, 64]
+  ]
+}

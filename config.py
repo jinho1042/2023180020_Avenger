@@ -278,6 +278,18 @@ COLOR_SHADOW_CURTAIN = (25, 20, 45)    # 그림자 장막 (그림자 질풍으�
 COLOR_SHADOW_STRAND = (90, 70, 140)    # 장막 안에서 흔들리는 그림자 실
 SHADOW_CURTAIN = dict(alpha=210, strand_gap=12, strand_w=3, sway=5, sway_speed=3.0)
 GATE_BAR_GAP = 16          # px, 문 창살 간격
+# 봉인문 (T57, 12.6): gates [x, y, w, h, "seal", id]. 위에 서서(또는 옆에서) ↑ → 핵이 SEAL_CORES_REQUIRED개면
+# 핵을 하나씩 끼우는 연출(플레이어 정지·숨 정지) 뒤 열려 opened에 남는다. 모자라면 몇 개 있는지 알림
+SEAL = dict(reach=24,                 # px, 문 테두리에서 이 거리 안이면 ↑로 상호작용
+            insert_each=0.6,          # s, 핵 하나를 끼우는 시간
+            open_delay=0.6,           # s, 다 끼운 뒤 열리기까지
+            slot_r=18, slot_gap=64,   # px, 핵 홈 반지름·간격 (문 가운데 줄)
+            prompt_h=40,              # px, ↑ 표시 높이 (문 위)
+            shake=8)                  # px, 열릴 때 화면 흔들림
+COLOR_SEAL = (150, 115, 55)             # 금빛 석조 (R6 색)
+COLOR_SEAL_EDGE = (215, 180, 100)
+COLOR_SEAL_SLOT = (45, 35, 25)          # 빈 핵 홈
+COLOR_SEAL_CORE = dict(crystal=(200, 170, 255), temple=(120, 220, 210), nest=(150, 120, 230))   # 끼운 핵 빛 (BOSS_CORE id)
 LEVER_W, LEVER_H = 24, 48  # px, (x, y)는 레버 아래쪽 중심
 LEVER_STICK = 36           # px, 손잡이 길이
 COLOR_LEVER_BASE = (80, 70, 60)
@@ -350,7 +362,8 @@ REGIONS = dict(            # 구역 이름·대표 색·기본 공기
     crystal=dict(name='수정 광맥', color=(130, 90, 200), air='normal', rooms=12),
     temple=dict(name='침수 신전', color=(40, 120, 130), air='normal', rooms=10),
     nest=dict(name='그림자 둥지', color=(40, 50, 90), air='foul', rooms=10),
-    tomb=dict(name='왕의 묘실', color=(170, 130, 60), air='thin', rooms=8 if SCOPE == 'full' else 7),
+    # R6: 12.2 표 8방(목표판 7방)에 B6 아레나 2개(목표판 1개)가 들어 있어(11.4 B6) 보스방을 뺀 수는 범위와 상관없이 6 (18장)
+    tomb=dict(name='왕의 묘실', color=(170, 130, 60), air='thin', rooms=6),
     test=dict(name='테스트', color=(110, 110, 120), air=None, rooms=0),   # data/rooms/test (개발용, 구역 검사 제외)
 )
 HUB_SHORTCUT_REGIONS = ['moss', 'crystal', 'temple', 'nest']   # R1 허브행 숏컷이 필요한 구역 (R2~R5, 12.5)

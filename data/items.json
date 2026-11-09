@@ -79,6 +79,10 @@
                     "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
   "map_stone_r5": {"kind": "map_stone", "name": "둥지 지도석", "name_en": "Nest Map Stone",
                    "desc": ["그림자 둥지의 지도가 새겨져 있다"], "desc_en": ["The Shadow Nest is carved on it"]},
+  "rare_ore_r6_a": {"kind": "rare_ore", "name": "희귀 광석", "name_en": "Rare Ore",
+                    "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
+  "map_stone_r6": {"kind": "map_stone", "name": "묘실 지도석", "name_en": "Tomb Map Stone",
+                   "desc": ["왕의 묘실의 지도가 새겨져 있다"], "desc_en": ["The King's Tomb is carved on it"]},
 
   "rare_ore_a": {"kind": "shop", "name": "희귀 광석", "name_en": "Rare Ore",
                  "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
