@@ -115,9 +115,9 @@ def draw_glyph(progress):
         draw_whetstone(cx, cy, half, bar)
         return
     if rune in config.BOSS_CORE_CARD.values():
-        # 봉인 핵 (B4 신전 핵): 룬 빛 원판 + 테두리
+        # 봉인 핵 (B4 신전 핵, B5 둥지 핵): 핵마다 다른 빛 원판 + 테두리
         effect.draw_ring(cx, cy, half, half, 16, bar * 1.5, color)
-        effect.draw_disc(cx, cy, half * 0.55, config.COLOR_COLOSSUS_CORE)
+        effect.draw_disc(cx, cy, half * 0.55, config.COLOR_CORE_CARD[rune])
         return
     effect.draw_ring(cx, cy, half, half, 16, bar * 1.5, color)
     camera.draw_rect(cx - bar / 2, cy - half * 0.7, cx + bar / 2, cy + half * 0.7, *color, filled=True)

@@ -50,6 +50,13 @@ class Player:
         self.dash_cooldown = 0.0
         self.dash_dir = 1
         self.air_dash_used = False
+        # 그림자 질풍 (그림자의 룬, 6.4): C를 눌렀을 때 shadow_cooldown이 0이면 굴착 대시 대신 질풍.
+        # 같은 대시 동작(dash_timer)에 shadow_dash = True. 무적, 그림자 장막 통과. 쿨은 질풍 시작부터 센다
+        self.shadow_dash = False
+        self.shadow_cooldown = 0.0
+        self.dash_len = 0.0          # 이번 대시(질풍) 거리
+        self.shadow_trail = []       # 질풍 잔상 [(x, y, 남은 시간)]
+        self.shadow_trail_timer = 0.0
         # 벽 매달리기 (WallSlide, 버팀의 룬, 6.4): wall_dir = 매달린 벽 쪽 (-1 왼쪽, 1 오른쪽, 0 아님)
         # 벽점프 (WallJump): wall_jump_lock 동안 수평 입력을 무시하고 wall_jump_dir 쪽으로 밀려난다
         self.wall_dir = 0
@@ -160,6 +167,22 @@ class Player:
         return dist
 
     @property
+    def shadow_dash_dist(self):
+        # 그림자 질풍 거리: 대시와 같은 거리 × 그림자 Lv3 (8.2)
+        dist = self.dash_dist
+        if self.can('shadow_far'):
+            dist *= config.RUNE_LV_EFFECT['shadow_lv3_dist_mult']
+        return dist
+
+    @property
+    def shadow_cooldown_time(self):
+        # SHADOW_DASH_COOLDOWN × 그림자 Lv2 (8.2)
+        cooldown = config.SHADOW_DASH_COOLDOWN
+        if self.can('shadow_quick'):
+            cooldown *= config.RUNE_LV_EFFECT['shadow_lv2_cooldown_mult']
+        return cooldown
+
+    @property
     def max_jumps(self):
         # 땅 점프 1 + 결정 디딤 (결정 Lv1~2 1회, Lv3 crystal_lv3_steps회, 6.4)
         if self.can('crystal_step2'):
@@ -225,9 +248,15 @@ class Player:
     def is_dashing(self):
         return self.dash_timer > 0
 
+    def is_shadow_dashing(self):
+        return self.is_dashing() and self.shadow_dash
+
+    def shadow_ready(self):
+        return self.can('shadow_dash') and self.shadow_cooldown <= 0
+
     def is_invincible(self):
-        # 낙반 낙하 중 무적 (8.2)
-        return ((self.is_dashing() and config.DASH_INVINCIBLE) or self.invincible_timer > 0 or self.dead
+        # 낙반 낙하 중 무적 (8.2), 그림자 질풍 중 무적 (6.4)
+        return ((self.is_dashing() and config.DASH_INVINCIBLE) or self.is_shadow_dashing() or self.invincible_timer > 0 or self.dead
                 or self.is_hazard_respawning() or self.blackout or self.cutscene or self.rockfall)
 
     def is_hazard_respawning(self):
@@ -329,9 +358,11 @@ class Player:
             self.face_dir = move
 
     def can_dash(self):
-        # 굴착의 룬이 없으면 C는 아무 반응도 하지 않는다 (6.1)
-        return (self.can('dash') and not self.is_dashing() and self.dash_cooldown <= 0
-                and (self.on_ground or not self.air_dash_used))
+        # 굴착의 룬이 없으면 C는 아무 반응도 하지 않는다 (6.1). 질풍이 준비돼 있으면 대시 쿨과 상관없이 질풍
+        # 공중에서는 대시·질풍을 합쳐 1회
+        if self.is_dashing() or (not self.on_ground and self.air_dash_used):
+            return False
+        return self.shadow_ready() or (self.can('dash') and self.dash_cooldown <= 0)
 
     def start_dash(self):
         # 방향키를 누르고 있으면 그쪽으로, 아니면 바라보는 방향으로
@@ -340,6 +371,13 @@ class Player:
         self.face_dir = self.dash_dir
         self.dash_timer = config.DASH_TIME
         self.dash_cooldown = self.dash_cooldown_time
+        self.shadow_dash = self.shadow_ready()
+        if self.shadow_dash:
+            self.shadow_cooldown = self.shadow_cooldown_time
+            self.dash_len = self.shadow_dash_dist
+            self.shadow_trail_timer = 0.0
+        else:
+            self.dash_len = self.dash_dist
         if not self.on_ground:
             self.air_dash_used = True
         self.vy = 0
@@ -841,6 +879,10 @@ class Player:
     def update(self):
         dt = game_framework.frame_time
         self.dash_cooldown = max(0, self.dash_cooldown - dt)
+        self.shadow_cooldown = max(0, self.shadow_cooldown - dt)
+        for trail in self.shadow_trail:
+            trail[2] -= dt
+        self.shadow_trail = [trail for trail in self.shadow_trail if trail[2] > 0]
         if not self.breaking:
             self.break_cooldown = max(0, self.break_cooldown - dt)
         self.invincible_timer = max(0, self.invincible_timer - dt)
@@ -901,10 +943,15 @@ class Player:
         # 마지막 프레임은 남은 시간만큼만 이동해서 이동 거리를 DASH_DIST에 맞춘다. 중력 무시
         step = min(dt, self.dash_timer)
         self.dash_timer -= step
-        self.vx = self.dash_dir * self.dash_dist * self.water_speed_mult / config.DASH_TIME
+        self.vx = self.dash_dir * self.dash_len * self.water_speed_mult / config.DASH_TIME
         self.vy = 0
         self.dig_soil(self.x + self.vx * step)
         self.move_x(self.vx * step)
+        if self.shadow_dash:
+            self.shadow_trail_timer -= step
+            if self.shadow_trail_timer <= 0:
+                self.shadow_trail_timer = config.SHADOW_TRAIL['gap']
+                self.shadow_trail.append([self.x, self.y, config.SHADOW_TRAIL['life']])
         if self.dash_timer <= 0:
             engravings.on_dash_end(self)
 
@@ -986,8 +1033,12 @@ class Player:
 
     def move_x(self, dx):
         # 지형 충돌은 X 이동 → X 해결 → Y 이동 → Y 해결 순서로 분리
+        # 그림자 질풍 중에는 그림자 장막을 지나간다 (장막 안에서 질풍이 끝나면 가까운 쪽으로 밀려난다)
         self.x += dx
-        self.x = terrain.resolve_x(self.x, self.y, config.PLAYER_W, config.PLAYER_H, self.platforms)
+        platforms = self.platforms
+        if self.is_shadow_dashing():
+            platforms = [p for p in platforms if getattr(p, 'type', None) != 'shadow_curtain']
+        self.x = terrain.resolve_x(self.x, self.y, config.PLAYER_W, config.PLAYER_H, platforms)
         half_w = config.PLAYER_W / 2
         self.x = clamp(half_w, self.x, game_world.room_w - half_w)
 
@@ -1094,7 +1145,16 @@ class Player:
         # 곡괭이 레벨마다 색이 바뀐다 (13.3, T64)
         return config.COLOR_PICKAXE[self.pickaxe_lv - 1]
 
+    def draw_shadow_trail(self):
+        # 그림자 질풍 잔상: 지나간 자리에 몸 크기 반투명 상자가 점점 옅어진다
+        spec = config.SHADOW_TRAIL
+        half_w = config.PLAYER_W / 2
+        for x, y, life in self.shadow_trail:
+            effect.draw_alpha_rect(x - half_w, y, x + half_w, y + config.PLAYER_H, config.COLOR_PLAYER_SHADOW,
+                                   spec['alpha'] * life / spec['life'])
+
     def draw(self):
+        self.draw_shadow_trail()
         l, b, r, t = self.get_bb()
         attack_bb = self.get_attack_bb()
         if not self.is_blink_hidden():
@@ -1105,6 +1165,8 @@ class Player:
                          else config.COLOR_PLAYER_ROCKFALL)
             elif self.is_breaking():
                 color = config.COLOR_PLAYER_BREAK
+            elif self.is_shadow_dashing():
+                color = config.COLOR_PLAYER_SHADOW
             elif self.is_dashing():
                 color = config.COLOR_PLAYER_DASH
             elif self.is_parry_stunned():

@@ -169,8 +169,11 @@ def draw_dash_icon(player):
         else:
             color = config.COLOR_DASH_COOL
         draw_rectangle(x - half, y - half, x + half, y + half, *color, filled=True)
-    if ready:
-        inner = radius / 2
+    inner = radius / 2
+    if player.shadow_ready():
+        # 그림자 질풍 준비 (그림자의 룬): 가운데가 그림자 색. 다음 C는 질풍
+        draw_rectangle(cx - inner, cy - inner, cx + inner, cy + inner, *config.COLOR_SHADOW_READY, filled=True)
+    elif ready:
         draw_rectangle(cx - inner, cy - inner, cx + inner, cy + inner, *config.COLOR_DASH_READY, filled=True)
 
 

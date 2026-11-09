@@ -1,0 +1,44 @@
+{
+  "id": "R5_B5",
+  "region": "nest",
+  "size": [1, 1],
+  "map_cell": [11, 1],
+  "music": null,
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 680, 1280, 40, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [1240, 64, 40, 616, "solid"]
+  ],
+  "hazards": [],
+  "breath_zones": [],
+  "breath_gates": [],
+  "safe_zones": [],
+  "air_vents": [
+    [700, 100, "vent_a"]
+  ],
+  "breakables": [
+    [1176, 64, 56, 56, "ore_chunk", "chunk_r5_b5"]
+  ],
+  "gates": [
+    [16, 64, 32, 200, "arena", "arena_door"],
+    [1080, 64, 32, 616, "shadow_curtain", "curtain_b5"]
+  ],
+  "switches": [],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R5_09", "to_exit": "R"}
+  ],
+  "spawns": [
+    ["scythe", 800, 64]
+  ],
+  "objects": [],
+  "safe_points": [
+    [120, 64]
+  ],
+  "triggers": [
+    [300, 64, 40, 400, "arena", "arena_b5"]
+  ],
+  "boss": "scythe"
+}
