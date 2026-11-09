@@ -1,0 +1,39 @@
+{
+  "id": "R5_01",
+  "region": "nest",
+  "size": [1, 2],
+  "map_cell": [0, 0],
+  "music": "nest",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 1280, 64, "solid"],
+    [0, 264, 40, 392, "solid"],
+    [0, 656, 1000, 64, "solid"],
+    [0, 920, 40, 480, "solid"],
+    [1240, 264, 40, 1136, "solid"],
+    [0, 1400, 1280, 40, "solid"],
+    [1040, 214, 180, 16, "oneway"],
+    [700, 384, 200, 16, "oneway"],
+    [1040, 544, 180, 16, "oneway"]
+  ],
+  "safe_zones": [
+    [140, 64, 1080, 560, "safe_a"]
+  ],
+  "gates": [
+    [80, 64, 48, 200, "one_way", "short_hub", {"open_from": "right", "to_hub": true}]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 720, 16, 200], "to": "R4_10", "to_exit": "R"},
+    {"id": "L2", "rect": [0, 64, 16, 200], "to": "R1_06", "to_exit": "R2"},
+    {"id": "R", "rect": [1264, 64, 16, 200], "to": "R5_02", "to_exit": "L"}
+  ],
+  "spawns": [],
+  "objects": [
+    ["seat", 640, 64, "safe_a"]
+  ],
+  "safe_points": [
+    [640, 64],
+    [300, 720]
+  ]
+}

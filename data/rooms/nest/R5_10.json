@@ -1,0 +1,33 @@
+{
+  "id": "R5_10",
+  "region": "nest",
+  "size": [3, 1],
+  "map_cell": [7, 2],
+  "music": "nest",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 3840, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [3800, 264, 40, 416, "solid"],
+    [0, 680, 3840, 40, "solid"],
+    [1200, 64, 240, 110, "solid"],
+    [2400, 64, 240, 110, "solid"],
+    [1800, 480, 400, 200, "solid"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R5_07", "to_exit": "R2"},
+    {"id": "R", "rect": [3824, 64, 16, 200], "to": "R5_09", "to_exit": "L2"}
+  ],
+  "spawns": [
+    ["vine_lurker", 2000, 440]
+  ],
+  "objects": [
+    ["tablet", 3400, 64, "tablet_r5_b"]
+  ],
+  "safe_points": [
+    [3500, 64],
+    [1320, 174],
+    [300, 64]
+  ]
+}

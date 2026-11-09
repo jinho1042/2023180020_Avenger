@@ -1,0 +1,38 @@
+{
+  "id": "R5_02",
+  "region": "nest",
+  "size": [2, 1],
+  "map_cell": [1, 0],
+  "music": "nest",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 2560, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [2520, 264, 40, 416, "solid"],
+    [0, 680, 2560, 40, "solid"],
+    [900, 64, 300, 120, "solid"],
+    [1400, 224, 240, 16, "oneway"],
+    [1750, 380, 240, 16, "oneway"],
+    [2000, 460, 520, 24, "solid"]
+  ],
+  "breakables": [
+    [2200, 484, 40, 196, "crack", "crack_a"],
+    [2380, 484, 56, 56, "ore_chunk", "chunk_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R5_01", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R5_03", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["scythe_mantis", 2000, 64]
+  ],
+  "objects": [
+    ["tablet", 300, 64, "tablet_r5_a"]
+  ],
+  "safe_points": [
+    [200, 64],
+    [1050, 184],
+    [2300, 64]
+  ]
+}
