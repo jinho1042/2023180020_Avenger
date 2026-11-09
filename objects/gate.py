@@ -1,3 +1,7 @@
+import math
+
+from pico2d import get_time
+
 import config
 import game_world
 from objects import effect
@@ -9,8 +13,10 @@ class Gate:
     # lever_gate: 연결된 레버(objects/switch.py)가 연다. one_way: open_from 쪽에서 곡괭이로 치면 열린다 (숏컷)
     # arena: 보스 아레나 돌문 (11.2). 평소 열려 있고(kind None) 아레나 트리거가 닫는다(close).
     #   플레이어 사망·보스 처치 때 열리며 opened에 남기지 않는다 (방에 들어올 때마다 열린 채로 만든다)
-    # kind = 'solid'는 systems/terrain.py가 보는 값이고 문 종류는 type. 그림자 장막·봉인문은 해당 작업에서
-    KINDS = ('lever_gate', 'one_way', 'arena')
+    # shadow_curtain: 그림자 장막 (12.6). 열리지 않고 늘 지형으로 막지만, 플레이어가 그림자 질풍 중이면 지나간다
+    #   (objects/player.py move_x가 질풍 중에 장막을 빼고 충돌한다). 적·투사체 판정과 곡괭이에는 벽
+    # kind = 'solid'는 systems/terrain.py가 보는 값이고 문 종류는 type. 봉인문은 T57
+    KINDS = ('lever_gate', 'one_way', 'arena', 'shadow_curtain')
 
     def __init__(self, room_id, x, y, w, h, type, obj_id, props, state):
         self.x, self.y, self.w, self.h = x, y, w, h
@@ -74,6 +80,9 @@ class Gate:
     def draw(self):
         if self.kind is None:
             return   # 열린 아레나 문
+        if self.type == 'shadow_curtain':
+            self.draw_curtain()
+            return
         l, b, r, t = self.get_bb()
         color = config.COLOR_ARENA_GATE if self.type == 'arena' else config.COLOR_GATE
         camera.draw_rect(l, b, r, t, *color, filled=True)
@@ -87,6 +96,22 @@ class Gate:
                 camera.draw_rect(l, y - 2, r, y + 2, *config.COLOR_GATE_BAR, filled=True)
         if self.type == 'one_way':
             self.draw_open_mark()
+        if game_world.show_hitbox:
+            camera.draw_rect(l, b, r, t, *config.COLOR_DEBUG_BODY)
+
+    def draw_curtain(self):
+        # 그림자 장막: 짙은 반투명 막 + 세로로 흔들리는 그림자 실
+        spec = config.SHADOW_CURTAIN
+        l, b, r, t = self.get_bb()
+        effect.draw_alpha_rect(l, b, r, t, config.COLOR_SHADOW_CURTAIN, spec['alpha'])
+        half = spec['strand_w'] / 2
+        now = get_time() * spec['sway_speed']
+        step = spec['strand_gap']
+        for i, x in enumerate(range(int(l + step / 2), int(r), step)):
+            for y in range(int(b), int(t), step):
+                dx = math.sin(now + i + y / 40) * spec['sway']
+                sx = min(max(x + dx, l + half), r - half)
+                camera.draw_rect(sx - half, y, sx + half, y + step * 0.7, *config.COLOR_SHADOW_STRAND, filled=True)
         if game_world.show_hitbox:
             camera.draw_rect(l, b, r, t, *config.COLOR_DEBUG_BODY)
 

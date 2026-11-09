@@ -50,6 +50,7 @@ DASH_DIST = 215            # px
 DASH_TIME = 0.25
 DASH_COOLDOWN = 0.6
 DASH_INVINCIBLE = False    # 일반 대시는 무적 아님
+SHADOW_DASH_COOLDOWN = 1.5 # 그림자 질풍 (무적). C를 눌렀을 때 이 쿨이 차 있으면 굴착 대시 대신 질풍 (6.4)
 # 돌파 (돌파의 룬, 6.4, T54): 바닥이나 벽(Lv3는 공중도)에서 D를 누르고 있으면 BREAK_CHARGE_TIME 충전(BreakCharge, 제자리)
 # → 떼면 BREAK_SPEED 수평 직선 돌진(BreakDash, 중력 무시). 벽에 닿거나 D를 다시 누르거나 피격되면 정지
 # 충전이 덜 찼을 때 떼면 취소. 쿨다운은 돌진이 끝난 뒤부터. 물 안에서는 충전할 수 없다
@@ -205,6 +206,8 @@ SLASH_BAND_RATIO = 0.6     # 옆 공격 베기 그림: hitbox 높이 중 위/아
 COLOR_PLAYER = (80, 160, 255)
 COLOR_PLAYER_HARD_LAND = (60, 120, 200)  # 강착지 입력 잠금 중 색
 COLOR_PLAYER_DASH = (180, 220, 255)  # 대시(무적) 중 색
+COLOR_PLAYER_SHADOW = (70, 60, 120)  # 그림자 질풍 중 색 (무적, 장막 통과)
+SHADOW_TRAIL = dict(gap=0.03, life=0.18, alpha=120)   # 그림자 질풍 잔상: gap초마다 몸 자리에 life초 남는 반투명 상자
 COLOR_PLAYER_SLASH = (220, 240, 255)  # 공격 판정 중 베기 표시 (곡괭이 Lv1 색)
 # 곡괭이 Lv1~5 색 (13.3 '색이 바뀐다', T64): 베기 표시·벽에 박은 곡괭이. 무쇠 → 강철 → 수정 → 청록 → 금
 COLOR_PICKAXE = [COLOR_PLAYER_SLASH, (170, 200, 230), (200, 150, 255), (110, 240, 210), (255, 215, 90)]
@@ -271,6 +274,9 @@ COLOR_CRYSTAL_SWITCH_EDGE = (215, 200, 250)
 COLOR_GATE = (110, 60, 50)
 COLOR_GATE_BAR = (60, 40, 35)
 COLOR_ONE_WAY_MARK = (240, 220, 140)   # 한쪽 문의 열리는 쪽 표시
+COLOR_SHADOW_CURTAIN = (25, 20, 45)    # 그림자 장막 (그림자 질풍으로만 통과, 12.6)
+COLOR_SHADOW_STRAND = (90, 70, 140)    # 장막 안에서 흔들리는 그림자 실
+SHADOW_CURTAIN = dict(alpha=210, strand_gap=12, strand_w=3, sway=5, sway_speed=3.0)
 GATE_BAR_GAP = 16          # px, 문 창살 간격
 LEVER_W, LEVER_H = 24, 48  # px, (x, y)는 레버 아래쪽 중심
 LEVER_STICK = 36           # px, 손잡이 길이
@@ -417,7 +423,7 @@ ABILITY_RUNE = dict(      # 능력 → (룬, 필요 레벨). player.can(능력)�
     wall_cling=('brace', 1), thorn_cling=('brace', 2), brace_breath=('brace', 3),
     crystal_step=('crystal', 1), crystal_arrow=('crystal', 2), crystal_step2=('crystal', 3),
     breakthrough=('breakthrough', 1), breakthrough_pierce=('breakthrough', 2), air_breakthrough=('breakthrough', 3),
-    shadow_dash=('shadow', 1),
+    shadow_dash=('shadow', 1), shadow_quick=('shadow', 2), shadow_far=('shadow', 3),
 )
 RUNE_UPGRADE_COST = dict(  # 임시. 레벨 n→n+1 비용 (광석, 희귀 광석). 인덱스 0 = Lv1→2 (8.3)
     breath=[(60, 0), (400, 1), (900, 1), (1600, 2)],   # 첫 강화 150 → 60 (R1에서 확실히 모을 수 있는 양)
@@ -805,9 +811,9 @@ COLOR_BORER_CRACK = (90, 70, 55)       # 잠행 균열
 BOSS_FIGHT_TARGET = dict(  # 임시. 보스전 예상 시간(초). 아레나 숨구멍 수를 정할 때 참고 (7.6 목표 3)
     borer=50, moss_warden=80, archsage=90, colossus=100, scythe=110, king=180, first_miner=90,
 )
-BOSS_RUNE = dict(borer='burrow', moss_warden='brace', archsage='crystal', colossus='breakthrough')   # 처치 보상 룬 (11.4 보상). B5·B6는 해당 보스 작업에서
-BOSS_CORE = dict(archsage='crystal', colossus='temple')   # 처치 보상 봉인 핵 id (world_state.cores, 11.4 보상). B5는 T56
-BOSS_CORE_CARD = dict(colossus='temple_core')   # 아이템이 없는 보스의 핵 카드 (룬 카드 뒤, rune_get_mode). B3은 숫돌 카드에 함께
+BOSS_RUNE = dict(borer='burrow', moss_warden='brace', archsage='crystal', colossus='breakthrough', scythe='shadow')   # 처치 보상 룬 (11.4 보상)
+BOSS_CORE = dict(archsage='crystal', colossus='temple', scythe='nest')   # 처치 보상 봉인 핵 id (world_state.cores, 11.4 보상)
+BOSS_CORE_CARD = dict(colossus='temple_core', scythe='nest_core')   # 아이템이 없는 보스의 핵 카드 (룬 카드 뒤, rune_get_mode). B3은 숫돌 카드에 함께
 # B2 이끼 수문장 (T49, ← v2 대검 기사). 첫 줄은 4장 값 그대로, 둘째 줄부터 행동·그림 값. 넉백을 받지 않는다
 # 패턴 선택: 거리 < near_range → near 표(내려찍기·회전), 아니면 far 표(돌진·도약) (11.4 선택 규칙). 회전 쿨 spin_cooldown
 # 2페이즈(체력 phase_hp 아래): 이끼 갑옷이 벗겨짐(color_phase2, 균열) + 내려찍기+충격파·도약 내려찍기 추가 (phase2_near·far)
@@ -840,27 +846,46 @@ COLOR_GREATSWORD = (200, 200, 220)
 COLOR_MOSS_ARMOR = (70, 140, 70)        # 1페이즈 이끼 갑옷 조각
 COLOR_SHOCKWAVE = (239, 68, 68)         # 충격파 (빨강 = 패링 불가)
 COLOR_LEAP_SHADOW = (20, 20, 20)        # 도약 내려찍기 떨어질 자리
-# 쌍검 기사: 빠르고 날렵. 넉백을 받지 않는다
-# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치 (11.2 패턴 선택 규칙)
-# 2페이즈(체력 phase_hp 이하): 모든 동작 시간 ÷ phase2_speed_mult (예고는 TELEGRAPH_MIN 이상 유지),
-#   이동 속도 × phase2_speed_mult, phase2_near/far 가중치(빨간 예고 비율 증가),
-#   feint_chance 확률로 페이크(예고만 하고 공격하지 않은 채 feint_recover 동안 멈춤)
-BOSS_TWINBLADE = dict(hp=600, ore=500, damage=1, heavy_damage=2,   # 빨간(패링 불가) 패턴 = heavy_damage
-                      phase_hp=[0.5], phase2_speed_mult=1.2,
-                      w=56, h=100, color=(70, 90, 140), color_phase2=(140, 60, 120),
-                      speed=220, detect_range=1280, near_range=160,
-                      near=dict(combo=3, teleport=1, wave=1), far=dict(combo=0, teleport=2, wave=3),
-                      phase2_near=dict(combo=3, teleport=2, wave=1), phase2_far=dict(combo=0, teleport=3, wave=2),
-                      feint_chance=0.25, feint_recover=0.5,
-                      # 4연속 베기 (흰색): 첫 타만 길게 예고, 이후는 next_telegraph로 짧게 리듬을 탄다
-                      # 패링해도 연타가 끊기지 않고 자세만 쌓인다. 마지막 타 뒤에만 last_recover로 길게 쉰다
-                      combo=dict(count=4, telegraph=0.5, next_telegraph=0.3, windup=0.1, active=0.1,
-                                 recover=0.15, last_recover=0.7, hitbox=(80, 50)),
-                      # 순간이동 기습 (빨간색): 예고가 끝나면 플레이어 등 뒤 offset px로 이동해 windup 후 베기
-                      teleport=dict(telegraph=0.6, windup=0.35, active=0.12, recover=0.8, hitbox=(90, 60),
-                                    offset=90),
-                      # 검기 발사 (흰색): 바라보는 방향으로 수평 발사
-                      wave=dict(telegraph=0.6, windup=0.2, active=0.05, recover=0.6, speed=550))
+# B5 쌍낫 군주 (T56, ← v2 쌍검 기사). 첫 두 줄은 4장 값 그대로, 그다음부터 행동·그림 값. 넉백을 받지 않는다
+# 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치 (11.2). 순간이동 기습 쿨 teleport_cooldown, 소용돌이 쿨 vortex_cooldown
+# 2페이즈(체력 phase_hp 아래): 이동 속도 × phase2_speed_mult, 예고·동작 시간 ÷ phase2_speed_mult (예고는 TELEGRAPH_MIN 이상,
+#   패턴 끝 반격 틈은 그대로), phase2_near/far 가중치(빨강 비율 증가 + 소용돌이), 페이크
+# 페이크 (원칙 14, 2페이즈만): 4연속 베기를 고를 때 feint_chance로 예고(흰)만 하고 feint_recover 동안 멈춘다.
+#   패턴 feint_cycle개에 최대 1회, 페이크 다음 패턴은 반드시 흰 패턴(feint_next)
+# 패턴별 피해는 11.4 표: 4연속 베기·낫날 1, 순간이동 기습 2(heavy_damage), 소용돌이 1
+BOSS_SCYTHE = dict(hp=560, damage=1, heavy_damage=2, phase_hp=[0.5],
+                   phase2_speed_mult=1.2, ore=500,
+                   w=60, h=110, color=(55, 60, 105), color_phase2=(95, 45, 110),
+                   speed=230, detect_range=1280, near_range=180,
+                   teleport_cooldown=3.0, vortex_cooldown=4.0,
+                   near=dict(combo=3, teleport=1, throw=1), far=dict(teleport=2, throw=3),
+                   phase2_near=dict(combo=3, teleport=2, throw=1, vortex=2),
+                   phase2_far=dict(teleport=3, throw=2, vortex=2),
+                   feint_chance=0.35, feint_cycle=4, feint_recover=0.6, feint_next=('combo', 'throw'),
+                   # 4연속 베기 (흰): 두 낫을 교차 telegraph → 각 타 next_telegraph 번쩍임 (리듬 연속 패링).
+                   #   패링해도 연타가 끊기지 않고 자세만 쌓인다. 타마다 step px 앞으로. 마지막 타 뒤에만 last_recover
+                   combo=dict(count=4, telegraph=0.5, next_telegraph=0.3, windup=0.1, active=0.1,
+                              recover=0.1, last_recover=0.8, hitbox=(90, 60), step=24),
+                   # 순간이동 기습 (빨강): 그림자로 녹아듦 telegraph → 플레이어 등 뒤 offset px에 나타나 windup
+                   #   → 플레이어 쪽으로 lunge_speed 대시 베기(active) → recover
+                   teleport=dict(telegraph=0.5, windup=0.3, active=0.25, recover=0.7, hitbox=(90, 70),
+                                 offset=120, lunge_speed=900),
+                   # 낫날 투척 (흰): 한 팔을 뒤로 telegraph → 회전 낫날 수평 발사 (패링·반사 가능)
+                   throw=dict(telegraph=0.6, windup=0.15, active=0.05, recover=0.8, speed=600),
+                   # 그림자 낫 소용돌이 (빨강, 2페이즈): 공중으로 rise px 떠올라 회전 telegraph (rise_time 동안 상승)
+                   #   → 예고가 끝날 때 플레이어 발밑(가로 max_dx px까지)을 정하고 그 바닥에 빨간 표시, windup 동안 멈칫
+                   #   → dive_speed로 그 자리까지 대각선 내리꽂기 (착지까지 active, active는 상한) → 착지 후 recover.
+                   #   내리꽂는 동안 몸 둘레 hitbox. 표시 크기 mark_w × mark_h
+                   vortex=dict(telegraph=0.6, windup=0.25, active=1.5, recover=1.0, hitbox=(130, 130),
+                               rise=260, rise_time=0.3, dive_speed=1100, max_dx=520, mark_w=130, mark_h=10),
+                   # 그림 (도형): 낫 자루·날 크기, 소용돌이 회전, 녹아듦 투명도, 착지 먼지
+                   scythe=dict(handle=70, thick=7, blade=46, blade_h=10),
+                   spin=dict(speed=14.0, radius=62, blades=2),
+                   fade_alpha=70, dust=dict(count=10, speed=(80, 260), life=0.4, size=7), land_shake=(7, 0.18))
+# 회전 낫날 (11.4 B5). 반사하면 reflect_mult배 피해 (반사 강화 배율과 곱해진다)
+SCYTHE_BLADE = dict(size=40, length=0, color=(170, 150, 230), round=True, reflect_mult=3.0)
+COLOR_SCYTHE = (200, 200, 225)          # 낫 날
+COLOR_SCYTHE_HANDLE = (60, 45, 40)      # 낫 자루
 # B3 수정 대술사 (T52, ← v2 대마법사). 첫 5줄은 4장 값 그대로, 그다음부터 행동·그림 값. 넉백을 받지 않는다
 # 땅에 있을 때는 keep_distance ± distance_tolerance를 유지하며 걷고, 공중 발판(방의 oneway 발판) 위에서는 걷지 않는다
 # 패턴 선택: 거리 near_range 이하면 near, 그보다 멀면 far 가중치 (11.2). 유생 소환은 쿨 summon_cooldown, 동시에 최대 summon_max
@@ -926,6 +951,7 @@ BOSS_COLOSSUS = dict(hp=480, damage=1, heavy_damage=2, phase_hp=[0.5],  # 패턴
                      chest=(70, 60), chest_y=0.62,   # 가슴 핵 크기, 높이 (몸 비율)
                      groggy_head_drop=170)           # 그로기: 무릎을 꿇어 머리 핵이 이만큼 내려온다
 COLOR_COLOSSUS_CORE = (120, 220, 210)    # 머리·가슴 핵 (룬 빛)
+COLOR_CORE_CARD = dict(temple_core=(120, 220, 210), nest_core=(150, 120, 230))   # 봉인 핵 카드 문양 색 (rune_get_mode)
 COLOR_COLOSSUS_FIST = (110, 130, 125)
 COLOR_COLOSSUS_PLATE = (80, 100, 95)     # 1페이즈 가슴판
 # 대술사 수정탄은 반사해도 1배, 대형 마력구는 반사하면 orb_reflect_mult배 (「거울 결정」 배율과 곱해진다)
@@ -933,10 +959,7 @@ BOSS_BOLT = dict(size=20, length=0, color=(200, 150, 255), round=True)
 MAGE_ORB = dict(size=56, length=0, color=(170, 100, 255), round=True,
                 reflect_mult=BOSS_ARCHSAGE['orb_reflect_mult'])
 COLOR_BOSS_STAFF_ORB = (220, 180, 255)
-# 쌍검 기사 검기. 반사하면 reflect_mult배 피해 (반사 강화 배율과 곱해진다)
-TWIN_WAVE = dict(size=36, length=48, color=(200, 160, 255), reflect_mult=3.0)
 TELEPORT_PUFF = dict(count=10, speed=(100, 300), life=0.3, size=6)  # 색은 보스 몸 색
-COLOR_TWINBLADE = (210, 210, 235)
 
 # 세이브 (T36, 13.6)
 SAVE_PATH = 'save.json'
@@ -991,6 +1014,7 @@ DASH_ICON_DOT = 6          # px, 점 한 변
 COLOR_DASH_READY = (180, 220, 255)
 COLOR_DASH_COOL = (70, 80, 100)
 COLOR_DASH_FILL = (120, 160, 220)
+COLOR_SHADOW_READY = (150, 120, 230)   # 그림자 질풍이 준비되면 대시 아이콘 가운데 색
 
 # 보스 HUD (하단 중앙, 14.1): 이름(작게) + 자세 게이지. BOSS_HP_BAR이면 그 위에 체력 바
 BOSS_BAR_W, BOSS_BAR_H = 640, 18
@@ -1001,7 +1025,6 @@ COLOR_BOSS_HP = (200, 50, 50)
 COLOR_POSTURE_BACK = (50, 50, 60)
 COLOR_POSTURE_FILL = (255, 220, 120)
 # 보스 이름·칭호 (11.4). 키 = 방 JSON boss · bosses_met · bosses_defeated 값
-# [v2] scythe는 아직 v2 쌍검 기사 행동 (T56에서 교체)
 BOSS_NAME = dict(borer='바위껍질 굴착충', moss_warden='이끼 수문장', archsage='수정 대술사',
                  colossus='신전 골렘 거상', scythe='쌍낫 군주', king='타락한 왕 에르딘',
                  first_miner='먼저 떨어진 광부')
