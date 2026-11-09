@@ -1,0 +1,36 @@
+{
+  "id": "R5_05",
+  "region": "nest",
+  "size": [2, 1],
+  "map_cell": [1, 2],
+  "music": "nest",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 500, 64, "solid"],
+    [1700, 0, 860, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [2520, 264, 40, 416, "solid"],
+    [0, 680, 2560, 40, "solid"]
+  ],
+  "hazards": [
+    [500, 0, 1200, 40, "pit"]
+  ],
+  "gates": [
+    [60, 64, 48, 200, "shadow_curtain", "curtain_secret"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R5_SECRET", "to_exit": "R"},
+    {"id": "R", "rect": [2544, 64, 16, 200], "to": "R5_04", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["vine_lurker", 260, 640]
+  ],
+  "objects": [
+    ["item", 380, 64, "rare_ore_r5_a"]
+  ],
+  "safe_points": [
+    [1900, 64],
+    [250, 64]
+  ]
+}

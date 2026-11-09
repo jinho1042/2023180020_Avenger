@@ -73,6 +73,12 @@
                     "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
   "map_stone_r4": {"kind": "map_stone", "name": "신전 지도석", "name_en": "Temple Map Stone",
                    "desc": ["침수 신전의 지도가 새겨져 있다"], "desc_en": ["The Flooded Temple is carved on it"]},
+  "rare_ore_r5_a": {"kind": "rare_ore", "name": "희귀 광석", "name_en": "Rare Ore",
+                    "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
+  "rare_ore_r5_b": {"kind": "rare_ore", "name": "희귀 광석", "name_en": "Rare Ore",
+                    "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},
+  "map_stone_r5": {"kind": "map_stone", "name": "둥지 지도석", "name_en": "Nest Map Stone",
+                   "desc": ["그림자 둥지의 지도가 새겨져 있다"], "desc_en": ["The Shadow Nest is carved on it"]},
 
   "rare_ore_a": {"kind": "shop", "name": "희귀 광석", "name_en": "Rare Ore",
                  "desc": ["대장간 강화 재료"], "desc_en": ["Material for the forge"]},

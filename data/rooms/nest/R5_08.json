@@ -1,0 +1,51 @@
+{
+  "id": "R5_08",
+  "region": "nest",
+  "size": [3, 1],
+  "map_cell": [7, 1],
+  "music": "nest",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 3840, 64, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [3800, 264, 40, 416, "solid"],
+    [0, 680, 3840, 40, "solid"],
+    [800, 64, 200, 160, "solid"],
+    [1150, 300, 240, 16, "oneway"],
+    [1500, 64, 300, 100, "solid"],
+    [1950, 240, 200, 16, "oneway"],
+    [2300, 64, 160, 200, "solid"],
+    [2500, 180, 150, 16, "oneway"],
+    [2650, 320, 200, 16, "oneway"],
+    [2900, 440, 900, 24, "solid"]
+  ],
+  "hazards": [
+    [1800, 64, 500, 24, "spike"]
+  ],
+  "air_vents": [
+    [2380, 300, "vent_a"]
+  ],
+  "breakables": [
+    [3100, 464, 40, 216, "crack", "crack_a"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R5_07", "to_exit": "R"},
+    {"id": "R", "rect": [3824, 64, 16, 200], "to": "R5_09", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["scythe_mantis", 600, 64],
+    ["shadow_stalker", 1650, 164],
+    ["vine_lurker", 1270, 640],
+    ["scythe_mantis", 3200, 64]
+  ],
+  "objects": [
+    ["item", 3500, 464, "rare_ore_r5_b"]
+  ],
+  "safe_points": [
+    [300, 64],
+    [1650, 164],
+    [2380, 264],
+    [2700, 64]
+  ]
+}
