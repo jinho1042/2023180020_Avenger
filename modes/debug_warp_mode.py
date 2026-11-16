@@ -11,7 +11,7 @@ from systems import engravings, sound, world
 
 # play_mode 위에 push되는 디버그 메뉴 (0장 15번). config.DEBUG일 때만 열린다
 # F4 방 이동: ↑↓로 방을 고르고 Z·Enter로 워프
-# F7 개별 지급: 룬은 ←→(Z = +1)로 레벨, 플래그·각인은 Z·Enter로 켜고 끈다. 하나라도 바꾸면 debug_unlocked (13.6)
+# F7 개별 지급: 룬은 ←→(Z = +1)로 레벨, 플래그·봉인 핵(T57)·각인은 Z·Enter로 켜고 끈다. 하나라도 바꾸면 debug_unlocked (13.6)
 # Esc·F4·F7로 닫는다
 
 DEBUG_KEY = {getattr(pico2d, name): action for action, name in config.DEBUG_KEYS.items()}
@@ -32,7 +32,13 @@ def open_menu(menu_kind):
 
 def give_entries():
     return ([('rune', r) for r in config.RUNE_MAX_LEVEL] + [('flag', f) for f in config.DEBUG_GIVE_FLAGS]
-            + [('engraving', e) for e in engravings.IDS])
+            + [('core', c) for c in config.BOSS_CORE.values()] + [('engraving', e) for e in engravings.IDS])
+
+
+def owned_set(entry_kind):
+    # 켜고 끄는 항목이 들어 있는 집합 (플래그·봉인 핵·각인)
+    state = world.state
+    return dict(flag=state.flags, core=state.cores).get(entry_kind, state.player.engravings_owned)
 
 
 def init():
@@ -82,8 +88,8 @@ def give(step):
     entry_kind, eid = entries[selected]
     if entry_kind == 'rune':
         change_rune(eid, step)
-    elif entry_kind == 'flag':
-        world.state.flags ^= {eid}
+    elif entry_kind in ('flag', 'core'):
+        owned_set(entry_kind).symmetric_difference_update({eid})
     else:
         toggle_engraving(eid)
     world.state.debug_unlocked = True   # 이후 저장은 save_debug.json으로 (13.6)
@@ -130,8 +136,9 @@ def label(entry):
     state = world.state
     if entry_kind == 'rune':
         return f'룬  {eid}  Lv{state.player.runes.get(eid, 0)} / {config.RUNE_MAX_LEVEL[eid]}'
-    on = eid in (state.flags if entry_kind == 'flag' else state.player.engravings_owned)
-    return f"{'플래그' if entry_kind == 'flag' else '각인'}  {eid}  {'O' if on else '-'}"
+    on = eid in owned_set(entry_kind)
+    name = dict(flag='플래그', core='봉인 핵').get(entry_kind, '각인')
+    return f"{name}  {eid}  {'O' if on else '-'}"
 
 
 def is_on(entry):
@@ -140,7 +147,7 @@ def is_on(entry):
     entry_kind, eid = entry
     if entry_kind == 'rune':
         return world.state.player.runes.get(eid, 0) > 0
-    return eid in (world.state.flags if entry_kind == 'flag' else world.state.player.engravings_owned)
+    return eid in owned_set(entry_kind)
 
 
 def draw():

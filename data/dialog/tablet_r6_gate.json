@@ -1,0 +1,24 @@
+{
+  "name": "경고 석판",
+  "name_en": "Warning Tablet",
+  "pages": [
+    [
+      "봉인의 틈으로 숨이 빨려 나간다.",
+      "숨방도 바람 구멍도 없다."
+    ],
+    [
+      "룬을 네 번 새겨 숨이 가장 깊어진 자만",
+      "통로 끝에 닿으리라."
+    ]
+  ],
+  "pages_en": [
+    [
+      "Breath is drawn out through the cracks of the seal.",
+      "No breath chamber, no vent."
+    ],
+    [
+      "Only one whose rune is carved four times, whose breath runs deepest,",
+      "may reach the end of the passage."
+    ]
+  ]
+}

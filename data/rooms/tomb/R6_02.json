@@ -1,0 +1,50 @@
+{
+  "id": "R6_02",
+  "region": "tomb",
+  "size": [3, 1],
+  "map_cell": [7, 3],
+  "music": "tomb",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 3840, 64, "solid"],
+    [0, 680, 3840, 40, "solid"],
+    [0, 264, 40, 416, "solid"],
+    [3800, 264, 40, 416, "solid"],
+    [40, 360, 600, 40, "solid"],
+    [700, 220, 200, 16, "oneway"],
+    [1500, 64, 120, 140, "solid"],
+    [2200, 220, 180, 16, "oneway"],
+    [2400, 380, 180, 16, "oneway"],
+    [2600, 440, 1200, 40, "solid"]
+  ],
+  "safe_zones": [
+    [40, 64, 640, 296, "safe_a"]
+  ],
+  "air_vents": [
+    [2300, 64, "vent_a"]
+  ],
+  "breakables": [
+    [300, 400, 48, 280, "crack", "crack_a"],
+    [120, 400, 56, 56, "ore_chunk", "chunk_a"],
+    [3200, 480, 48, 200, "crack", "crack_b"]
+  ],
+  "exits": [
+    {"id": "L", "rect": [0, 64, 16, 200], "to": "R6_G3", "to_exit": "R"},
+    {"id": "R", "rect": [3824, 64, 16, 200], "to": "R6_03", "to_exit": "L"}
+  ],
+  "spawns": [
+    ["ruin_golem", 1900, 64],
+    ["scythe_mantis", 2800, 64],
+    ["shadow_stalker", 3000, 480]
+  ],
+  "objects": [
+    ["seat", 300, 64, "safe_a"],
+    ["tablet", 1000, 64, "tablet_r6_a"],
+    ["item", 3500, 480, "rare_ore_r6_a"]
+  ],
+  "safe_points": [
+    [300, 64],
+    [1300, 64]
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "id": "R6_01",
+  "region": "tomb",
+  "size": [2, 1],
+  "map_cell": [0, 3],
+  "music": "tomb",
+  "air": null,
+  "hub": false,
+  "platforms": [
+    [0, 0, 560, 200, "solid"],
+    [2200, 0, 360, 200, "solid"],
+    [0, 200, 40, 520, "solid"],
+    [2520, 400, 40, 160, "solid"],
+    [560, 560, 2000, 160, "solid"],
+    [40, 680, 60, 40, "solid"],
+    [300, 680, 260, 40, "solid"],
+    [300, 360, 200, 16, "oneway"],
+    [100, 540, 200, 16, "oneway"]
+  ],
+  "exits": [
+    {"id": "U", "rect": [100, 704, 200, 16], "to": "R1_08", "to_exit": "D"},
+    {"id": "R", "rect": [2544, 200, 16, 200], "to": "R6_G1", "to_exit": "L"}
+  ],
+  "spawns": [],
+  "objects": [
+    ["warning_tablet", 440, 200, "tablet_r6_gate"]
+  ],
+  "safe_points": [
+    [300, 200],
+    [2350, 200]
+  ],
+  "rune_variants": {
+    "shadow": {
+      "platforms": [
+        [560, 0, 1640, 200, "solid"]
+      ],
+      "gates": [
+        [2160, 200, 40, 360, "shadow_curtain", "curtain_r6"]
+      ],
+      "spawns": [
+        ["ruin_golem", 1400, 200]
+      ]
+    },
+    "breakthrough": {
+      "hazards": [
+        [560, 0, 1640, 40, "pit"]
+      ]
+    }
+  }
+}

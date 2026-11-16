@@ -3,8 +3,10 @@ import math
 from pico2d import get_time
 
 import config
+import game_framework
 import game_world
 from objects import effect
+from objects.npc import Npc
 from systems import camera
 
 
@@ -15,8 +17,10 @@ class Gate:
     #   플레이어 사망·보스 처치 때 열리며 opened에 남기지 않는다 (방에 들어올 때마다 열린 채로 만든다)
     # shadow_curtain: 그림자 장막 (12.6). 열리지 않고 늘 지형으로 막지만, 플레이어가 그림자 질풍 중이면 지나간다
     #   (objects/player.py move_x가 질풍 중에 장막을 빼고 충돌한다). 적·투사체 판정과 곡괭이에는 벽
-    # kind = 'solid'는 systems/terrain.py가 보는 값이고 문 종류는 type. 봉인문은 T57
-    KINDS = ('lever_gate', 'one_way', 'arena', 'shadow_curtain')
+    # seal: 봉인문 (T57). 가까이에서 ↑(play_mode.check_seals) → 봉인 핵이 SEAL_CORES_REQUIRED개면 핵을 하나씩 끼우는
+    #   연출(플레이어 컷신 = 조작·숨 정지) 뒤 열려 opened에 남는다. 모자라면 몇 개 있는지 알림만
+    # kind = 'solid'는 systems/terrain.py가 보는 값이고 문 종류는 type
+    KINDS = ('lever_gate', 'one_way', 'arena', 'shadow_curtain', 'seal')
 
     def __init__(self, room_id, x, y, w, h, type, obj_id, props, state):
         self.x, self.y, self.w, self.h = x, y, w, h
@@ -25,6 +29,9 @@ class Gate:
         self.gid = f'{room_id}:{obj_id}'
         self.open_from = props.get('open_from')
         self.state = state
+        self.prompt = False      # 봉인문: ↑로 상호작용할 수 있으면 문 위에 ↑ 표시 (play_mode가 매 프레임 정함)
+        self.inserting = None    # 봉인문: 핵을 끼우는 중이면 지난 시간 (s), 아니면 None
+        self.player = None       # 봉인문: 연출 중 멈춰 둔 플레이어
 
     @property
     def left(self):
@@ -43,7 +50,59 @@ class Gate:
         return self.y + self.h
 
     def update(self):
-        pass
+        if self.inserting is None:
+            return
+        # 봉인문 연출: 핵을 insert_each마다 하나씩 끼우고, 다 끼운 뒤 open_delay 뒤 열린다
+        spec = config.SEAL
+        before = self.cores_lit()
+        self.inserting += game_framework.frame_time
+        if self.cores_lit() > before:
+            cx, _ = self.slot_pos(before)
+            effect.burst(cx, self.y + self.h / 2, config.DOOR_SPARK, self.core_color(before))
+            camera.shake(spec['shake'] / 2, 0.15)
+        if self.inserting >= spec['insert_each'] * config.SEAL_CORES_REQUIRED + spec['open_delay']:
+            self.inserting = None
+            camera.shake(spec['shake'], 0.4)
+            self.player.end_cutscene()
+            self.open()
+
+    def can_unseal(self, player):
+        # 봉인문 테두리에서 SEAL.reach 안, 땅에 서 있고 조작할 수 있을 때 ↑ (play_mode.check_seals)
+        if self.type != 'seal' or self.kind is None or self.inserting is not None:
+            return False
+        if not player.on_ground or player.is_locked():
+            return False
+        reach = config.SEAL['reach']
+        l, b, r, t = player.get_bb()
+        return l < self.right + reach and r > self.left - reach and b < self.top + reach and t > self.bottom - reach
+
+    def unseal(self, player):
+        # 핵이 다 있으면 끼우는 연출 시작 (True), 모자라면 False
+        if len(self.state.cores) < config.SEAL_CORES_REQUIRED:
+            return False
+        self.inserting = 0.0
+        self.player = player
+        self.prompt = False
+        player.start_cutscene()
+        return True
+
+    def cores_lit(self):
+        # 지금 빛나는 핵 홈 수 (연출 중이 아니면 0)
+        if self.inserting is None:
+            return 0
+        return min(config.SEAL_CORES_REQUIRED, int(self.inserting / config.SEAL['insert_each']))
+
+    def core_color(self, i):
+        # i번째 홈에 끼우는 핵 색 (가진 핵을 BOSS_CORE 순서로)
+        order = [c for c in config.BOSS_CORE.values() if c in self.state.cores]
+        return config.COLOR_SEAL_CORE.get(order[i] if i < len(order) else None, config.COLOR_SEAL_EDGE)
+
+    def slot_pos(self, i):
+        # 핵 홈 i의 중심. 문 가운데 줄에 긴 쪽을 따라 slot_gap 간격
+        n = config.SEAL_CORES_REQUIRED
+        offset = (i - (n - 1) / 2) * config.SEAL['slot_gap']
+        cx, cy = self.x + self.w / 2, self.y + self.h / 2
+        return (cx + offset, cy) if self.w >= self.h else (cx, cy + offset)
 
     def open(self):
         if self.kind is None:
@@ -83,6 +142,9 @@ class Gate:
         if self.type == 'shadow_curtain':
             self.draw_curtain()
             return
+        if self.type == 'seal':
+            self.draw_seal()
+            return
         l, b, r, t = self.get_bb()
         color = config.COLOR_ARENA_GATE if self.type == 'arena' else config.COLOR_GATE
         camera.draw_rect(l, b, r, t, *color, filled=True)
@@ -112,6 +174,22 @@ class Gate:
                 dx = math.sin(now + i + y / 40) * spec['sway']
                 sx = min(max(x + dx, l + half), r - half)
                 camera.draw_rect(sx - half, y, sx + half, y + step * 0.7, *config.COLOR_SHADOW_STRAND, filled=True)
+        if game_world.show_hitbox:
+            camera.draw_rect(l, b, r, t, *config.COLOR_DEBUG_BODY)
+
+    def draw_seal(self):
+        # 봉인문: 금빛 석판 + 테두리 + 가운데 핵 홈 SEAL_CORES_REQUIRED개 (끼운 핵은 빛남)
+        l, b, r, t = self.get_bb()
+        camera.draw_rect(l, b, r, t, *config.COLOR_SEAL, filled=True)
+        camera.draw_rect(l, b, r, t, *config.COLOR_SEAL_EDGE)
+        camera.draw_rect(l + 4, b + 4, r - 4, t - 4, *config.COLOR_SEAL_EDGE)
+        lit = self.cores_lit()
+        for i in range(config.SEAL_CORES_REQUIRED):
+            x, y = self.slot_pos(i)
+            effect.draw_disc(x, y, config.SEAL['slot_r'], config.COLOR_SEAL_EDGE)
+            effect.draw_disc(x, y, config.SEAL['slot_r'] - 4, self.core_color(i) if i < lit else config.COLOR_SEAL_SLOT)
+        if self.prompt:
+            Npc.draw_prompt(self, self.x + self.w / 2, t + config.SEAL['prompt_h'])
         if game_world.show_hitbox:
             camera.draw_rect(l, b, r, t, *config.COLOR_DEBUG_BODY)
 

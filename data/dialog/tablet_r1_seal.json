@@ -1,0 +1,24 @@
+{
+  "name": "경고 석판",
+  "name_en": "Warning Tablet",
+  "pages": [
+    [
+      "왕은 모든 문을 닫았다.",
+      "이 아래 문은 봉인 핵으로만 열린다."
+    ],
+    [
+      "유적 깊은 곳의 주인들이",
+      "핵을 하나씩 품고 있다."
+    ]
+  ],
+  "pages_en": [
+    [
+      "The king closed every door.",
+      "The door below opens only to the seal cores."
+    ],
+    [
+      "The masters deep in the ruins",
+      "each hold one core."
+    ]
+  ]
+}
