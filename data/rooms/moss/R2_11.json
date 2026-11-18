@@ -13,9 +13,14 @@
     [0, 680, 1280, 40, "solid"],
     [800, 184, 300, 40, "solid"],
     [1076, 64, 24, 120, "solid"],
-    [600, 300, 200, 16, "oneway"],
-    [488, 464, 220, 16, "oneway"],
-    [40, 440, 400, 40, "solid"]
+    [40, 440, 400, 40, "solid"],
+    [520, 64, 180, 100, "solid"],
+    [700, 64, 50, 190, "solid"],
+    [540, 300, 140, 16, "oneway"],
+    [488, 464, 220, 16, "oneway"]
+  ],
+  "air_vents": [
+    [250, 100, "vent_a"]
   ],
   "breakables": [
     [440, 480, 48, 200, "crack", "crack_a"],
@@ -23,10 +28,24 @@
     [800, 64, 40, 120, "hard_soil", "hard_soil_a"],
     [960, 64, 56, 56, "ore_chunk", "chunk_hard"]
   ],
+  "gates": [
+    [16, 64, 32, 200, "arena", "lock_l"],
+    [1232, 64, 32, 200, "arena", "lock_r"]
+  ],
   "exits": [
     {"id": "L", "rect": [0, 64, 16, 200], "to": "R2_06", "to_exit": "R"},
     {"id": "R", "rect": [1264, 64, 16, 200], "to": "R2_07", "to_exit": "L"}
   ],
+  "triggers": [
+    [600, 64, 100, 620, "lockdown", "lock_r2_11"]
+  ],
+  "lockdown": {
+    "id": "lock_r2_11",
+    "waves": [
+      [["crawler", 150, 64], ["crawler", 1170, 64]],
+      [["bat", 300, 330], ["crawler", 950, 224], ["vine_lurker", 1170, 64]]
+    ]
+  },
   "objects": [],
   "spawns": [
     ["shell_warrior", 450, 64],
