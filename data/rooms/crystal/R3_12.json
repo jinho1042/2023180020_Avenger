@@ -13,16 +13,37 @@
     [0, 64, 40, 616, "solid"],
     [1240, 64, 40, 616, "solid"],
     [900, 304, 48, 376, "solid"],
-    [150, 304, 48, 376, "solid"]
+    [150, 304, 48, 376, "solid"],
+    [600, 280, 180, 16, "oneway"],
+    [300, 460, 200, 16, "oneway"]
+  ],
+  "air_vents": [
+    [800, 120, "vent_a"]
   ],
   "breakables": [
     [900, 64, 48, 240, "crack", "crack_a"],
     [150, 64, 48, 240, "crack", "crack_b"],
     [60, 64, 56, 56, "ore_chunk", "chunk_a"]
   ],
+  "gates": [
+    [300, 0, 200, 64, "arena", "lock_d"],
+    [990, 64, 32, 616, "arena", "lock_v"]
+  ],
   "exits": [
     {"id": "D", "rect": [300, 0, 200, 16], "to": "R3_06", "to_exit": "U"}
   ],
+  "triggers": [
+    [540, 64, 360, 616, "lockdown", "lock_r3_12"]
+  ],
+  "lockdown": {
+    "id": "lock_r3_12",
+    "reward_ore": 0,
+    "waves": [
+      [["crawler", 820, 64], ["bat", 350, 400]],
+      [["crawler", 690, 296], ["bat", 800, 450]],
+      [["crystal_sprite", 250, 64], ["bat", 600, 500]]
+    ]
+  },
   "objects": [
     ["item", 1100, 64, "rare_ore_r3_b"]
   ],
