@@ -361,5 +361,100 @@ class Arena(Trigger):
             gate.open()
 
 
+class Lockdown(Trigger):
+    # 잠금 전투방 (T66, docs/맵디테일.md 9.3): 몸이 닿으면 아레나 돌문이 닫히고 방 JSON lockdown.waves를 차례로 낸다
+    # 웨이브 적은 LOCKDOWN.warn 동안 바닥 그림자로 예고한 뒤, 플레이어에게서 min_dist 이상 떨어져 있을 때 나타난다
+    # 닫힐 때 살아 있던 방의 일반 적도 '다 잡아야' 대상. 마지막 웨이브까지 다 잡으면 문 열림 + 광석 보상 +
+    # id를 lockdowns_cleared에 남긴다 (다시 잠기지 않음). 잠긴 동안 죽으면 문만 연다 (부활하면 방이 새로 만들어진다)
+    def __init__(self, *args):
+        super().__init__(*args)
+        data = room.lockdown if room.lockdown and room.lockdown.get('id') == self.id else None
+        self.waves = data['waves'] if data else []
+        self.reward = data.get('reward_ore', config.LOCKDOWN['reward_ore']) if data else 0
+        # area [x, y, w, h]: 잠기는 구역 (없으면 방 전체). 닫힐 때 이 안에 있는 기존 적만 '다 잡아야' 대상
+        self.area = tuple(data['area']) if data and 'area' in data else (0, 0, room.width, room.height)
+        self.done = self.id in world.state.lockdowns_cleared or not self.waves
+        self.wave = 0
+        self.foes = []       # 이번 웨이브에서 잡아야 할 적
+        self.marks = []      # 예고 중인 자리 [[종류, x, y, 남은 시간], ...]
+        self.gap = 0.0       # 다음 웨이브까지 남은 시간
+
+    def update(self):
+        if self.done:
+            return
+        if not self.fired:
+            super().update()
+            return
+        if player.dead:
+            self.done = True
+            self.open_gates()
+            return
+        self.update_marks()
+        self.foes = [e for e in self.foes if e.is_alive()]
+        if self.foes or self.marks:
+            return
+        if self.wave >= len(self.waves):
+            self.clear()
+            return
+        self.gap -= game_framework.frame_time
+        if self.gap <= 0:
+            self.start_wave()
+
+    def enter(self):
+        from modes import play_mode
+        for gate in room.arena_gates:
+            gate.close()
+        camera.shake(*config.LOCKDOWN['shake'])
+        sound.play('door')
+        x, y, w, h = self.area
+        self.foes = [e for e in play_mode.enemies if e.is_alive() and e.kind == 'enemy'
+                     and x <= e.x <= x + w and y <= e.y <= y + h]
+        self.start_wave()
+
+    def start_wave(self):
+        self.marks = [[kind, x, y, config.LOCKDOWN['warn']] for kind, x, y in self.waves[self.wave]]
+        self.wave += 1
+        self.gap = config.LOCKDOWN['wave_gap']
+
+    def update_marks(self):
+        from modes import play_mode
+        dt = game_framework.frame_time
+        ready = []
+        for mark in self.marks:
+            mark[3] -= dt
+            if mark[3] <= 0 and math.hypot(mark[1] - player.x, mark[2] - player.y) >= config.LOCKDOWN['min_dist']:
+                ready.append(mark)
+        if not ready:
+            return
+        self.marks = [m for m in self.marks if m not in ready]
+        new = room.make_enemies([m[:3] for m in ready], player)
+        for kind, x, y, _ in ready:
+            effect.burst(x, y, config.WALL_DEBRIS, config.COLOR_LOCKDOWN_MARK)
+        play_mode.add_enemies(new)
+        self.foes += new
+
+    def clear(self):
+        self.done = True
+        self.open_gates()
+        world.state.lockdowns_cleared.add(self.id)
+        if self.reward:
+            from objects import pickup
+            pickup.spill(player.x, player.y + config.PLAYER_H, self.reward, player)
+        print(f'[잠금] {self.id} 해제')
+
+    def open_gates(self):
+        for gate in room.arena_gates:
+            gate.open()
+
+    def draw(self):
+        spec = config.LOCKDOWN
+        for _, x, y, left in self.marks:
+            # 예고: 바닥 그림자가 점점 짙어진다 (예고가 끝나도 플레이어가 가까우면 짙은 채로 기다림)
+            alpha = 255 * min(1.0, 1 - max(left, 0) / spec['warn'])
+            effect.draw_alpha_rect(x - spec['marker_w'], y, x + spec['marker_w'], y + spec['marker_h'],
+                                   config.COLOR_LOCKDOWN_MARK, max(alpha, 60))
+        super().draw()
+
+
 TRIGGERS = dict(sign=Sign, hint=Hint, omen=Omen, collapse=Collapse, fall=Fall, fall_end=FallEnd,
-                fall_backdrop=FallBackdrop, air_shaft=AirShaft, arena=Arena)
+                fall_backdrop=FallBackdrop, air_shaft=AirShaft, arena=Arena, lockdown=Lockdown)

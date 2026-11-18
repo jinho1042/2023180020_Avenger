@@ -369,6 +369,14 @@ REGIONS = dict(            # 구역 이름·대표 색·기본 공기
 HUB_SHORTCUT_REGIONS = ['moss', 'crystal', 'temple', 'nest']   # R1 허브행 숏컷이 필요한 구역 (R2~R5, 12.5)
 SAFE_ZONE_MAX_ROOMS = 4    # 어느 방에서든 가장 가까운 안전지대까지 최대 방 수 (게이트 방 제외)
 CARVER_FROM_HUB_MAX = 10.0 # s, R1 허브 안전지대 → 새김터 이동 시간 상한
+LOCKDOWN = dict(            # 잠금 전투방 (T66, docs/맵디테일.md 9). 웨이브를 다 잡아야 아레나 문이 열린다
+    warn=0.6,              # s, 웨이브 적이 나타나기 전 바닥 먼지·그림자 예고
+    min_dist=200,          # px, 플레이어에게서 이만큼 떨어져야 예고 자리에 적이 나타난다 (가까우면 멀어질 때까지 기다림)
+    wave_gap=1.0,          # s, 웨이브를 다 잡은 뒤 다음 웨이브까지
+    reward_ore=30,         # 임시. 처음 깰 때 광석 (방 JSON lockdown.reward_ore가 있으면 그 값). T20 광석 경제에서 정함
+    shake=(8, 0.3),        # 문이 닫힐 때 흔들림 (세기 px, 시간 s)
+    marker_w=24, marker_h=10,   # 예고 그림자 반폭·높이 (px)
+)
 R1_SEGMENT_MAX = 15.0      # 임시. s, 숨의 룬 전 R1에서 숨 회복 지점 사이 최단 이동 시간 상한 (용량 25 기준)
 COLLECTIBLE_COUNTS = dict(  # 임시. 12.7 구역별 수집품 수 (상점·NPC·보스 몫 제외). validate_rooms.py 개수 검사 기준
     full=dict(rare_ore=dict(corridor=3, moss=3, crystal=3, temple=3, nest=3, tomb=1),
@@ -787,6 +795,7 @@ BOSS_AIR_BURST = dict(count=18, speed=(150, 420), life=0.6, size=8)    # 그로�
 BOSS_INTRO_ROAR = dict(shake=10, shake_time=0.5)   # 등장 포효
 BOSS_DEATH_FLASH = dict(color=(255, 255, 255), alpha=200, time=0.4)
 COLOR_ARENA_GATE = (90, 85, 80)        # 아레나 돌문
+COLOR_LOCKDOWN_MARK = (40, 30, 25)     # 잠금 전투방 웨이브 예고 그림자 (T66)
 BOSS_PARRY_RECOIL = 0.5    # s, 보스는 패링당해도 길게 비틀거리지 않고 이만큼만 멈칫한다
 COLOR_BOSS_GROGGY = (230, 200, 60)
 # ===== 보스 (11.4). 체력은 T58 숨 예산에 맞춰 다시 조정할 수 있음 =====

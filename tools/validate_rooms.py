@@ -180,6 +180,42 @@ def check_room(room_id, data, items, global_ids):
             error(room_id, '독 거머리가 숨 게이트 방에 있음 (일반 물에만 둔다)')
 
 
+FLYING_SPAWNS = ('bat',)   # 공중에 두는 적 (발판 위 검사 제외)
+
+
+def check_lockdown(room_id, data):
+    # 잠금 전투방 (T66, docs/맵디테일.md 9.3): lockdown id ↔ triggers "lockdown" id 짝, 출구마다 아레나 문,
+    # 웨이브 spawn이 발판 윗면 위(거머리는 물 안, 박쥐는 공중), 방 안에 숨구멍 1개 이상
+    lock = data.get('lockdown')
+    trigger_ids = [t[5] for t in data.get('triggers', []) if t[4] == 'lockdown']
+    if lock is None:
+        if trigger_ids:
+            error(room_id, f'lockdown 트리거 {trigger_ids}에 짝이 되는 lockdown 데이터가 없음')
+        return
+    if trigger_ids != [lock.get('id')]:
+        error(room_id, f"lockdown id {lock.get('id')}와 triggers의 lockdown id {trigger_ids}가 짝이 아님")
+    arena = [g for g in data.get('gates', []) if g[4] == 'arena']
+    if len(arena) < len(data.get('exits', [])):
+        error(room_id, f"잠금 전투방 아레나 문 {len(arena)}개 < 출구 {len(data.get('exits', []))}개")
+    if not data.get('air_vents'):
+        error(room_id, '잠금 전투방에 숨구멍이 없음')
+    waves = lock.get('waves', [])
+    if not waves:
+        error(room_id, 'lockdown waves가 비어 있음')
+    tops = [(p[0], p[0] + p[2], p[1] + p[3]) for p in data['platforms']]
+    water = [w[:4] for w in data.get('water', [])]
+    for i, wave in enumerate(waves, 1):
+        for kind, x, y in wave:
+            if kind in FLYING_SPAWNS:
+                continue
+            if kind == 'leech':
+                ok = any(wx <= x <= wx + ww and wy <= y <= wy + wh for wx, wy, ww, wh in water)
+            else:
+                ok = any(l <= x <= r and y == top for l, r, top in tops)
+            if not ok:
+                error(room_id, f'잠금 {i}웨이브 {kind} ({x}, {y})가 발판 윗면(거머리는 물) 위가 아님')
+
+
 def check_map_cells(rooms):
     owner = {}
     for room_id, data in sorted(rooms.items()):
@@ -347,6 +383,7 @@ def main():
     global_ids = {}
     for room_id, data in sorted(rooms.items()):
         check_room(room_id, data, items, global_ids)
+        check_lockdown(room_id, data)
     check_exits(rooms)
     check_map_cells(rooms)
     check_bosses(rooms)
