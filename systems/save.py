@@ -12,7 +12,7 @@ from systems import world
 PLAYER_SETS = ('engravings_owned',)
 WORLD_SETS = ('visited', 'map_stones', 'broken', 'opened', 'switches', 'collected', 'miners_rescued',
               'miner_rewards_taken', 'safe_zones_found', 'bosses_met', 'bosses_defeated', 'elites_defeated',
-              'cores', 'flags')
+              'cores', 'flags', 'lockdowns_cleared')
 WORLD_VALUES = ('mined', 'hint_fail_count', 'debug_unlocked')   # mined는 13.6에 없지만 저장한다 (18장 25번)
 
 

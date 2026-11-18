@@ -34,6 +34,7 @@ def new_state():
         visited=set(), map_stones=set(), broken=set(), mined={}, opened=set(), switches=set(), collected=set(),
         miners_rescued=set(), miner_rewards_taken=set(), safe_zones_found=set(),
         bosses_met=set(), bosses_defeated=set(), elites_defeated=set(), cores=set(), hint_fail_count=0,
+        lockdowns_cleared=set(),
         stats=dict(deaths=0, parries=0, reflects=0, suffocations=0, blackouts=0, ore_lost=0))
 
 

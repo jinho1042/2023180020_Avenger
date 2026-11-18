@@ -138,6 +138,14 @@ class Breakable:
         wind = config.CRACK_WIND
         half = wind['size'] / 2
         cx = self.x + self.w / 2
+        if self.w > self.h:
+            # 천장 균열 (T66, 맵디테일 7.3): 아래의 먼지가 위로 빨려 올라간다
+            for i in range(wind['count']):
+                phase = (self.time / wind['period'] + i / wind['count']) % 1
+                x = self.x + self.w * (i + 1) / (wind['count'] + 1)
+                y = self.y - wind['dist'] * (1 - phase)
+                camera.draw_rect(x - half, y - half, x + half, y + half, *config.COLOR_CRACK_WIND, filled=True)
+            return
         for i in range(wind['count']):
             phase = (self.time / wind['period'] + i / wind['count']) % 1
             side = 1 if i % 2 else -1

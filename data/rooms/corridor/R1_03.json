@@ -1,40 +1,47 @@
 {
   "id": "R1_03",
   "region": "corridor",
-  "size": [1, 1],
+  "size": [1, 2],
   "map_cell": [7, 6],
   "music": "corridor",
   "air": null,
   "hub": false,
   "platforms": [
     [0, 0, 1280, 64, "solid"],
-    [0, 264, 40, 76, "solid"],
-    [0, 540, 40, 180, "solid"],
-    [1240, 264, 40, 416, "solid"],
-    [0, 680, 1280, 40, "solid"],
-    [40, 300, 960, 40, "solid"],
-    [1080, 164, 160, 16, "oneway"],
-    [1000, 324, 160, 16, "oneway"]
+    [0, 264, 40, 716, "solid"],
+    [0, 1180, 40, 260, "solid"],
+    [1240, 264, 40, 1176, "solid"],
+    [0, 1400, 1280, 40, "solid"],
+    [40, 340, 680, 40, "solid"],
+    [880, 340, 360, 40, "solid"],
+    [40, 380, 600, 600, "solid"],
+    [960, 380, 280, 600, "solid"],
+    [700, 64, 200, 156, "solid"],
+    [720, 384, 160, 16, "oneway"],
+    [820, 534, 120, 16, "oneway"],
+    [660, 684, 140, 16, "oneway"],
+    [820, 834, 120, 16, "oneway"],
+    [640, 964, 320, 16, "oneway"]
   ],
   "air_vents": [
     [560, 110, "vent_a"]
   ],
   "safe_zones": [
-    [40, 340, 820, 340, "safe_carver"]
+    [40, 980, 900, 400, "safe_carver"]
   ],
   "breakables": [
-    [860, 340, 48, 340, "crack", "crack_carver"],
-    [560, 340, 56, 56, "ore_chunk", "chunk_a"],
-    [680, 340, 56, 56, "ore_chunk", "chunk_b"]
+    [720, 340, 160, 40, "crack", "crack_carver"],
+    [644, 64, 56, 56, "ore_chunk", "chunk_a"],
+    [900, 64, 56, 56, "ore_chunk", "chunk_b"]
   ],
   "exits": [
     {"id": "L", "rect": [0, 64, 16, 200], "to": "R1_02", "to_exit": "R"},
-    {"id": "L2", "rect": [0, 340, 16, 200], "to": "R3_01", "to_exit": "R2"},
+    {"id": "L2", "rect": [0, 980, 16, 200], "to": "R3_01", "to_exit": "R2"},
     {"id": "R", "rect": [1264, 64, 16, 200], "to": "R1_04", "to_exit": "L"}
   ],
   "objects": [
-    ["carver", 260, 340, "oram"],
-    ["seat", 440, 340, "safe_carver"]
+    ["carver", 260, 980, "oram"],
+    ["seat", 440, 980, "safe_carver"]
   ],
   "spawns": [],
   "safe_points": [

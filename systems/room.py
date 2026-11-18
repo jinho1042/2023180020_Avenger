@@ -87,6 +87,8 @@ class Room:
         self.breath_gates = [tuple(g) for g in data.get('breath_gates', [])]
         # gates: (x, y, w, h, 종류, id, 속성 dict). 속성(open_from, to_hub)은 선택이라 없으면 빈 dict
         self.gates = [tuple(g[:6]) + (dict(g[6]) if len(g) > 6 else {},) for g in data.get('gates', [])]
+        # lockdown: 잠금 전투방 {id, waves: [[[종류, x, y], ...], ...], reward_ore?} (T66, systems/script.py Lockdown)
+        self.lockdown = data.get('lockdown')
         for field in ('hazards', 'water', 'breath_zones', 'safe_zones', 'air_vents', 'breakables',
                       'switches', 'objects', 'triggers'):
             setattr(self, field, [tuple(item) for item in data.get(field, [])])
@@ -168,15 +170,20 @@ class Room:
     def spawn_enemies(self, player):
         # 일반 적은 안전지대 영역에 들어오지 않는다 (10.1)
         enemy_base.set_safe_zones(z.get_bb() for z in self.safe_zone_objects)
-        enemies = [ENEMY_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns if kind in ENEMY_TYPES]
-        for e in enemies:
-            if hasattr(e, 'set_water'):
-                e.set_water(self.water)   # 독 거머리는 자기 물 영역 안에서만 (10.3)
+        enemies = self.make_enemies(self.spawns, player)
         if not self.boss_defeated(self.state):
             enemies += [BOSS_TYPES[kind](x, y, player, self.terrain) for kind, x, y in self.spawns
                         if kind in BOSS_TYPES]
         statues = [TrainingStatue(self.id, x, y, sid, player, self.terrain, self.state) for x, y, sid in self.statues]
         return enemies + self.spawn_elites(player) + statues + self.spawn_targets(player)
+
+    def make_enemies(self, spawns, player):
+        # [종류, x, y] 목록 → 일반 적 (spawns, 잠금 전투방 웨이브)
+        enemies = [ENEMY_TYPES[kind](x, y, player, self.terrain) for kind, x, y in spawns if kind in ENEMY_TYPES]
+        for e in enemies:
+            if hasattr(e, 'set_water'):
+                e.set_water(self.water)   # 독 거머리는 자기 물 영역 안에서만 (10.3)
+        return enemies
 
     def spawn_elites(self, player):
         # 정예는 한 번 처치하면 다시 나오지 않는다 (10.4, elites_defeated에 '방 id:정예 id')
