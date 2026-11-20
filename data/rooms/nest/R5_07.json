@@ -15,22 +15,41 @@
     [0, 984, 40, 416, "solid"],
     [1240, 984, 40, 416, "solid"],
     [0, 1400, 1280, 40, "solid"],
-    [300, 204, 260, 16, "oneway"],
-    [760, 364, 240, 16, "oneway"],
-    [300, 524, 260, 16, "oneway"],
-    [720, 664, 160, 16, "oneway"]
+    [300, 210, 140, 16, "oneway"],
+    [640, 370, 160, 16, "oneway"],
+    [740, 624, 120, 16, "oneway"],
+    [1000, 420, 200, 120, "solid"]
+  ],
+  "air_vents": [
+    [1100, 590, "vent_a"]
   ],
   "gates": [
-    [1140, 784, 48, 200, "one_way", "short_b", {"open_from": "right"}]
+    [1140, 784, 48, 200, "one_way", "short_b", {"open_from": "right"}],
+    [16, 784, 32, 200, "arena", "lock_l"],
+    [1232, 784, 32, 200, "arena", "lock_r2"],
+    [1232, 64, 32, 200, "arena", "lock_r"],
+    [700, 720, 200, 64, "arena", "lock_u"]
   ],
   "exits": [
     {"id": "L", "rect": [0, 784, 16, 200], "to": "R5_06", "to_exit": "R"},
     {"id": "R2", "rect": [1264, 784, 16, 200], "to": "R5_10", "to_exit": "L"},
     {"id": "R", "rect": [1264, 64, 16, 200], "to": "R5_08", "to_exit": "L"}
   ],
+  "triggers": [
+    [100, 64, 1000, 480, "lockdown", "lock_r5_07"]
+  ],
+  "lockdown": {
+    "id": "lock_r5_07",
+    "area": [40, 64, 1200, 656],
+    "waves": [
+      [["vine_lurker", 250, 64]],
+      [["vine_lurker", 1150, 64], ["scythe_mantis", 600, 64]]
+    ]
+  },
   "spawns": [
     ["scythe_mantis", 1000, 64],
-    ["vine_lurker", 450, 680]
+    ["vine_lurker", 450, 680],
+    ["vine_lurker", 1100, 380]
   ],
   "objects": [],
   "safe_points": [
