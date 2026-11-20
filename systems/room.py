@@ -51,8 +51,9 @@ def apply_rune_variant(data):
     # rune_variants: {룬 이름: {필드: [항목, ...]}}. config.R6_GATE_RUNE과 같은 룬의 항목을 같은 필드에 덧붙인다
     # R6 통로 앞 방(R6_01)의 장애물이 범위에 따라 다르다 (T57: 완전판 그림자 장막 / 목표판 돌파 구덩이)
     # tools/validate_rooms.py도 같은 규칙으로 읽는다
+    # dict 필드(lockdown 등)는 덧붙이지 않고 그 값으로 둔다 (T66: R6_01 잠금 전투방은 완전판 돌다리 위에만)
     for field, items in data.get('rune_variants', {}).get(config.R6_GATE_RUNE, {}).items():
-        data[field] = data.get(field, []) + items
+        data[field] = items if isinstance(items, dict) else data.get(field, []) + items
     return data
 
 

@@ -41,7 +41,7 @@ def report(strict, room_id, msg):
 def apply_rune_variant(data):
     # systems/room.py apply_rune_variant와 같은 규칙 (그쪽은 pico2d를 불러오므로 여기서 다시 쓴다, T57)
     for field, items in data.get('rune_variants', {}).get(config.R6_GATE_RUNE, {}).items():
-        data[field] = data.get(field, []) + items
+        data[field] = items if isinstance(items, dict) else data.get(field, []) + items
     return data
 
 
