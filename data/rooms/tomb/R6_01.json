@@ -32,13 +32,35 @@
   "rune_variants": {
     "shadow": {
       "platforms": [
-        [560, 0, 1640, 200, "solid"]
+        [560, 0, 1640, 200, "solid"],
+        [940, 200, 100, 120, "solid"],
+        [1680, 200, 100, 120, "solid"],
+        [1280, 380, 160, 16, "oneway"]
+      ],
+      "air_vents": [
+        [1900, 200, "vent_a"]
       ],
       "gates": [
-        [2160, 200, 40, 360, "shadow_curtain", "curtain_r6"]
+        [2160, 200, 40, 360, "shadow_curtain", "curtain_r6"],
+        [100, 680, 200, 40, "arena", "lock_u"],
+        [2512, 200, 32, 200, "arena", "lock_r"]
       ],
+      "triggers": [
+        [560, 200, 1600, 360, "lockdown", "lock_r6_01"]
+      ],
+      "lockdown": {
+        "id": "lock_r6_01",
+        "area": [40, 200, 2120, 520],
+        "waves": [
+          [["crawler", 990, 320], ["crawler", 400, 376]],
+          [["scythe_mantis", 1950, 200], ["vine_lurker", 700, 200], ["crawler", 1730, 320]]
+        ]
+      },
       "spawns": [
-        ["ruin_golem", 1400, 200]
+        ["ruin_golem", 1360, 200]
+      ],
+      "safe_points": [
+        [1360, 200]
       ]
     },
     "breakthrough": {
